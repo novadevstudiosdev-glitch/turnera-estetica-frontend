@@ -19,7 +19,7 @@ export function HeroSection() {
       id="hero"
       component="section"
       sx={{
-        backgroundColor: '#F8F5F2',
+        backgroundColor: '#FFF8E7',
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
@@ -29,25 +29,6 @@ export function HeroSection() {
         py: { xs: 6, md: 0 },
       }}
     >
-      {/* Decorative Background Elements */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: '10%',
-          right: '5%',
-          width: '400px',
-          height: '400px',
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle at 30% 30%, rgba(196, 138, 154, 0.1) 0%, transparent 70%)',
-          pointerEvents: 'none',
-          '@media (max-width:600px)': {
-            width: '200px',
-            height: '200px',
-          },
-        }}
-      />
-
       <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
         <Box
           sx={{
@@ -60,12 +41,13 @@ export function HeroSection() {
           <Typography
             variant="body1"
             sx={{
-              color: '#C48A9A',
-              fontWeight: 600,
-              fontSize: { xs: '0.95rem', md: '1.05rem' },
+              color: '#D4A5A5',
+              fontWeight: 800,
+              fontSize: { xs: '1.05rem', md: '1.25rem' },
               mb: 2,
-              letterSpacing: '0.05em',
+              letterSpacing: '0.08em',
               textTransform: 'uppercase',
+              
             }}
           >
             Bienvenido a MOK
@@ -82,6 +64,7 @@ export function HeroSection() {
               mb: 3,
               lineHeight: 1.2,
               letterSpacing: '-0.02em',
+              whiteSpace: 'nowrap',
             }}
           >
             Consultorio Médico Estético
@@ -115,20 +98,32 @@ export function HeroSection() {
           >
             <Button
               variant="contained"
-              color="primary"
+              color="secondary"
               size="large"
               onClick={handleScrollToContact}
               sx={{
                 px: { xs: 3, md: 5 },
                 py: { xs: 1.5, md: 2 },
                 fontSize: '1rem',
+                backgroundColor: '#D4A5A5',
+                color: '#FFF8E7',
+                border: '2px solid #D4A5A5',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  backgroundColor: '#FFF8E7',
+                  color: '#D4A5A5',
+                  border: '2px solid #D4A5A5',
+                },
+                '&:active': {
+                  transform: 'scale(0.97)',
+                },
               }}
             >
               Agendar Cita
             </Button>
             <Button
               variant="outlined"
-              color="primary"
+              color="secondary"
               size="large"
               onClick={() => {
                 const serviciosElement = document.querySelector('#servicios');
@@ -140,6 +135,14 @@ export function HeroSection() {
                 px: { xs: 3, md: 5 },
                 py: { xs: 1.5, md: 2 },
                 fontSize: '1rem',
+                borderColor: '#D4A5A5',
+                color: '#D4A5A5',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  backgroundColor: '#D4A5A5',
+                  color: '#FFF8E7',
+                  borderColor: '#D4A5A5',
+                }
               }}
             >
               Ver Servicios

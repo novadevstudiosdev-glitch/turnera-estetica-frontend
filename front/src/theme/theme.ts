@@ -1,9 +1,9 @@
 import { createTheme } from '@mui/material/styles';
 
 // Paleta de colores
-const PRIMARY_COLOR = '#C48A9A'; // Rosa viejo
-const SECONDARY_COLOR = '#8A7C8A'; // Rosa complementario
-const BACKGROUND_COLOR = '#F8F5F2'; // Blanco crema
+const PRIMARY_COLOR = '#FFF8E7'; // Blanco crema
+const SECONDARY_COLOR = '#D4A5A5'; // Rosa viejo
+const BACKGROUND_COLOR = '#FFF8E7'; // Blanco crema
 const TEXT_COLOR = '#1A1A1A'; // Negro
 const LIGHT_GRAY = '#E8E3DF';
 
@@ -11,19 +11,19 @@ export const theme = createTheme({
   palette: {
     primary: {
       main: PRIMARY_COLOR,
-      light: '#D4A8B2',
+      light: '#FFF8E7',
       dark: '#A06B7D',
       contrastText: '#fff',
     },
     secondary: {
       main: SECONDARY_COLOR,
-      light: '#A89CAA',
+      light: '#FFF8E7',
       dark: '#6B5A6C',
       contrastText: '#fff',
     },
     background: {
       default: BACKGROUND_COLOR,
-      paper: '#FFFFFF',
+      paper: '#FFF8E7',
     },
     text: {
       primary: TEXT_COLOR,
@@ -118,7 +118,7 @@ export const theme = createTheme({
         {
           props: { variant: 'contained' },
           style: {
-            background: `linear-gradient(135deg, ${PRIMARY_COLOR} 0%, ${SECONDARY_COLOR} 100%)`,
+            background: "#D4A5A5"
           },
         },
       ],
@@ -144,14 +144,14 @@ export const theme = createTheme({
             borderRadius: '12px',
             transition: 'all 0.3s ease',
             '& fieldset': {
-              borderColor: LIGHT_GRAY,
+              borderColor: SECONDARY_COLOR,
               borderWidth: '1.5px',
             },
             '&:hover fieldset': {
-              borderColor: PRIMARY_COLOR,
+              borderColor: SECONDARY_COLOR,
             },
             '&.Mui-focused fieldset': {
-              borderColor: PRIMARY_COLOR,
+              borderColor: SECONDARY_COLOR,
               borderWidth: '2px',
             },
           },
