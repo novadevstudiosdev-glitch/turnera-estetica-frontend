@@ -15,10 +15,7 @@ export function VideoPresentationSection() {
       }}
     >
       <Container maxWidth="lg">
-        <SectionTitle
-          title="Conoce Nuestro Consultorio"
-          subtitle="Un recorrido por nuestras instalaciones y el equipo profesional que te cuidará"
-        />
+        <SectionTitle title="Conoce Nuestro Consultorio" subtitle="Un recorrido por nuestras instalaciones y el equipo profesional que te cuidará" />
 
         <Box
           sx={{
@@ -57,8 +54,7 @@ export function VideoPresentationSection() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor:
-                    'linear-gradient(135deg, rgba(196, 138, 154, 0.2) 0%, rgba(138, 124, 138, 0.2) 100%)',
+                  backgroundColor: 'linear-gradient(135deg, rgba(196, 138, 154, 0.2) 0%, rgba(138, 124, 138, 0.2) 100%)',
                 }}
               >
                 <Box sx={{ textAlign: 'center' }}>
@@ -69,16 +65,14 @@ export function VideoPresentationSection() {
                       mb: 2,
                     }}
                   />
-                  <Typography sx={{ color: '#FFFFFF', fontWeight: 600 }}>
-                    Click para reproducir video
-                  </Typography>
+                  <Typography sx={{ color: '#FFFFFF', fontWeight: 600 }}>Click para reproducir video</Typography>
                 </Box>
 
                 {/* Aquí iría el video real - reemplazar con: */}
-                {/* <iframe
+                <iframe
                   width="100%"
                   height="100%"
-                  src="https://www.youtube.com/embed/VIDEO_ID"
+                  src="https://www.youtube.com/embed/TBtkQQ0NgT0"
                   title="MOK Consultorio"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -88,7 +82,7 @@ export function VideoPresentationSection() {
                     top: 0,
                     left: 0,
                   }}
-                /> */}
+                />
               </Box>
             </Box>
 
@@ -114,8 +108,8 @@ export function VideoPresentationSection() {
                   color: '#CCCCCC',
                 }}
               >
-                Descubre cómo en MOK combinamos tecnología de punta con un ambiente cálido y
-                profesional para ofrecerte la mejor experiencia en tratamientos estéticos.
+                Descubre cómo en MOK combinamos tecnología de punta con un ambiente cálido y profesional para ofrecerte la mejor experiencia en
+                tratamientos estéticos.
               </Typography>
             </CardContent>
           </Card>

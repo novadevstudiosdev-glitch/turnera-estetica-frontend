@@ -34,6 +34,7 @@ export function ContactSection() {
     message: '',
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{
     type: 'success' | 'error' | null;
@@ -44,6 +45,16 @@ export function ContactSection() {
     e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>
   ) => {
     const { name, value } = e.target as HTMLInputElement;
+
+    if (name === 'phone') {
+      if (!/^\d*$/.test(value)) {
+        setErrors((prev) => ({ ...prev, phone: 'Solo números' }));
+        return;
+      } else {
+        setErrors((prev) => ({ ...prev, phone: '' }));
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -52,11 +63,21 @@ export function ContactSection() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const newErrors: Record<string, string> = {};
+    if (!formData.name.trim()) newErrors.name = 'Campo obligatorio';
+    if (!formData.email.trim()) newErrors.email = 'Campo obligatorio';
+    if (!formData.phone.trim()) newErrors.phone = 'Campo obligatorio';
+    if (!formData.service.trim()) newErrors.service = 'Campo obligatorio';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     setLoading(true);
 
-    // Simular envío del formulario
     try {
-      // Aquí iría la lógica real de envío
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       setSubmitStatus({
@@ -71,11 +92,8 @@ export function ContactSection() {
         service: '',
         message: '',
       });
-
-      setTimeout(() => {
-        setSubmitStatus({ type: null, message: '' });
-      }, 5000);
-    } catch (error) {
+      setErrors({});
+    } catch {
       setSubmitStatus({
         type: 'error',
         message: 'Error al enviar el mensaje. Intenta de nuevo.',
@@ -106,15 +124,15 @@ export function ContactSection() {
     },
   ];
 
+  const labelStyle = {
+    sx: {
+      color: '#D4A5A5',
+      '&.Mui-focused': { color: '#D4A5A5' },
+    },
+  };
+
   return (
-    <Box
-      id="contacto"
-      component="section"
-      sx={{
-        py: { xs: 8, md: 12 },
-        backgroundColor: '#FFFFFF',
-      }}
-    >
+    <Box id="contacto" component="section" sx={{ py: { xs: 8, md: 12 } }}>
       <Container maxWidth="lg">
         <SectionTitle
           title="Ponte en Contacto"
@@ -122,7 +140,7 @@ export function ContactSection() {
         />
 
         <Box sx={{ mt: 2 }}>
-          {/* Contact Info Cards */}
+          {/* Contact cards */}
           <Box
             sx={{
               display: 'grid',
@@ -134,190 +152,127 @@ export function ContactSection() {
             {contactOptions.map((option, index) => {
               const Icon = option.icon;
               return (
-                <Box key={index}>
-                  <Card
-                    sx={{
-                      height: '100%',
-                      borderRadius: '16px',
-                      backgroundColor: '#F8F5F2',
-                      border: '1px solid #E8E3DF',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      textAlign: 'center',
-                      p: 3,
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        boxShadow: '0 8px 24px rgba(196, 138, 154, 0.2)',
-                        transform: 'translateY(-4px)',
-                        textDecoration: 'none',
-                      },
-                      cursor: 'pointer',
-                      textDecoration: 'none',
-                      color: 'inherit',
-                    }}
-                    component="a"
-                    href={option.href}
-                    target={option.title === 'Email' ? undefined : '_blank'}
-                  >
-                    <Icon
-                      sx={{
-                        fontSize: '2.5rem',
-                        color: '#C48A9A',
-                        mb: 2,
-                      }}
-                    />
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontWeight: 700,
-                        color: '#1A1A1A',
-                        mb: 1,
-                      }}
-                    >
-                      {option.title}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: '#666666',
-                        wordBreak: 'break-all',
-                      }}
-                    >
-                      {option.value}
-                    </Typography>
-                  </Card>
-                </Box>
+                <Card
+                  key={index}
+                  component="a"
+                  href={option.href}
+                  target={option.title === 'Email' ? undefined : '_blank'}
+                  sx={{
+                    borderRadius: '16px',
+                    backgroundColor: '#F8F5F2',
+                    border: '1px solid #E8E3DF',
+                    textAlign: 'center',
+                    p: 3,
+                    textDecoration: 'none',
+                    color: 'inherit',
+                  }}
+                >
+                  <Icon sx={{ fontSize: '2.5rem', color: '#C48A9A', mb: 2 }} />
+                  <Typography fontWeight={700}>{option.title}</Typography>
+                  <Typography variant="body2">{option.value}</Typography>
+                </Card>
               );
             })}
           </Box>
 
-          {/* Contact Form */}
-          <Box sx={{ mt: 4 }}>
-            <Card
-              sx={{
-                borderRadius: '16px',
-                p: 4,
-                backgroundColor: '#F8F5F2',
-                border: '1px solid #E8E3DF',
-              }}
-            >
-              <Typography
-                variant="h5"
+          {/* Form */}
+          <Card sx={{ borderRadius: '16px', p: 4, backgroundColor: '#F8F5F2' }}>
+            <Typography variant="h5" fontWeight={700} mb={3}>
+              Formulario de Contacto
+            </Typography>
+
+            {submitStatus.type && (
+              <Alert severity={submitStatus.type} sx={{ mb: 3 }}>
+                {submitStatus.message}
+              </Alert>
+            )}
+
+            <Box component="form" onSubmit={handleSubmit} noValidate>
+              <Box
                 sx={{
-                  fontWeight: 700,
-                  mb: 3,
-                  color: '#1A1A1A',
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                  gap: 3,
                 }}
               >
-                Formulario de Contacto
-              </Typography>
+                <TextField
+                  fullWidth
+                  label="Nombre Completo"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  error={!!errors.name}
+                  helperText={errors.name}
+                  InputLabelProps={labelStyle}
+                />
 
-              {submitStatus.type && (
-                <Alert
-                  severity={submitStatus.type}
-                  sx={{ mb: 3 }}
-                  onClose={() => setSubmitStatus({ type: null, message: '' })}
-                >
-                  {submitStatus.message}
-                </Alert>
-              )}
+                <TextField
+                  fullWidth
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  error={!!errors.email}
+                  helperText={errors.email}
+                  InputLabelProps={labelStyle}
+                />
 
-              <Box component="form" onSubmit={handleSubmit} noValidate>
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                    gap: 3,
-                  }}
-                >
-                  <Box sx={{ gridColumn: { xs: '1', sm: 'span 1' } }}>
-                    <TextField
-                      fullWidth
-                      label="Nombre Completo"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
-                      disabled={loading}
-                      variant="outlined"
-                    />
-                  </Box>
+                <TextField
+                  fullWidth
+                  label="Teléfono"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                  error={!!errors.phone}
+                  helperText={errors.phone}
+                  InputLabelProps={labelStyle}
+                />
 
-                  <Box sx={{ gridColumn: { xs: '1', sm: 'span 1' } }}>
-                    <TextField
-                      fullWidth
-                      label="Email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                      disabled={loading}
-                      variant="outlined"
-                    />
-                  </Box>
+                <TextField
+                  fullWidth
+                  label="Servicio de Interés"
+                  name="service"
+                  value={formData.service}
+                  onChange={handleChange}
+                  required
+                  error={!!errors.service}
+                  helperText={errors.service}
+                  InputLabelProps={labelStyle}
+                />
 
-                  <Box sx={{ gridColumn: { xs: '1', sm: 'span 1' } }}>
-                    <TextField
-                      fullWidth
-                      label="Teléfono"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      disabled={loading}
-                      variant="outlined"
-                    />
-                  </Box>
+                {/* Mensaje + botón */}
+                <Box sx={{ gridColumn: '1 / -1' }}>
+                  <TextField
+                    fullWidth
+                    label="Mensaje"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    multiline
+                    rows={6}
+                    InputLabelProps={labelStyle}
+                  />
 
-                  <Box sx={{ gridColumn: { xs: '1', sm: 'span 1' } }}>
-                    <TextField
-                      fullWidth
-                      label="Servicio de Interés"
-                      name="service"
-                      value={formData.service}
-                      onChange={handleChange}
-                      disabled={loading}
-                      variant="outlined"
-                    />
-                  </Box>
-
-                  <Box sx={{ gridColumn: '1 / -1' }}>
-                    <TextField
-                      fullWidth
-                      label="Mensaje"
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      multiline
-                      rows={5}
-                      required
-                      disabled={loading}
-                      variant="outlined"
-                    />
-                  </Box>
-
-                  <Box sx={{ gridColumn: '1 / -1' }}>
-                    <Button
-                      type="submit"
-                      fullWidth
-                      variant="contained"
-                      color="primary"
-                      size="large"
-                      disabled={loading}
-                      sx={{
-                        position: 'relative',
-                      }}
-                    >
-                      {loading ? <CircularProgress size={24} color="inherit" /> : 'Enviar Mensaje'}
-                    </Button>
-                  </Box>
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    disabled={loading}
+                    sx={{ mt: 3 }}
+                  >
+                    {loading ? <CircularProgress size={24} /> : 'Enviar Mensaje'}
+                  </Button>
                 </Box>
               </Box>
-            </Card>
-          </Box>
+            </Box>
+          </Card>
         </Box>
       </Container>
     </Box>
   );
 }
+
