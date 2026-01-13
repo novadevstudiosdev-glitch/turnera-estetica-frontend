@@ -64,7 +64,10 @@ export function HeroSection() {
               mb: 3,
               lineHeight: 1.2,
               letterSpacing: '-0.02em',
-              whiteSpace: 'nowrap',
+              whiteSpace: {
+                xs: 'normal', //móvil
+                md: 'nowrap', //desktop
+              },
             }}
           >
             Consultorio Médico Estético
