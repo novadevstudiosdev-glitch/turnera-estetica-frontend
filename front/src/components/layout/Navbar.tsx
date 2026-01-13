@@ -32,7 +32,7 @@ export function Navbar() {
     <AppBar
       position="sticky"
       sx={{
-        backgroundColor: '#F8F5F2',
+        backgroundColor: '#FFF',
         color: '#1A1A1A',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
         borderBottom: '1px solid #E8E3DF',
@@ -63,8 +63,8 @@ export function Navbar() {
               <Image
                 src="/logo.png"
                 alt="MOK Logo"
-                width={180}
-                height={180}
+                width={200}
+                height={200}
                 priority
                 style={{
                   objectFit: 'contain',

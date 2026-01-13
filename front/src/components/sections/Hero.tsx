@@ -19,7 +19,7 @@ export function HeroSection() {
       id="hero"
       component="section"
       sx={{
-        backgroundColor: '#FFF8E7',
+        backgroundColor: '#FFF8EF',
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
