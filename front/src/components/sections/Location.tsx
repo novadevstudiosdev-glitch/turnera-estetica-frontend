@@ -41,36 +41,16 @@ export function LocationSection() {
                 boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
               }}
             >
-              <Box
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: '#E8E3DF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative',
-                }}
-              >
-                {/* Placeholder para mapa - reemplazar con Google Maps */}
-                <Box sx={{ textAlign: 'center', color: '#999999' }}>
-                  <LocationOnIcon sx={{ fontSize: '48px', mb: 1, opacity: 0.5 }} />
-                  <Typography variant="body2">Integra Google Maps aquí</Typography>
-                </Box>
-
-                {/* Código para integrar Google Maps real:
-                <iframe
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  src="https://www.google.com/maps/embed?pb=YOUR_EMBED_CODE"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-                */}
-              </Box>
+              <iframe
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                src="https://www.google.com/maps?q=Calle+Almirante+Brown+1871,+Tunuyán,+Mendoza,+Argentina&output=embed"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              ></iframe>
             </Card>
           </Box>
 

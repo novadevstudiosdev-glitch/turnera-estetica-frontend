@@ -63,7 +63,7 @@ export function Navbar() {
               <Image
                 src="/logo.png"
                 alt="MOK Logo"
-                width={200}
+                width={250}
                 height={200}
                 priority
                 style={{

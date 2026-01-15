@@ -48,16 +48,20 @@ export function ServicesSection() {
                 }}
               >
                 <CardContent sx={{ flexGrow: 1 }}>
-                  {/* Icon */}
-                  <Typography
-                    sx={{
-                      fontSize: '3rem',
-                      mb: 2,
-                      display: 'block',
-                    }}
-                  >
-                    {service.icon}
-                  </Typography>
+                  {service.image && (
+                    <Box
+                      component="img"
+                      src={service.image}
+                      alt={service.name}
+                      sx={{
+                        width: '100%',
+                        height: '200px',
+                        objectFit: 'cover',
+                        borderRadius: '12px 12px 0 0',
+                        mb: 2,
+                      }}
+                    />
+                  )}
 
                   {/* Service Name */}
                   <Typography

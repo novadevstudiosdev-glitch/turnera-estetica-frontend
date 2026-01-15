@@ -1,6 +1,7 @@
 'use client';
 
 import { Box, Container, Typography, Button, useTheme, useMediaQuery } from '@mui/material';
+import Image from 'next/image';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 
 export function HeroSection() {
