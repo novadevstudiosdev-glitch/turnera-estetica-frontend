@@ -1,9 +1,17 @@
 'use client';
 
-import { AppBar, Box, Container, Toolbar, Button, useTheme, useMediaQuery } from '@mui/material';
+import {
+  AppBar,
+  Box,
+  Container,
+  Toolbar,
+  Button,
+  Typography,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
 import Link from 'next/link';
-import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -19,6 +27,14 @@ export function Navbar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleNavClick = (href: string) => {
     setMobileMenuOpen(false);
@@ -28,22 +44,72 @@ export function Navbar() {
     }
   };
 
+  const handleOpenReserva = () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('open-reserva-modal'));
+    }
+  };
+
+  const navItemStyle = {
+    color: '#2C2C2C',
+    fontSize: '0.95rem',
+    fontWeight: 500,
+    fontFamily: 'Poppins, sans-serif',
+    textTransform: 'none',
+    backgroundColor: 'transparent',
+    boxShadow: 'none',
+    transform: 'none',
+    borderRadius: '0',
+    minWidth: 'auto',
+    px: 2.25,
+    py: 1,
+    transition: 'color 0.25s ease',
+    '&:hover': {
+      color: '#EEBBC3',
+      backgroundColor: 'transparent',
+      boxShadow: 'none',
+      transform: 'none',
+    },
+    '&:active': {
+      backgroundColor: 'transparent',
+      boxShadow: 'none',
+      transform: 'none',
+    },
+    '&.Mui-focusVisible': {
+      color: '#EEBBC3',
+      backgroundColor: 'transparent',
+      boxShadow: 'none',
+      transform: 'none',
+    },
+    '&:focus-visible': {
+      color: '#EEBBC3',
+      backgroundColor: 'transparent',
+      boxShadow: 'none',
+      transform: 'none',
+    },
+  } as const;
+
   return (
     <AppBar
-      position="sticky"
+      position="fixed"
       sx={{
-        backgroundColor: '#FFF',
-        color: '#1A1A1A',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-        borderBottom: '1px solid #E8E3DF',
+        backgroundColor: isScrolled ? 'rgba(255, 255, 255, 0.92)' : 'rgba(255, 255, 255, 0.88)',
+        color: '#2C2C2C',
+        boxShadow: isScrolled ? '0 6px 24px rgba(0,0,0,0.08)' : '0 2px 20px rgba(0,0,0,0.04)',
+        borderBottom: '1px solid rgba(212, 165, 165, 0.12)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        transition: 'all 0.3s ease',
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth="lg" sx={{ px: { xs: 3, md: 7.5 } }}>
         <Toolbar
           sx={{
             display: 'flex',
+            alignItems: 'center',
             justifyContent: 'space-between',
-            padding: { xs: '16px 0', md: '12px 0' },
+            minHeight: 80,
+            padding: 0,
           }}
         >
           {/* Logo */}
@@ -51,63 +117,61 @@ export function Navbar() {
             <Box
               sx={{
                 display: 'flex',
+                flexDirection: 'row',
                 alignItems: 'center',
+                gap: 2,
                 cursor: 'pointer',
                 transition: 'transform 0.3s ease',
-                height: 70,
+                height: 80,
                 '&:hover': {
-                  transform: 'scale(1.08)',
+                  transform: 'scale(1.02)',
                 },
               }}
             >
-              <Image
-                src="/logo.png"
-                alt="MOK Logo"
-                width={250}
-                height={200}
-                priority
-                style={{
-                  objectFit: 'contain',
+              <Typography
+                sx={{
+                  fontFamily: '"Cormorant Garamond", serif',
+                  fontWeight: 600,
+                  letterSpacing: '3px',
+                  fontSize: { xs: '1.5rem', md: '1.75rem' },
+                  color: '#D4A5A5',
+                }}
+              >
+                JG
+              </Typography>
+              <Box
+                aria-hidden="true"
+                sx={{
+                  width: '1px',
+                  height: 30,
+                  backgroundColor: '#E0E0E0',
                 }}
               />
+              <Typography
+                sx={{
+                  fontFamily: '"Cormorant Garamond", serif',
+                  fontStyle: 'italic',
+                  fontWeight: 300,
+                  letterSpacing: '0.08em',
+                  color: '#666666',
+                  fontSize: '0.82rem',
+                }}
+              >
+                Dra. Jaquelina Grassetti
+              </Typography>
             </Box>
           </Link>
 
           {/* Desktop Navigation */}
           {!isMobile && (
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 1.5 }}>
               {NAVIGATION_LINKS.map((link) => (
                 <Button
                   key={link.href}
                   onClick={() => handleNavClick(link.href)}
-                  sx={{
-                    color: '#1A1A1A',
-                    fontSize: '0.95rem',
-                    fontWeight: 500,
-                    textTransform: 'none',
-                    position: 'relative',
-                    px: 2,
-                    py: 1,
-                    borderRadius: '8px',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '8px',
-                      background:
-                        'linear-gradient(135deg, rgba(196, 138, 154, 0.1) 0%, rgba(138, 124, 138, 0.1) 100%)',
-                      opacity: 0,
-                      transition: 'opacity 0.3s ease',
-                      zIndex: -1,
-                    },
-                    '&:hover': {
-                      color: '#C48A9A',
-                      '&::before': {
-                        opacity: 1,
-                      },
-                    },
-                  }}
+                  disableRipple
+                  disableFocusRipple
+                  sx={navItemStyle}
                 >
                   {link.label}
                 </Button>
@@ -115,34 +179,46 @@ export function Navbar() {
             </Box>
           )}
 
-          {/* Mobile Menu Button */}
-          {isMobile && (
-            <Button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              sx={{
-                color: '#1A1A1A',
-                minWidth: 'auto',
-                p: 1,
-              }}
-            >
-              {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
-            </Button>
-          )}
-
-          {/* CTA Button - Desktop */}
-          {!isMobile && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Button
               variant="contained"
-              color="primary"
-              onClick={() => handleNavClick('#contacto')}
+              onClick={handleOpenReserva}
               sx={{
-                borderRadius: '12px',
-                px: 3,
+                borderRadius: '25px',
+                px: { xs: 2.6, md: 3.5 },
+                py: { xs: 0.9, md: 1.1 },
+                fontSize: { xs: '0.85rem', md: '0.95rem' },
+                backgroundColor: '#EEBBC3',
+                color: '#2C2C2C',
+                border: '1px solid #D4A5A5',
+                boxShadow: '0 6px 18px rgba(238, 187, 195, 0.25)',
+                textTransform: 'none',
+                fontWeight: 500,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  backgroundColor: '#FFB8C6',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 14px 26px rgba(238, 187, 195, 0.35)',
+                },
               }}
             >
               Reservar
             </Button>
-          )}
+
+            {/* Mobile Menu Button */}
+            {isMobile && (
+              <Button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                sx={{
+                  color: '#2C2C2C',
+                  minWidth: 'auto',
+                  p: 1,
+                }}
+              >
+                {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+              </Button>
+            )}
+          </Box>
         </Toolbar>
 
         {/* Mobile Navigation */}
@@ -153,8 +229,9 @@ export function Navbar() {
               flexDirection: 'column',
               gap: 1,
               pb: 2,
-              borderTop: '1px solid #E8E3DF',
+              borderTop: '1px solid #E9E4E2',
               pt: 2,
+              backgroundColor: '#FFFFFF',
             }}
           >
             {NAVIGATION_LINKS.map((link) => (
@@ -162,11 +239,14 @@ export function Navbar() {
                 key={link.href}
                 fullWidth
                 onClick={() => handleNavClick(link.href)}
+                disableRipple
+                disableFocusRipple
                 sx={{
+                  ...navItemStyle,
                   justifyContent: 'flex-start',
-                  color: '#1A1A1A',
-                  textTransform: 'none',
+                  width: '100%',
                   fontSize: '1rem',
+                  px: 0,
                 }}
               >
                 {link.label}
@@ -175,9 +255,18 @@ export function Navbar() {
             <Button
               fullWidth
               variant="contained"
-              color="primary"
-              onClick={() => handleNavClick('#contacto')}
-              sx={{ mt: 1 }}
+              onClick={handleOpenReserva}
+              sx={{
+                mt: 1,
+                borderRadius: '25px',
+                backgroundColor: '#EEBBC3',
+                color: '#2C2C2C',
+                border: '1px solid #D4A5A5',
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#FFB8C6',
+                },
+              }}
             >
               Reservar
             </Button>

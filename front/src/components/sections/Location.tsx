@@ -13,7 +13,7 @@ export function LocationSection() {
       component="section"
       sx={{
         py: { xs: 8, md: 12 },
-        backgroundColor: '#F8F5F2',
+        backgroundColor: 'transparent',
       }}
     >
       <Container maxWidth="lg">
@@ -38,7 +38,8 @@ export function LocationSection() {
                 minHeight: '400px',
                 overflow: 'hidden',
                 borderRadius: '16px',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+                boxShadow: '0 8px 20px rgba(0, 0, 0, 0.06)',
+                border: '1px solid #E9E4E2',
               }}
             >
               <iframe
@@ -61,7 +62,7 @@ export function LocationSection() {
                 height: '100%',
                 borderRadius: '16px',
                 backgroundColor: '#FFFFFF',
-                border: '1px solid #E8E3DF',
+                border: '1px solid #E9E4E2',
               }}
             >
               <CardContent sx={{ p: 4 }}>
@@ -70,7 +71,7 @@ export function LocationSection() {
                   sx={{
                     fontWeight: 700,
                     mb: 4,
-                    color: '#1A1A1A',
+                    color: '#3A3A3A',
                   }}
                 >
                   Información de Contacto
@@ -81,7 +82,7 @@ export function LocationSection() {
                   <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-start' }}>
                     <LocationOnIcon
                       sx={{
-                        color: '#C48A9A',
+                        color: '#D4A5A5',
                         mt: 0.5,
                       }}
                     />
@@ -90,7 +91,7 @@ export function LocationSection() {
                         variant="body2"
                         sx={{
                           fontWeight: 600,
-                          color: '#1A1A1A',
+                          color: '#3A3A3A',
                           mb: 0.5,
                         }}
                       >
@@ -99,7 +100,7 @@ export function LocationSection() {
                       <Typography
                         variant="body2"
                         sx={{
-                          color: '#666666',
+                          color: '#7A7A7A',
                         }}
                       >
                         {contactInfo.address}
@@ -113,7 +114,7 @@ export function LocationSection() {
                   <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-start' }}>
                     <PhoneIcon
                       sx={{
-                        color: '#C48A9A',
+                        color: '#D4A5A5',
                         mt: 0.5,
                       }}
                     />
@@ -122,7 +123,7 @@ export function LocationSection() {
                         variant="body2"
                         sx={{
                           fontWeight: 600,
-                          color: '#1A1A1A',
+                          color: '#3A3A3A',
                           mb: 0.5,
                         }}
                       >
@@ -131,7 +132,7 @@ export function LocationSection() {
                       <Button
                         href={`tel:${contactInfo.phone}`}
                         sx={{
-                          color: '#C48A9A',
+                          color: '#3A3A3A',
                           textTransform: 'none',
                           textDecoration: 'none',
                           p: 0,
@@ -153,7 +154,7 @@ export function LocationSection() {
                     variant="body2"
                     sx={{
                       fontWeight: 600,
-                      color: '#1A1A1A',
+                      color: '#3A3A3A',
                       mb: 1.5,
                     }}
                   >
@@ -164,7 +165,7 @@ export function LocationSection() {
                       variant="caption"
                       sx={{
                         display: 'block',
-                        color: '#666666',
+                        color: '#7A7A7A',
                         mb: 0.5,
                       }}
                     >
@@ -174,7 +175,7 @@ export function LocationSection() {
                       variant="caption"
                       sx={{
                         display: 'block',
-                        color: '#666666',
+                        color: '#7A7A7A',
                         mb: 0.5,
                       }}
                     >
@@ -184,7 +185,7 @@ export function LocationSection() {
                       variant="caption"
                       sx={{
                         display: 'block',
-                        color: '#666666',
+                        color: '#7A7A7A',
                       }}
                     >
                       <strong>Domingo:</strong> {contactInfo.hours.sunday}
@@ -195,8 +196,7 @@ export function LocationSection() {
                 {/* CTA Button */}
                 <Button
                   fullWidth
-                  variant="contained"
-                  color="primary"
+                  variant="outlined"
                   href={`https://www.google.com/maps/search/${contactInfo.address.replace(
                     /\s/g,
                     '+'
@@ -204,6 +204,14 @@ export function LocationSection() {
                   target="_blank"
                   sx={{
                     mt: 3,
+                    borderRadius: '999px',
+                    borderColor: '#EEBBC3',
+                    color: '#3A3A3A',
+                    textTransform: 'none',
+                    '&:hover': {
+                      backgroundColor: '#EEBBC3',
+                      borderColor: '#FFB8C6',
+                    },
                   }}
                 >
                   Ver en Google Maps

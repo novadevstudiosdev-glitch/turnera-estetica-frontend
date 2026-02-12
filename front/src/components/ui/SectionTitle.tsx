@@ -20,8 +20,10 @@ export function SectionTitle({ title, subtitle, centered = true }: SectionTitleP
         variant="h2"
         component="h2"
         sx={{
-          fontWeight: 700,
-          color: '#1A1A1A',
+          fontFamily: '"Cormorant Garamond", serif',
+          fontWeight: 600,
+          letterSpacing: '0.06em',
+          color: '#2C2C2C',
           mb: subtitle ? 2 : 0,
         }}
       >
@@ -31,7 +33,7 @@ export function SectionTitle({ title, subtitle, centered = true }: SectionTitleP
         <Typography
           variant="body1"
           sx={{
-            color: '#666666',
+            color: '#3D3D3D',
             fontSize: '1.1rem',
             maxWidth: '600px',
             mx: centered ? 'auto' : 0,

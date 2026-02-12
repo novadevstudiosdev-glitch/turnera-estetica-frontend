@@ -11,7 +11,7 @@ export function VideoPresentationSection() {
       component="section"
       sx={{
         py: { xs: 8, md: 12 },
-        backgroundColor: '#F8F5F2',
+        backgroundColor: 'transparent',
       }}
     >
       <Container maxWidth="lg">
@@ -30,8 +30,9 @@ export function VideoPresentationSection() {
               maxWidth: '800px',
               overflow: 'hidden',
               borderRadius: '16px',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-              backgroundColor: '#000000',
+              boxShadow: '0 10px 22px rgba(0, 0, 0, 0.06)',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E9E4E2',
             }}
           >
             <Box
@@ -40,7 +41,7 @@ export function VideoPresentationSection() {
                 width: '100%',
                 paddingBottom: '56.25%', // 16:9 aspect ratio
                 overflow: 'hidden',
-                backgroundColor: '#1A1A1A',
+                backgroundColor: '#FFFFFF',
               }}
             >
               {/* Placeholder para video - reemplazar con video real */}
@@ -54,21 +55,23 @@ export function VideoPresentationSection() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: 'linear-gradient(135deg, rgba(196, 138, 154, 0.2) 0%, rgba(138, 124, 138, 0.2) 100%)',
+                  backgroundColor: 'transparent',
                 }}
               >
                 <Box sx={{ textAlign: 'center' }}>
                   <PlayCircleIcon
                     sx={{
                       fontSize: '80px',
-                      color: '#C48A9A',
+                      color: '#D4A5A5',
                       mb: 2,
                     }}
                   />
-                  <Typography sx={{ color: '#FFFFFF', fontWeight: 600 }}>Click para reproducir video</Typography>
+                  <Typography sx={{ color: '#3A3A3A', fontWeight: 500 }}>
+                    Click para reproducir video
+                  </Typography>
                 </Box>
 
-                {/* Aquí iría el video real - reemplazar con: */}
+                {/* AquÃƒÂ­ irÃƒÂ­a el video real - reemplazar con: */}
                 <iframe
                   width="100%"
                   height="100%"
@@ -88,15 +91,15 @@ export function VideoPresentationSection() {
 
             <CardContent
               sx={{
-                backgroundColor: '#1A1A1A',
-                color: '#FFFFFF',
+                backgroundColor: '#FFFFFF',
+                color: '#3A3A3A',
                 p: 3,
               }}
             >
               <Typography
                 variant="h6"
                 sx={{
-                  fontWeight: 700,
+                  fontWeight: 600,
                   mb: 1,
                 }}
               >
@@ -105,11 +108,11 @@ export function VideoPresentationSection() {
               <Typography
                 variant="body2"
                 sx={{
-                  color: '#CCCCCC',
+                  color: '#7A7A7A',
                 }}
               >
-                Descubre cómo en MOK combinamos tecnología de punta con un ambiente cálido y profesional para ofrecerte la mejor experiencia en
-                tratamientos estéticos.
+                Descubre cÃƒÂ³mo en MOK combinamos tecnologÃƒÂ­a de punta con un ambiente cÃƒÂ¡lido y profesional para ofrecerte la mejor experiencia en
+                tratamientos estÃƒÂ©ticos.
               </Typography>
             </CardContent>
           </Card>

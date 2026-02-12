@@ -1,17 +1,14 @@
 'use client';
 
-import { Box, Container, Typography, Button, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Button, Container, Typography } from '@mui/material';
 import Image from 'next/image';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
 export function HeroSection() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
-  const handleScrollToContact = () => {
-    const contactElement = document.querySelector('#contacto');
-    if (contactElement) {
-      contactElement.scrollIntoView({ behavior: 'smooth' });
+  const handleOpenReserva = () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('open-reserva-modal'));
     }
   };
 
@@ -20,164 +17,115 @@ export function HeroSection() {
       id="hero"
       component="section"
       sx={{
-        backgroundColor: '#FFF8EF',
-        minHeight: '100vh',
+        position: 'relative',
+        height: '100vh',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
         overflow: 'hidden',
-        py: { xs: 6, md: 0 },
       }}
     >
-      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
+      <Image
+        src="/portada.png"
+        alt="Tratamiento de medicina estética"
+        fill
+        priority
+        sizes="100vw"
+        style={{ objectFit: 'cover', objectPosition: 'center' }}
+      />
+
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundImage:
+            'linear-gradient(to right, rgba(255, 229, 236, 0.98) 0%, rgba(255, 229, 236, 0.95) 15%, rgba(255, 229, 236, 0.85) 25%, rgba(255, 229, 236, 0.6) 35%, rgba(255, 229, 236, 0.3) 45%, rgba(255, 229, 236, 0.1) 52%, rgba(255, 229, 236, 0) 60%), radial-gradient(circle at 20% 20%, rgba(245, 230, 232, 0.2) 0%, rgba(245, 230, 232, 0) 65%)',
+          opacity: { xs: 1, md: 1 },
+          pointerEvents: 'none',
+        }}
+      />
+
+      <Container
+        maxWidth="lg"
+        sx={{
+          position: 'relative',
+          zIndex: 1,
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          minHeight: '100vh',
+        }}
+      >
         <Box
           sx={{
-            textAlign: 'center',
-            maxWidth: '800px',
-            mx: 'auto',
+            maxWidth: { xs: '100%', md: '600px' },
+            pl: { xs: 4, md: 10 },
+            pr: { xs: 4, md: 4 },
+            animation: 'fadeUp 0.9s ease both',
+            '@keyframes fadeUp': {
+              from: { opacity: 0, transform: 'translateY(16px)' },
+              to: { opacity: 1, transform: 'translateY(0)' },
+            },
           }}
         >
-          {/* Subtitle */}
-          <Typography
-            variant="body1"
-            sx={{
-              color: '#D4A5A5',
-              fontWeight: 800,
-              fontSize: { xs: '1.05rem', md: '1.25rem' },
-              mb: 2,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              
-            }}
-          >
-            Bienvenido a MOK
-          </Typography>
-
-          {/* Main Title */}
           <Typography
             variant="h1"
-            component="h1"
             sx={{
-              fontSize: { xs: '2.5rem', sm: '3rem', md: '3.5rem', lg: '4rem' },
-              fontWeight: 700,
-              color: '#1A1A1A',
-              mb: 3,
+              fontFamily: '"Cormorant Garamond", serif',
+              fontSize: { xs: '2.625rem', md: '3.625rem' },
+              color: '#2C2C2C',
               lineHeight: 1.2,
-              letterSpacing: '-0.02em',
-              whiteSpace: {
-                xs: 'normal', //móvil
-                md: 'nowrap', //desktop
-              },
+              letterSpacing: '0.02em',
+              fontWeight: 600,
             }}
           >
-            Consultorio Médico Estético
+            Resultados naturales, cuidado profesional
           </Typography>
-
-          {/* Description */}
           <Typography
-            variant="body1"
             sx={{
-              fontSize: { xs: '1rem', md: '1.15rem' },
-              color: '#666666',
-              mb: 5,
-              lineHeight: 1.8,
-              maxWidth: '600px',
-              mx: 'auto',
+              mt: 2,
+              fontFamily: 'Poppins, sans-serif',
+              fontSize: { xs: '1rem', md: '1.125rem' },
+              color: '#3D3D3D',
+              maxWidth: 520,
             }}
           >
-            Realza tu belleza natural con nuestros tratamientos especializados. Profesionales
-            certificados, tecnología de punta y resultados garantizados.
+            Tratamientos de medicina estética diseñados para realzar tu belleza de forma sutil,
+            segura y armónica.
           </Typography>
 
-          {/* CTA Buttons */}
-          <Box
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<CalendarMonthIcon />}
+            onClick={handleOpenReserva}
             sx={{
-              display: 'flex',
-              gap: 3,
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-              mb: 8,
-            }}
-          >
-            <Button
-              variant="contained"
-              color="secondary"
-              size="large"
-              onClick={handleScrollToContact}
-              sx={{
-                px: { xs: 3, md: 5 },
-                py: { xs: 1.5, md: 2 },
-                fontSize: '1rem',
-                backgroundColor: '#D4A5A5',
-                color: '#FFF8E7',
-                border: '2px solid #D4A5A5',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  backgroundColor: '#FFF8E7',
-                  color: '#D4A5A5',
-                  border: '2px solid #D4A5A5',
-                },
-                '&:active': {
-                  transform: 'scale(0.97)',
-                },
-              }}
-            >
-              Agendar Cita
-            </Button>
-            <Button
-              variant="outlined"
-              color="secondary"
-              size="large"
-              onClick={() => {
-                const serviciosElement = document.querySelector('#servicios');
-                if (serviciosElement) {
-                  serviciosElement.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}
-              sx={{
-                px: { xs: 3, md: 5 },
-                py: { xs: 1.5, md: 2 },
-                fontSize: '1rem',
-                borderColor: '#D4A5A5',
-                color: '#D4A5A5',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  backgroundColor: '#D4A5A5',
-                  color: '#FFF8E7',
-                  borderColor: '#D4A5A5',
-                }
-              }}
-            >
-              Ver Servicios
-            </Button>
-          </Box>
-
-          {/* Scroll Indicator */}
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              animation: 'bounce 2s infinite',
-              '@keyframes bounce': {
-                '0%, 100%': {
-                  transform: 'translateY(0)',
-                },
-                '50%': {
-                  transform: 'translateY(12px)',
-                },
+              mt: 4,
+              borderRadius: '30px',
+              px: '40px',
+              py: '18px',
+              backgroundColor: '#EEBBC3',
+              color: '#2C2C2C',
+              fontWeight: 500,
+              textTransform: 'none',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                backgroundColor: '#FFB8C6',
+                transform: 'translateY(-3px)',
+                boxShadow: '0 14px 26px rgba(238, 187, 195, 0.35)',
               },
             }}
           >
-            <Box
-              sx={{
-                p: 1,
-                borderRadius: '50%',
-                border: '2px solid #C48A9A',
-              }}
-            >
-              <ArrowDownwardIcon sx={{ color: '#C48A9A' }} />
-            </Box>
+            Reservar turno online
+          </Button>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
+            <CheckCircleOutlineIcon sx={{ color: '#D4A5A5', fontSize: '18px' }} />
+            <Typography sx={{ color: '#666666', fontSize: '0.875rem' }}>
+              Agendá tu cita en menos de 30 segundos
+            </Typography>
           </Box>
         </Box>
       </Container>

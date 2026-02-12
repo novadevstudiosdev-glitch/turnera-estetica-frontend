@@ -11,7 +11,7 @@ export function ServicesSection() {
       component="section"
       sx={{
         py: { xs: 8, md: 12 },
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'transparent',
         position: 'relative',
       }}
     >
@@ -40,11 +40,11 @@ export function ServicesSection() {
                   cursor: 'pointer',
                   '&:hover': {
                     transform: 'translateY(-8px)',
-                    boxShadow: '0 16px 40px rgba(196, 138, 154, 0.2)',
+                    boxShadow: '0 12px 26px rgba(0, 0, 0, 0.08)',
                   },
                   borderRadius: '16px',
-                  backgroundColor: '#F8F5F2',
-                  border: '1px solid #E8E3DF',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #E9E4E2',
                 }}
               >
                 <CardContent sx={{ flexGrow: 1 }}>
@@ -68,8 +68,8 @@ export function ServicesSection() {
                     variant="h5"
                     component="h3"
                     sx={{
-                      fontWeight: 700,
-                      color: '#1A1A1A',
+                      fontWeight: 600,
+                      color: '#3A3A3A',
                       mb: 2,
                     }}
                   >
@@ -80,7 +80,7 @@ export function ServicesSection() {
                   <Typography
                     variant="body2"
                     sx={{
-                      color: '#666666',
+                      color: '#7A7A7A',
                       lineHeight: 1.8,
                     }}
                   >
@@ -97,9 +97,10 @@ export function ServicesSection() {
                       width: '40px',
                       height: '40px',
                       borderRadius: '50%',
-                      backgroundColor: '#E8E3DF',
+                      backgroundColor: 'transparent',
+                      border: '1px solid #E9E4E2',
                       transition: 'all 0.3s ease',
-                      color: '#C48A9A',
+                      color: '#D4A5A5',
                       fontSize: '1.2rem',
                     }}
                   >
