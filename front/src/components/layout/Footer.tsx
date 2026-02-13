@@ -3,8 +3,7 @@
 import { Box, Container, Typography, Link as MuiLink, Divider } from '@mui/material';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
-import TwitterIcon from '@mui/icons-material/Twitter';
-import LinkedInIcon from '@mui/icons-material/LinkedIn';
+
 import { contactInfo } from '@/lib/data';
 
 export function Footer() {
@@ -13,8 +12,7 @@ export function Footer() {
   const socialLinks = [
     { icon: FacebookIcon, href: '#', label: 'Facebook' },
     { icon: InstagramIcon, href: '#', label: 'Instagram' },
-    { icon: TwitterIcon, href: '#', label: 'Twitter' },
-    { icon: LinkedInIcon, href: '#', label: 'LinkedIn' },
+  
   ];
 
   return (
