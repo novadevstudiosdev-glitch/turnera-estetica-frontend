@@ -122,13 +122,22 @@ export const brands: Brand[] = [
 ];
 
 export const contactInfo = {
-  phone: '+54 261 XXXXXXX',
+  phone: '+54 341 751-1529',
   whatsapp: '+54 9 261 XXXXXXX',
   email: 'info@mok-consultorio.com',
-  address: 'Calle Almirante Brown 1871, Tunuyán, Mendoza, Argentina',
+  address: 'Junín 191 • Alto Buró • Rosario. Argentina',
   hours: {
-    weekday: '09:00 - 20:00',
-    saturday: '10:00 - 14:00',
-    sunday: 'Cerrado',
+    rosario: {
+      label: 'Rosario',
+      schedule: [
+        { day: 'Lunes', time: '14:00 - 19:30' },
+        { day: 'Jueves', time: '08:00 - 15:00' },
+        { day: 'Viernes', time: '08:00 - 14:00' },
+      ],
+    },
+    correa: {
+      label: 'Correa',
+      schedule: [{ day: 'Martes', time: '07:00 - 16:00' }],
+    },
   },
 };

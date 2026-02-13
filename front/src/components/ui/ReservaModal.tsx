@@ -18,8 +18,14 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import { useEffect, useState } from 'react';
+import {
+  LOCATIONS,
+  LocationKey,
+  getAvailableDaysLabel,
+  getTimeSlots,
+  isDateAvailable,
+} from '@/lib/booking';
 
-const TIME_SLOTS = ['09:00 AM', '10:30 AM', '12:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'];
 const TREATMENTS = [
   'Toxina Botulínica',
   'Rellenos con Ácido Hialurónico',
@@ -35,6 +41,8 @@ const TREATMENTS = [
 
 export function ReservaModal() {
   const [open, setOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<LocationKey | null>(null);
+  const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,6 +52,15 @@ export function ReservaModal() {
   }, []);
 
   const handleClose = () => setOpen(false);
+  const handleLocationChange = (location: LocationKey) => {
+    setSelectedLocation(location);
+    setSelectedDate('');
+    setSelectedTime(null);
+  };
+  const handleDateChange = (value: string) => {
+    setSelectedDate(value);
+    setSelectedTime(null);
+  };
 
   const textFieldSx = {
     '& .MuiInputBase-root': {
@@ -102,6 +119,14 @@ export function ReservaModal() {
       },
     },
   };
+
+  const todayValue = new Date().toISOString().split('T')[0];
+  const availableDaysLabel = selectedLocation ? getAvailableDaysLabel(selectedLocation) : '';
+  const timeSlots =
+    selectedLocation && selectedDate ? getTimeSlots(selectedLocation, selectedDate) : [];
+  const shouldShowNoSlotsMessage =
+    Boolean(selectedLocation && selectedDate) &&
+    (!isDateAvailable(selectedLocation, selectedDate) || timeSlots.length === 0);
 
   return (
     <Dialog
@@ -169,15 +194,11 @@ export function ReservaModal() {
               <TextField fullWidth placeholder="Ingresá tu nombre" sx={textFieldSx} />
             </Box>
             <Box>
-              <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
-                Teléfono
-              </Typography>
+              <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>Teléfono</Typography>
               <TextField fullWidth placeholder="+54 9 11 1234-5678" sx={textFieldSx} />
             </Box>
             <Box>
-              <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
-                Email
-              </Typography>
+              <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>Email</Typography>
               <TextField fullWidth placeholder="Ingresá tu email" sx={textFieldSx} />
             </Box>
             <Box>
@@ -207,14 +228,61 @@ export function ReservaModal() {
             </Box>
             <Box>
               <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
-                Fecha
+                Seleccione lugar de atención
               </Typography>
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                {LOCATIONS.map((location) => {
+                  const isSelected = selectedLocation === location.id;
+                  return (
+                    <Button
+                      key={location.id}
+                      onClick={() => handleLocationChange(location.id)}
+                      variant={isSelected ? 'contained' : 'outlined'}
+                      sx={{
+                        borderRadius: '999px',
+                        px: 3,
+                        py: 1,
+                        borderColor: '#EEBBC3',
+                        backgroundColor: isSelected ? '#EEBBC3' : '#FFFFFF',
+                        color: isSelected ? '#2C2C2C' : '#3D3D3D',
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        boxShadow: isSelected ? '0 8px 20px rgba(238, 187, 195, 0.3)' : 'none',
+                        '&:hover': {
+                          backgroundColor: isSelected ? '#FFB8C6' : '#F5E6E8',
+                          borderColor: '#FFB8C6',
+                        },
+                      }}
+                    >
+                      {location.label}
+                    </Button>
+                  );
+                })}
+              </Box>
+              {selectedLocation && (
+                <Typography sx={{ mt: 1.2, fontSize: '0.82rem', color: '#666666' }}>
+                  Estás reservando en:{' '}
+                  <strong>{LOCATIONS.find((item) => item.id === selectedLocation)?.label}</strong>
+                </Typography>
+              )}
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>Fecha</Typography>
               <TextField
                 fullWidth
                 type="date"
                 InputLabelProps={{ shrink: true }}
+                value={selectedDate}
+                onChange={(event) => handleDateChange(event.target.value)}
+                disabled={!selectedLocation}
+                inputProps={{ min: todayValue }}
                 sx={textFieldSx}
               />
+              <Typography sx={{ mt: 1, fontSize: '0.82rem', color: '#666666' }}>
+                {selectedLocation
+                  ? `Días disponibles: ${availableDaysLabel}`
+                  : 'Selecciona una sede para ver los días disponibles.'}
+              </Typography>
             </Box>
           </Box>
 
@@ -229,7 +297,7 @@ export function ReservaModal() {
               mb: 3,
             }}
           >
-            {TIME_SLOTS.map((slot) => {
+            {timeSlots.map((slot) => {
               const isSelected = selectedTime === slot;
               return (
                 <Button
@@ -258,6 +326,11 @@ export function ReservaModal() {
               );
             })}
           </Box>
+          {shouldShowNoSlotsMessage && (
+            <Typography sx={{ color: '#9C6B6B', fontSize: '0.9rem', mb: 3 }}>
+              No hay turnos disponibles este día
+            </Typography>
+          )}
 
           <Box sx={{ mb: 4 }}>
             <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>

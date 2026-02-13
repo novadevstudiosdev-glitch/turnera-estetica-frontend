@@ -6,6 +6,8 @@ import {
   Container,
   Toolbar,
   Button,
+  IconButton,
+  Tooltip,
   Typography,
   useTheme,
   useMediaQuery,
@@ -14,6 +16,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import { AuthModal } from '../ui/AuthModal';
+import { keyframes } from '@mui/system';
 
 const NAVIGATION_LINKS = [
   { label: 'Inicio', href: '#hero' },
@@ -23,11 +28,47 @@ const NAVIGATION_LINKS = [
   { label: 'Contacto', href: '#contacto' },
 ];
 
+const accountBreathing = keyframes`
+  0% {
+    opacity: 0.86;
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 0 0 rgba(212, 165, 165, 0));
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.03);
+    filter: drop-shadow(0 8px 18px rgba(212, 165, 165, 0.38));
+  }
+  100% {
+    opacity: 0.92;
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 0 0 rgba(212, 165, 165, 0));
+  }
+`;
+
+const accountPing = keyframes`
+  0%,
+  70% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+  78% {
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.8);
+  }
+`;
+
 export function Navbar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [tab, setTab] = useState(0);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 8);
@@ -48,6 +89,12 @@ export function Navbar() {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('open-reserva-modal'));
     }
+  };
+
+  const handleOpenAuth = (nextTab?: number) => {
+    setAuthOpen(true);
+    setTab(nextTab ?? 0);
+    setMobileMenuOpen(false);
   };
 
   const navItemStyle = {
@@ -204,6 +251,71 @@ export function Navbar() {
             >
               Reservar
             </Button>
+            <Tooltip title="Ingresar / Registrarse" placement="bottom" arrow>
+              <IconButton
+                aria-label="Cuenta"
+                onClick={() => handleOpenAuth(0)}
+                disableRipple
+                sx={{
+                  p: 1.3,
+                  color: '#D4A5A5',
+                  backgroundColor: 'transparent',
+                  borderRadius: '999px',
+                  position: 'relative',
+                  animation: `${accountBreathing} 1.4s ease-in-out infinite`,
+                  transition: 'color 0.2s ease, transform 0.2s ease',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    left: '50%',
+                    top: '50%',
+                    width: 34,
+                    height: 34,
+                    borderRadius: '50%',
+                    border: '1px solid rgba(212, 165, 165, 0.35)',
+                    transform: 'translate(-50%, -50%) scale(0.85)',
+                    opacity: 0,
+                    animation: `${accountPing} 8s ease-out infinite`,
+                    pointerEvents: 'none',
+                  },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    left: '50%',
+                    bottom: 2,
+                    width: '0%',
+                    height: 2,
+                    borderRadius: 999,
+                    background: 'rgba(212, 165, 165, 0.6)',
+                    transform: 'translateX(-50%)',
+                    opacity: 0,
+                    transition: 'all 0.2s ease',
+                  },
+                '&:hover': {
+                  animationPlayState: 'paused',
+                  transform: 'translateY(-3px)',
+                  color: '#B68484',
+                  backgroundColor: 'transparent',
+                },
+                  '&:hover::before': {
+                    animationPlayState: 'paused',
+                  },
+                  '&:hover::after': {
+                    width: '70%',
+                    opacity: 1,
+                  },
+                  '&:active': {
+                    transform: 'translateY(-3px) scale(0.96)',
+                  },
+                  '&.Mui-focusVisible': {
+                    animationPlayState: 'paused',
+                    boxShadow: '0 0 0 4px rgba(238, 187, 195, 0.18)',
+                  },
+                }}
+              >
+                <PersonOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
 
             {/* Mobile Menu Button */}
             {isMobile && (
@@ -254,6 +366,21 @@ export function Navbar() {
             ))}
             <Button
               fullWidth
+              onClick={() => handleOpenAuth(0)}
+              startIcon={<PersonOutlineIcon />}
+              sx={{
+                ...navItemStyle,
+                justifyContent: 'flex-start',
+                width: '100%',
+                fontSize: '1rem',
+                px: 0,
+                color: '#2C2C2C',
+              }}
+            >
+              Cuenta
+            </Button>
+            <Button
+              fullWidth
               variant="contained"
               onClick={handleOpenReserva}
               sx={{
@@ -273,6 +400,7 @@ export function Navbar() {
           </Box>
         )}
       </Container>
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} tab={tab} onTabChange={setTab} />
     </AppBar>
   );
 }
