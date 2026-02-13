@@ -46,7 +46,7 @@ export function LocationSection() {
                 width="100%"
                 height="100%"
                 frameBorder="0"
-                src="https://www.google.com/maps?q=Calle+Almirante+Brown+1871,+Tunuyán,+Mendoza,+Argentina&output=embed"
+                src="https://www.google.com/maps?q=Jun%C3%ADn+191,+Alto+Bur%C3%B3,+Rosario,+Argentina&output=embed"
                 style={{ border: 0 }}
                 allowFullScreen=""
                 loading="lazy"
@@ -160,36 +160,35 @@ export function LocationSection() {
                   >
                     Horarios
                   </Typography>
-                  <Box sx={{ pl: 4 }}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        display: 'block',
-                        color: '#7A7A7A',
-                        mb: 0.5,
-                      }}
-                    >
-                      <strong>Lunes a Viernes:</strong> {contactInfo.hours.weekday}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        display: 'block',
-                        color: '#7A7A7A',
-                        mb: 0.5,
-                      }}
-                    >
-                      <strong>Sábado:</strong> {contactInfo.hours.saturday}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        display: 'block',
-                        color: '#7A7A7A',
-                      }}
-                    >
-                      <strong>Domingo:</strong> {contactInfo.hours.sunday}
-                    </Typography>
+                  <Box sx={{ pl: 4, display: 'grid', gap: 1.5 }}>
+                    {Object.values(contactInfo.hours).map((location) => (
+                      <Box key={location.label}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            display: 'block',
+                            color: '#3A3A3A',
+                            fontWeight: 600,
+                            mb: 0.6,
+                          }}
+                        >
+                          {location.label}
+                        </Typography>
+                        {location.schedule.map((item) => (
+                          <Typography
+                            key={`${location.label}-${item.day}`}
+                            variant="caption"
+                            sx={{
+                              display: 'block',
+                              color: '#7A7A7A',
+                              mb: 0.4,
+                            }}
+                          >
+                            <strong>{item.day}:</strong> {item.time}
+                          </Typography>
+                        ))}
+                      </Box>
+                    ))}
                   </Box>
                 </Box>
 
@@ -197,9 +196,8 @@ export function LocationSection() {
                 <Button
                   fullWidth
                   variant="outlined"
-                  href={`https://www.google.com/maps/search/${contactInfo.address.replace(
-                    /\s/g,
-                    '+'
+                  href={`https://www.google.com/maps/search/${encodeURIComponent(
+                    contactInfo.address
                   )}`}
                   target="_blank"
                   sx={{

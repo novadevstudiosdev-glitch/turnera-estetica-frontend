@@ -5,8 +5,14 @@ import { useState } from 'react';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import {
+  LOCATIONS,
+  LocationKey,
+  getAvailableDaysLabel,
+  getTimeSlots,
+  isDateAvailable,
+} from '@/lib/booking';
 
-const TIME_SLOTS = ['09:00', '10:30', '12:00', '15:00', '16:30', '18:00', '19:30', '20:00'];
 const TREATMENTS = [
   'Toxina Botulínica',
   'Rellenos con Ácido Hialurónico',
@@ -21,7 +27,19 @@ const TREATMENTS = [
 ];
 
 export function TurnosSection() {
+  const [selectedLocation, setSelectedLocation] = useState<LocationKey | null>(null);
+  const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+
+  const handleLocationChange = (location: LocationKey) => {
+    setSelectedLocation(location);
+    setSelectedDate('');
+    setSelectedTime(null);
+  };
+  const handleDateChange = (value: string) => {
+    setSelectedDate(value);
+    setSelectedTime(null);
+  };
 
   const textFieldSx = {
     '& .MuiInputBase-root': {
@@ -80,6 +98,14 @@ export function TurnosSection() {
       },
     },
   };
+
+  const todayValue = new Date().toISOString().split('T')[0];
+  const availableDaysLabel = selectedLocation ? getAvailableDaysLabel(selectedLocation) : '';
+  const timeSlots =
+    selectedLocation && selectedDate ? getTimeSlots(selectedLocation, selectedDate) : [];
+  const shouldShowNoSlotsMessage =
+    Boolean(selectedLocation && selectedDate) &&
+    (!isDateAvailable(selectedLocation, selectedDate) || timeSlots.length === 0);
 
   return (
     <Box
@@ -156,14 +182,65 @@ export function TurnosSection() {
             </Box>
             <Box>
               <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
+                Seleccione lugar de atenciÃ³n
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                {LOCATIONS.map((location) => {
+                  const isSelected = selectedLocation === location.id;
+                  return (
+                    <Button
+                      key={location.id}
+                      onClick={() => handleLocationChange(location.id)}
+                      variant={isSelected ? 'contained' : 'outlined'}
+                      sx={{
+                        borderRadius: '999px',
+                        px: 3,
+                        py: 1,
+                        borderColor: '#EEBBC3',
+                        backgroundColor: isSelected ? '#EEBBC3' : '#FFFFFF',
+                        color: isSelected ? '#2C2C2C' : '#3D3D3D',
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        boxShadow: isSelected ? '0 8px 20px rgba(238, 187, 195, 0.3)' : 'none',
+                        '&:hover': {
+                          backgroundColor: isSelected ? '#FFB8C6' : '#F5E6E8',
+                          borderColor: '#FFB8C6',
+                        },
+                      }}
+                    >
+                      {location.label}
+                    </Button>
+                  );
+                })}
+              </Box>
+              {selectedLocation && (
+                <Typography sx={{ mt: 1.2, fontSize: '0.82rem', color: '#666666' }}>
+                  EstÃ¡s reservando en:{' '}
+                  <strong>
+                    {LOCATIONS.find((item) => item.id === selectedLocation)?.label}
+                  </strong>
+                </Typography>
+              )}
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
                 Fecha
               </Typography>
               <TextField
                 fullWidth
                 type="date"
                 InputLabelProps={{ shrink: true }}
+                value={selectedDate}
+                onChange={(event) => handleDateChange(event.target.value)}
+                disabled={!selectedLocation}
+                inputProps={{ min: todayValue }}
                 sx={textFieldSx}
               />
+              <Typography sx={{ mt: 1, fontSize: '0.82rem', color: '#666666' }}>
+                {selectedLocation
+                  ? `DÃ­as disponibles: ${availableDaysLabel}`
+                  : 'SeleccionÃ¡ una sede para ver los dÃ­as disponibles.'}
+              </Typography>
             </Box>
           </Box>
 
@@ -178,7 +255,7 @@ export function TurnosSection() {
               mb: 4,
             }}
           >
-            {TIME_SLOTS.map((slot) => {
+            {timeSlots.map((slot) => {
               const isSelected = selectedTime === slot;
               return (
                 <Button
@@ -207,6 +284,11 @@ export function TurnosSection() {
               );
             })}
           </Box>
+          {shouldShowNoSlotsMessage && (
+            <Typography sx={{ color: '#9C6B6B', fontSize: '0.9rem', mb: 4 }}>
+              No hay turnos disponibles este dÃ­a
+            </Typography>
+          )}
 
           <Box sx={{ display: 'grid', gap: 3, mb: 5 }}>
             <Box>
