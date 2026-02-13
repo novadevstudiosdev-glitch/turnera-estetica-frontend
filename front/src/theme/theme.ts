@@ -1,52 +1,54 @@
 import { createTheme } from '@mui/material/styles';
 
 // Paleta de colores
-const PRIMARY_COLOR = '#FFF8E7'; // Blanco crema
+const PRIMARY_COLOR = '#EEBBC3'; // Rosa medio
 const SECONDARY_COLOR = '#D4A5A5'; // Rosa viejo
-const BACKGROUND_COLOR = '#FFF8E7'; // Blanco crema
-const TEXT_COLOR = '#1A1A1A'; // Negro
-const LIGHT_GRAY = '#E8E3DF';
+const BACKGROUND_COLOR = '#FFFFFF'; // Blanco
+const TEXT_COLOR = '#2C2C2C';
+const LIGHT_GRAY = '#E9E4E2';
 
 export const theme = createTheme({
   palette: {
     primary: {
       main: PRIMARY_COLOR,
-      light: '#FFF8E7',
-      dark: '#A06B7D',
-      contrastText: '#fff',
+      light: '#FFE5EC',
+      dark: '#C9A0A0',
+      contrastText: '#2C2C2C',
     },
     secondary: {
       main: SECONDARY_COLOR,
-      light: '#FFF8E7',
-      dark: '#6B5A6C',
-      contrastText: '#fff',
+      light: '#F5E6E8',
+      dark: '#C9A0A0',
+      contrastText: '#2C2C2C',
     },
     background: {
       default: BACKGROUND_COLOR,
-      paper: '#FFF8E7',
+      paper: '#FFFFFF',
     },
     text: {
       primary: TEXT_COLOR,
-      secondary: '#666666',
+      secondary: '#3D3D3D',
     },
     divider: LIGHT_GRAY,
   },
   typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Poppins", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
+      fontFamily: '"Cormorant Garamond", serif',
       fontSize: '3.5rem',
-      fontWeight: 700,
+      fontWeight: 600,
       lineHeight: 1.2,
-      letterSpacing: '-0.02em',
+      letterSpacing: '0.04em',
       '@media (max-width:600px)': {
         fontSize: '2rem',
       },
     },
     h2: {
+      fontFamily: '"Cormorant Garamond", serif',
       fontSize: '2.5rem',
-      fontWeight: 700,
+      fontWeight: 600,
       lineHeight: 1.3,
-      letterSpacing: '-0.01em',
+      letterSpacing: '0.04em',
       '@media (max-width:600px)': {
         fontSize: '1.5rem',
       },
@@ -86,7 +88,7 @@ export const theme = createTheme({
     },
     button: {
       textTransform: 'none',
-      fontWeight: 600,
+      fontWeight: 500,
       fontSize: '1rem',
     },
   },
@@ -94,31 +96,29 @@ export const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: '12px',
-          padding: '12px 32px',
+          borderRadius: '25px',
+          padding: '12px 28px',
           fontSize: '1rem',
-          fontWeight: 600,
+          fontWeight: 500,
           transition: 'all 0.3s ease',
           '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: '0 8px 24px rgba(196, 138, 154, 0.25)',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 10px 24px rgba(0, 0, 0, 0.12)',
           },
         },
         contained: {
-          boxShadow: '0 2px 8px rgba(196, 138, 154, 0.15)',
+          boxShadow: '0 8px 20px rgba(0, 0, 0, 0.1)',
         },
         outlined: {
-          borderWidth: '2px',
-          '&:hover': {
-            borderWidth: '2px',
-          },
+          borderWidth: '1px',
         },
       },
       variants: [
         {
           props: { variant: 'contained' },
           style: {
-            background: "#D4A5A5"
+            background: PRIMARY_COLOR,
+            color: TEXT_COLOR,
           },
         },
       ],
@@ -127,11 +127,11 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: '16px',
-          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+          boxShadow: '0 8px 22px rgba(0, 0, 0, 0.08)',
           transition: 'all 0.3s ease',
           backgroundColor: '#FFFFFF',
           '&:hover': {
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+            boxShadow: '0 12px 28px rgba(0, 0, 0, 0.12)',
             transform: 'translateY(-4px)',
           },
         },
@@ -144,15 +144,15 @@ export const theme = createTheme({
             borderRadius: '12px',
             transition: 'all 0.3s ease',
             '& fieldset': {
-              borderColor: SECONDARY_COLOR,
-              borderWidth: '1.5px',
+              borderColor: LIGHT_GRAY,
+              borderWidth: '1px',
             },
             '&:hover fieldset': {
               borderColor: SECONDARY_COLOR,
             },
             '&.Mui-focused fieldset': {
-              borderColor: SECONDARY_COLOR,
-              borderWidth: '2px',
+              borderColor: PRIMARY_COLOR,
+              boxShadow: '0 0 0 3px rgba(238, 187, 195, 0.2)',
             },
           },
         },
@@ -163,7 +163,7 @@ export const theme = createTheme({
         root: {
           backgroundColor: BACKGROUND_COLOR,
           color: TEXT_COLOR,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+          boxShadow: 'none',
         },
       },
     },

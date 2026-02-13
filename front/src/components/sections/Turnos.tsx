@@ -1,0 +1,276 @@
+'use client';
+
+import { Box, Button, Chip, Container, MenuItem, TextField, Typography } from '@mui/material';
+import { useState } from 'react';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+
+const TIME_SLOTS = ['09:00', '10:30', '12:00', '15:00', '16:30', '18:00', '19:30', '20:00'];
+const TREATMENTS = [
+  'Toxina Botulínica',
+  'Rellenos con Ácido Hialurónico',
+  'Hilos Tensores',
+  'Bioestimuladores de Colágeno',
+  'Peeling Químico',
+  'Mesoterapia Facial',
+  'Plasma Rico en Plaquetas',
+  'Limpieza Facial Profunda',
+  'Radiofrecuencia',
+  'Otro / Consulta General',
+];
+
+export function TurnosSection() {
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+
+  const textFieldSx = {
+    '& .MuiInputBase-root': {
+      borderRadius: '12px',
+      backgroundColor: '#FFFFFF',
+    },
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderColor: '#E9E4E2',
+      borderWidth: '1px',
+    },
+    '& .MuiInputBase-input': {
+      padding: '14px 18px',
+      fontSize: '0.98rem',
+      color: '#2C2C2C',
+    },
+    '& .MuiInputBase-input::placeholder': {
+      color: '#999999',
+      opacity: 1,
+    },
+    '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
+      borderColor: '#EEBBC3',
+      boxShadow: '0 0 0 3px rgba(238, 187, 195, 0.2)',
+    },
+    '& .MuiSelect-icon': {
+      color: '#D4A5A5',
+    },
+  } as const;
+
+  const menuProps = {
+    PaperProps: {
+      sx: {
+        backgroundColor: '#FFFFFF',
+        border: '1px solid #E9E4E2',
+        borderRadius: '16px',
+        boxShadow: '0 10px 24px rgba(0,0,0,0.08)',
+      },
+    },
+    MenuListProps: {
+      sx: {
+        '& .MuiMenuItem-root': {
+          color: '#2C2C2C',
+          borderRadius: '12px',
+          mx: 0.5,
+          my: 0.5,
+        },
+        '& .MuiMenuItem-root:hover': {
+          backgroundColor: '#F5E6E8',
+        },
+        '& .MuiMenuItem-root.Mui-selected': {
+          backgroundColor: '#EEBBC3',
+          color: '#FFFFFF',
+        },
+        '& .MuiMenuItem-root.Mui-selected:hover': {
+          backgroundColor: '#FFB8C6',
+        },
+      },
+    },
+  };
+
+  return (
+    <Box
+      id="turnos"
+      component="section"
+      sx={{
+        py: { xs: 10, md: 12 },
+        backgroundColor: '#F5E6E8',
+        backgroundImage:
+          'radial-gradient(circle at 15% 20%, rgba(255, 229, 236, 0.18) 0%, rgba(255, 229, 236, 0) 55%), radial-gradient(circle at 85% 10%, rgba(255, 229, 236, 0.16) 0%, rgba(255, 229, 236, 0) 60%), radial-gradient(circle at 70% 85%, rgba(255, 229, 236, 0.14) 0%, rgba(255, 229, 236, 0) 55%)',
+      }}
+    >
+      <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Box
+          sx={{
+            width: '100%',
+            maxWidth: '600px',
+            backgroundColor: '#FFFFFF',
+            borderRadius: '24px',
+            boxShadow: '0 15px 50px rgba(0,0,0,0.08)',
+            p: { xs: 4, md: 7.5 },
+          }}
+        >
+          <Typography
+            variant="h2"
+            sx={{
+              fontFamily: '"Cormorant Garamond", serif',
+              fontSize: { xs: '2.1rem', md: '2.5rem' },
+              color: '#2C2C2C',
+              letterSpacing: '0.04em',
+              fontWeight: 600,
+              textAlign: 'center',
+              mb: 1,
+            }}
+          >
+            Reservá tu consulta
+          </Typography>
+          <Typography
+            sx={{
+              textAlign: 'center',
+              color: '#3D3D3D',
+              fontSize: '1rem',
+              mb: 5,
+            }}
+          >
+            Atención personalizada en minutos
+          </Typography>
+
+          <Box sx={{ display: 'grid', gap: 3, mb: 4 }}>
+            <Box>
+              <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
+                Tratamiento
+              </Typography>
+              <TextField
+                fullWidth
+                select
+                defaultValue=""
+                SelectProps={{
+                  IconComponent: KeyboardArrowDownIcon,
+                  MenuProps: menuProps,
+                  displayEmpty: true,
+                }}
+                sx={textFieldSx}
+              >
+                <MenuItem disabled value="">
+                  Seleccioná un tratamiento
+                </MenuItem>
+                {TREATMENTS.map((item) => (
+                  <MenuItem key={item} value={item}>
+                    {item}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
+                Fecha
+              </Typography>
+              <TextField
+                fullWidth
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                sx={textFieldSx}
+              />
+            </Box>
+          </Box>
+
+          <Typography sx={{ color: '#2C2C2C', fontWeight: 500, mb: 2 }}>
+            Horarios disponibles
+          </Typography>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' },
+              gap: 1.5,
+              mb: 4,
+            }}
+          >
+            {TIME_SLOTS.map((slot) => {
+              const isSelected = selectedTime === slot;
+              return (
+                <Button
+                  key={slot}
+                  onClick={() => setSelectedTime(slot)}
+                  variant="outlined"
+                  sx={{
+                    borderRadius: '20px',
+                    px: 2,
+                    py: 1.2,
+                    borderWidth: '2px',
+                    borderColor: '#EEBBC3',
+                    backgroundColor: isSelected ? '#EEBBC3' : '#FFFFFF',
+                    color: isSelected ? '#FFFFFF' : '#2C2C2C',
+                    textTransform: 'none',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      backgroundColor: isSelected ? '#EEBBC3' : '#F5E6E8',
+                      transform: 'translateY(-2px)',
+                      borderColor: '#FFB8C6',
+                    },
+                  }}
+                >
+                  {slot}
+                </Button>
+              );
+            })}
+          </Box>
+
+          <Box sx={{ display: 'grid', gap: 3, mb: 5 }}>
+            <Box>
+              <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
+                Nombre y apellido
+              </Typography>
+              <TextField fullWidth placeholder="Ingresá tu nombre" sx={textFieldSx} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
+                WhatsApp
+              </Typography>
+              <TextField fullWidth placeholder="Ingresá tu número" sx={textFieldSx} />
+            </Box>
+          </Box>
+
+          <Button
+            fullWidth
+            variant="contained"
+            size="large"
+            startIcon={<CalendarMonthIcon />}
+            sx={{
+              borderRadius: '12px',
+              py: '18px',
+              backgroundColor: '#EEBBC3',
+              color: '#2C2C2C',
+              fontWeight: 600,
+              textTransform: 'none',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                backgroundColor: '#FFB8C6',
+                boxShadow: '0 12px 24px rgba(0,0,0,0.12)',
+              },
+            }}
+          >
+            Confirmar reserva
+          </Button>
+
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: { xs: 2, md: 4 },
+              mt: 3,
+            }}
+          >
+            {['Atención personalizada', 'Equipamiento de última generación'].map((label) => (
+              <Chip
+                key={label}
+                icon={<CheckCircleOutlineIcon sx={{ color: '#D4A5A5' }} />}
+                label={label}
+                sx={{
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #E9E4E2',
+                  borderRadius: '999px',
+                  color: '#3D3D3D',
+                  fontWeight: 400,
+                }}
+              />
+            ))}
+          </Box>
+        </Box>
+      </Container>
+    </Box>
+  );
+}

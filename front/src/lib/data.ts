@@ -27,6 +27,7 @@ export const services: Service[] = [
     description:
       'Tratamientos con materiales premium para eliminar arrugas y restaurar volumen facial con resultados naturales.',
     icon: '💉',
+    image: '/imagenes/relleno.jpg',
   },
   {
     id: 2,
@@ -34,6 +35,7 @@ export const services: Service[] = [
     description:
       'Limpieza profunda y tratamiento dermatológico personalizado para revitalizar y purificar la piel.',
     icon: '✨',
+    image: '/imagenes/limpieza facial.png',
   },
   {
     id: 3,
@@ -41,6 +43,7 @@ export const services: Service[] = [
     description:
       'Depilación permanente con tecnología láser de última generación. Segura, rápida y efectiva.',
     icon: '🔆',
+    image: '/imagenes/La-depilación-láser.png',
   },
   {
     id: 4,
@@ -48,6 +51,7 @@ export const services: Service[] = [
     description:
       'Tatuaje semi-permanente de cejas con técnica artesanal para realzar la belleza natural.',
     icon: '🎨',
+    image: '/imagenes/Microblading.jpeg',
   },
   {
     id: 5,
@@ -55,6 +59,7 @@ export const services: Service[] = [
     description:
       'Tratamientos con ácido hialurónico y serums especializados para devolver brillo y elasticidad.',
     icon: '💧',
+    image: '/imagenes/hidratacion-profunda-de-la-piel.jpg',
   },
   {
     id: 6,
@@ -62,6 +67,7 @@ export const services: Service[] = [
     description:
       'Exfoliación controlada para renovar la piel, reducir manchas y mejorar la textura facial.',
     icon: '🧪',
+    image: '/imagenes/Peeling-quimico-en-madrid.webp',
   },
 ];
 
@@ -116,10 +122,10 @@ export const brands: Brand[] = [
 ];
 
 export const contactInfo = {
-  phone: '+34 912 345 678',
-  whatsapp: '+34 612 345 678',
+  phone: '+54 261 XXXXXXX',
+  whatsapp: '+54 9 261 XXXXXXX',
   email: 'info@mok-consultorio.com',
-  address: 'Calle Principal, 123, Madrid, 28001',
+  address: 'Calle Almirante Brown 1871, Tunuyán, Mendoza, Argentina',
   hours: {
     weekday: '09:00 - 20:00',
     saturday: '10:00 - 14:00',
