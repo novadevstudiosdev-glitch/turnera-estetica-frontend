@@ -19,10 +19,11 @@ export function Footer() {
     <Box
       component="footer"
       sx={{
-        backgroundColor: '#1A1A1A',
-        color: '#FFFFFF',
+        backgroundColor: '#FFFFFF',
+        color: '#3A3A3A',
         py: 8,
         mt: 12,
+        borderTop: '1px solid #E9E4E2',
       }}
     >
       <Container maxWidth="lg">
@@ -40,17 +41,14 @@ export function Footer() {
               variant="h6"
               sx={{
                 fontSize: '1.5rem',
-                fontWeight: 700,
-                background: 'linear-gradient(135deg, #C48A9A 0%, #8A7C8A 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
+                fontWeight: 600,
+                color: '#3A3A3A',
                 mb: 2,
               }}
             >
               MOK
             </Typography>
-            <Typography variant="body2" sx={{ color: '#CCCCCC', mb: 3 }}>
+            <Typography variant="body2" sx={{ color: '#7A7A7A', mb: 3 }}>
               Consultorio Médico Estético de excelencia. Tratamientos profesionales con resultados
               garantizados.
             </Typography>
@@ -62,11 +60,10 @@ export function Footer() {
                     key={social.label}
                     href={social.href}
                     sx={{
-                      color: '#C48A9A',
-                      transition: 'all 0.3s ease',
+                      color: '#D4A5A5',
+                      transition: 'color 0.2s ease',
                       '&:hover': {
-                        color: '#FFFFFF',
-                        transform: 'translateY(-2px)',
+                        color: '#C9A0A0',
                       },
                       display: 'flex',
                       alignItems: 'center',
@@ -90,11 +87,11 @@ export function Footer() {
                   key={link}
                   href="#"
                   sx={{
-                    color: '#CCCCCC',
+                    color: '#7A7A7A',
                     textDecoration: 'none',
                     transition: 'color 0.3s ease',
                     '&:hover': {
-                      color: '#C48A9A',
+                      color: '#3A3A3A',
                     },
                   }}
                 >
@@ -110,16 +107,16 @@ export function Footer() {
               Contacto
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              <Typography variant="body2" sx={{ color: '#CCCCCC' }}>
+              <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
                 📞 {contactInfo.phone}
               </Typography>
-              <Typography variant="body2" sx={{ color: '#CCCCCC' }}>
+              <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
                 💬{' '}
                 <MuiLink href={`https://wa.me/${contactInfo.whatsapp.replace(/\s/g, '')}`}>
                   {contactInfo.whatsapp}
                 </MuiLink>
               </Typography>
-              <Typography variant="body2" sx={{ color: '#CCCCCC' }}>
+              <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
                 ✉️ <MuiLink href={`mailto:${contactInfo.email}`}>{contactInfo.email}</MuiLink>
               </Typography>
             </Box>
@@ -132,26 +129,26 @@ export function Footer() {
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               <Box>
-                <Typography variant="body2" sx={{ color: '#999999', fontSize: '0.85rem' }}>
+                <Typography variant="body2" sx={{ color: '#7A7A7A', fontSize: '0.85rem' }}>
                   Lunes a Viernes
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#CCCCCC' }}>
+                <Typography variant="body2" sx={{ color: '#3A3A3A' }}>
                   {contactInfo.hours.weekday}
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="body2" sx={{ color: '#999999', fontSize: '0.85rem' }}>
+                <Typography variant="body2" sx={{ color: '#7A7A7A', fontSize: '0.85rem' }}>
                   Sábado
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#CCCCCC' }}>
+                <Typography variant="body2" sx={{ color: '#3A3A3A' }}>
                   {contactInfo.hours.saturday}
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="body2" sx={{ color: '#999999', fontSize: '0.85rem' }}>
+                <Typography variant="body2" sx={{ color: '#7A7A7A', fontSize: '0.85rem' }}>
                   Domingo
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#999999' }}>
+                <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
                   {contactInfo.hours.sunday}
                 </Typography>
               </Box>
@@ -160,7 +157,7 @@ export function Footer() {
         </Box>
 
         {/* Divider */}
-        <Divider sx={{ backgroundColor: '#333333', my: 4 }} />
+        <Divider sx={{ backgroundColor: '#E9E4E2', my: 4 }} />
 
         {/* Copyright */}
         <Box
@@ -172,18 +169,18 @@ export function Footer() {
             gap: 2,
           }}
         >
-          <Typography variant="body2" sx={{ color: '#999999' }}>
+          <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
             &copy; {currentYear} MOK - Consultorio Médico Estético. Todos los derechos reservados.
           </Typography>
           <Box sx={{ display: 'flex', gap: 3 }}>
             <MuiLink
               href="#"
               sx={{
-                color: '#999999',
+                color: '#7A7A7A',
                 textDecoration: 'none',
                 fontSize: '0.9rem',
                 '&:hover': {
-                  color: '#C48A9A',
+                  color: '#3A3A3A',
                 },
               }}
             >
@@ -192,11 +189,11 @@ export function Footer() {
             <MuiLink
               href="#"
               sx={{
-                color: '#999999',
+                color: '#7A7A7A',
                 textDecoration: 'none',
                 fontSize: '0.9rem',
                 '&:hover': {
-                  color: '#C48A9A',
+                  color: '#3A3A3A',
                 },
               }}
             >

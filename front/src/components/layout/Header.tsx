@@ -73,7 +73,7 @@ export function Header() {
               <Image
                 src="/logo.png"
                 alt="MOK Centro Médico Estético"
-                width={160}
+                width={180}
                 height={60}
                 priority
                 style={{ objectFit: 'contain' }}

@@ -13,7 +13,7 @@ export function LocationSection() {
       component="section"
       sx={{
         py: { xs: 8, md: 12 },
-        backgroundColor: '#F8F5F2',
+        backgroundColor: 'transparent',
       }}
     >
       <Container maxWidth="lg">
@@ -38,39 +38,20 @@ export function LocationSection() {
                 minHeight: '400px',
                 overflow: 'hidden',
                 borderRadius: '16px',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+                boxShadow: '0 8px 20px rgba(0, 0, 0, 0.06)',
+                border: '1px solid #E9E4E2',
               }}
             >
-              <Box
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: '#E8E3DF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative',
-                }}
-              >
-                {/* Placeholder para mapa - reemplazar con Google Maps */}
-                <Box sx={{ textAlign: 'center', color: '#999999' }}>
-                  <LocationOnIcon sx={{ fontSize: '48px', mb: 1, opacity: 0.5 }} />
-                  <Typography variant="body2">Integra Google Maps aquí</Typography>
-                </Box>
-
-                {/* Código para integrar Google Maps real:
-                <iframe
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  src="https://www.google.com/maps/embed?pb=YOUR_EMBED_CODE"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-                */}
-              </Box>
+              <iframe
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                src="https://www.google.com/maps?q=Jun%C3%ADn+191,+Alto+Bur%C3%B3,+Rosario,+Argentina&output=embed"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              ></iframe>
             </Card>
           </Box>
 
@@ -81,7 +62,7 @@ export function LocationSection() {
                 height: '100%',
                 borderRadius: '16px',
                 backgroundColor: '#FFFFFF',
-                border: '1px solid #E8E3DF',
+                border: '1px solid #E9E4E2',
               }}
             >
               <CardContent sx={{ p: 4 }}>
@@ -90,7 +71,7 @@ export function LocationSection() {
                   sx={{
                     fontWeight: 700,
                     mb: 4,
-                    color: '#1A1A1A',
+                    color: '#3A3A3A',
                   }}
                 >
                   Información de Contacto
@@ -101,7 +82,7 @@ export function LocationSection() {
                   <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-start' }}>
                     <LocationOnIcon
                       sx={{
-                        color: '#C48A9A',
+                        color: '#D4A5A5',
                         mt: 0.5,
                       }}
                     />
@@ -110,7 +91,7 @@ export function LocationSection() {
                         variant="body2"
                         sx={{
                           fontWeight: 600,
-                          color: '#1A1A1A',
+                          color: '#3A3A3A',
                           mb: 0.5,
                         }}
                       >
@@ -119,7 +100,7 @@ export function LocationSection() {
                       <Typography
                         variant="body2"
                         sx={{
-                          color: '#666666',
+                          color: '#7A7A7A',
                         }}
                       >
                         {contactInfo.address}
@@ -133,7 +114,7 @@ export function LocationSection() {
                   <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-start' }}>
                     <PhoneIcon
                       sx={{
-                        color: '#C48A9A',
+                        color: '#D4A5A5',
                         mt: 0.5,
                       }}
                     />
@@ -142,7 +123,7 @@ export function LocationSection() {
                         variant="body2"
                         sx={{
                           fontWeight: 600,
-                          color: '#1A1A1A',
+                          color: '#3A3A3A',
                           mb: 0.5,
                         }}
                       >
@@ -151,7 +132,7 @@ export function LocationSection() {
                       <Button
                         href={`tel:${contactInfo.phone}`}
                         sx={{
-                          color: '#C48A9A',
+                          color: '#3A3A3A',
                           textTransform: 'none',
                           textDecoration: 'none',
                           p: 0,
@@ -173,57 +154,62 @@ export function LocationSection() {
                     variant="body2"
                     sx={{
                       fontWeight: 600,
-                      color: '#1A1A1A',
+                      color: '#3A3A3A',
                       mb: 1.5,
                     }}
                   >
                     Horarios
                   </Typography>
-                  <Box sx={{ pl: 4 }}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        display: 'block',
-                        color: '#666666',
-                        mb: 0.5,
-                      }}
-                    >
-                      <strong>Lunes a Viernes:</strong> {contactInfo.hours.weekday}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        display: 'block',
-                        color: '#666666',
-                        mb: 0.5,
-                      }}
-                    >
-                      <strong>Sábado:</strong> {contactInfo.hours.saturday}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        display: 'block',
-                        color: '#666666',
-                      }}
-                    >
-                      <strong>Domingo:</strong> {contactInfo.hours.sunday}
-                    </Typography>
+                  <Box sx={{ pl: 4, display: 'grid', gap: 1.5 }}>
+                    {Object.values(contactInfo.hours).map((location) => (
+                      <Box key={location.label}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            display: 'block',
+                            color: '#3A3A3A',
+                            fontWeight: 600,
+                            mb: 0.6,
+                          }}
+                        >
+                          {location.label}
+                        </Typography>
+                        {location.schedule.map((item) => (
+                          <Typography
+                            key={`${location.label}-${item.day}`}
+                            variant="caption"
+                            sx={{
+                              display: 'block',
+                              color: '#7A7A7A',
+                              mb: 0.4,
+                            }}
+                          >
+                            <strong>{item.day}:</strong> {item.time}
+                          </Typography>
+                        ))}
+                      </Box>
+                    ))}
                   </Box>
                 </Box>
 
                 {/* CTA Button */}
                 <Button
                   fullWidth
-                  variant="contained"
-                  color="primary"
-                  href={`https://www.google.com/maps/search/${contactInfo.address.replace(
-                    /\s/g,
-                    '+'
+                  variant="outlined"
+                  href={`https://www.google.com/maps/search/${encodeURIComponent(
+                    contactInfo.address
                   )}`}
                   target="_blank"
                   sx={{
                     mt: 3,
+                    borderRadius: '999px',
+                    borderColor: '#EEBBC3',
+                    color: '#3A3A3A',
+                    textTransform: 'none',
+                    '&:hover': {
+                      backgroundColor: '#EEBBC3',
+                      borderColor: '#FFB8C6',
+                    },
                   }}
                 >
                   Ver en Google Maps

@@ -12,7 +12,7 @@ export function BrandsCarouselSection() {
       component="section"
       sx={{
         py: 6,
-        backgroundColor: '#1A1A1A',
+        backgroundColor: 'transparent',
         overflow: 'hidden',
       }}
     >
@@ -20,7 +20,7 @@ export function BrandsCarouselSection() {
         <Typography
           variant="body2"
           sx={{
-            color: '#999999',
+            color: '#7A7A7A',
             fontSize: '0.9rem',
             textAlign: 'center',
             mb: 4,
@@ -68,21 +68,20 @@ export function BrandsCarouselSection() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  backgroundColor: '#FFFFFF',
                   borderRadius: '12px',
-                  border: '1px solid rgba(196, 138, 154, 0.2)',
+                  border: '1px solid #E9E4E2',
                   padding: '16px',
                   transition: 'all 0.3s ease',
                   '&:hover': {
-                    backgroundColor: 'rgba(196, 138, 154, 0.1)',
-                    borderColor: '#C48A9A',
+                    borderColor: '#D4A5A5',
                   },
                 }}
               >
                 <Typography
                   sx={{
-                    color: '#CCCCCC',
-                    fontWeight: 600,
+                    color: '#3A3A3A',
+                    fontWeight: 500,
                     fontSize: '0.95rem',
                     textAlign: 'center',
                   }}

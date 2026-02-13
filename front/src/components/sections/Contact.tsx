@@ -159,15 +159,15 @@ export function ContactSection() {
                   target={option.title === 'Email' ? undefined : '_blank'}
                   sx={{
                     borderRadius: '16px',
-                    backgroundColor: '#F8F5F2',
-                    border: '1px solid #E8E3DF',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E9E4E2',
                     textAlign: 'center',
                     p: 3,
                     textDecoration: 'none',
                     color: 'inherit',
                   }}
                 >
-                  <Icon sx={{ fontSize: '2.5rem', color: '#C48A9A', mb: 2 }} />
+                  <Icon sx={{ fontSize: '2.5rem', color: '#D4A5A5', mb: 2 }} />
                   <Typography fontWeight={700}>{option.title}</Typography>
                   <Typography variant="body2">{option.value}</Typography>
                 </Card>
@@ -176,7 +176,7 @@ export function ContactSection() {
           </Box>
 
           {/* Form */}
-          <Card sx={{ borderRadius: '16px', p: 4, backgroundColor: '#F8F5F2' }}>
+          <Card sx={{ borderRadius: '16px', p: 4, backgroundColor: '#FFFFFF', border: '1px solid #E9E4E2' }}>
             <Typography variant="h5" fontWeight={700} mb={3}>
               Formulario de Contacto
             </Typography>
@@ -260,9 +260,19 @@ export function ContactSection() {
                   <Button
                     type="submit"
                     fullWidth
-                    variant="contained"
+                    variant="outlined"
                     disabled={loading}
-                    sx={{ mt: 3 }}
+                    sx={{
+                      mt: 3,
+                      borderRadius: '999px',
+                      borderColor: '#EEBBC3',
+                      color: '#3A3A3A',
+                      textTransform: 'none',
+                      '&:hover': {
+                        backgroundColor: '#EEBBC3',
+                        borderColor: '#FFB8C6',
+                      },
+                    }}
                   >
                     {loading ? <CircularProgress size={24} /> : 'Enviar Mensaje'}
                   </Button>
