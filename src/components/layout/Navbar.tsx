@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import { AuthModal } from '../ui/AuthModal';
 import { keyframes } from '@mui/system';
 
@@ -25,7 +26,6 @@ const NAVIGATION_LINKS = [
   { label: 'Servicios', href: '#servicios' },
   { label: 'Testimonios', href: '#testimonios' },
   { label: 'Ubicación', href: '#ubicacion' },
-  { label: 'Contacto', href: '#contacto' },
 ];
 
 const accountBreathing = keyframes`
@@ -59,6 +59,33 @@ const accountPing = keyframes`
   100% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(1.8);
+  }
+`;
+
+const heartFloat = keyframes`
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(0.6);
+  }
+  12% {
+    opacity: 0.9;
+    transform: translate(calc(-50% - 2px), 0px) scale(0.95);
+  }
+  28% {
+    opacity: 0.85;
+    transform: translate(calc(-50% + 2px), -6px) scale(1);
+  }
+  45% {
+    opacity: 0.7;
+    transform: translate(calc(-50% - 2px), -12px) scale(1);
+  }
+  65% {
+    opacity: 0.55;
+    transform: translate(calc(-50% + 2px), -20px) scale(0.98);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -30px) scale(0.8);
   }
 `;
 
@@ -313,7 +340,28 @@ export function Navbar() {
                   },
                 }}
               >
-                <PersonOutlineIcon fontSize="small" />
+                <PersonOutlineIcon sx={{ fontSize: 28 }} />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    left: '50%',
+                    top: 6,
+                    width: 13,
+                    height: 13,
+                    transform: 'translateX(-50%)',
+                    pointerEvents: 'none',
+                    animation: `${heartFloat} 2.8s ease-in-out infinite`,
+                    animationDelay: '0.4s',
+                    color: '#EE8FA0',
+                  }}
+                >
+                  <FavoriteIcon
+                    sx={{
+                      fontSize: 13,
+                      filter: 'drop-shadow(0 6px 10px rgba(238, 143, 160, 0.35))',
+                    }}
+                  />
+                </Box>
               </IconButton>
             </Tooltip>
 
