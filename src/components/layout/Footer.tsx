@@ -1,18 +1,22 @@
 'use client';
 
-import { Box, Container, Typography, Link as MuiLink, Divider } from '@mui/material';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
+import { Box, Container, Divider, Link as MuiLink, Typography } from '@mui/material';
 
-import { contactInfo } from '@/lib/data';
+const quickLinks = [
+  { label: 'Inicio', href: '#' },
+  { label: 'Servicios', href: '#servicios' },
+  { label: 'Ubicacion', href: '#ubicacion' },
+  { label: 'Contacto', href: '#contacto' },
+];
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
     { icon: FacebookIcon, href: '#', label: 'Facebook' },
-    { icon: InstagramIcon, href: '#', label: 'Instagram' },
-  
+    { icon: InstagramIcon, href: 'https://www.instagram.com/dra.jaquelinagrassetti', label: 'Instagram' },
   ];
 
   return (
@@ -35,7 +39,6 @@ export function Footer() {
             mb: 6,
           }}
         >
-          {/* Branding */}
           <Box>
             <Typography
               variant="h6"
@@ -46,11 +49,10 @@ export function Footer() {
                 mb: 2,
               }}
             >
-              MOK
+              JG
             </Typography>
             <Typography variant="body2" sx={{ color: '#7A7A7A', mb: 3 }}>
-              Consultorio Médico Estético de excelencia. Tratamientos profesionales con resultados
-              garantizados.
+              Consultorio Medico Estetico de excelencia. Tratamientos profesionales con resultados garantizados.
             </Typography>
             <Box sx={{ display: 'flex', gap: 2 }}>
               {socialLinks.map((social) => {
@@ -59,6 +61,8 @@ export function Footer() {
                   <MuiLink
                     key={social.label}
                     href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     sx={{
                       color: '#D4A5A5',
                       transition: 'color 0.2s ease',
@@ -76,16 +80,15 @@ export function Footer() {
             </Box>
           </Box>
 
-          {/* Enlaces Rápidos */}
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
-              Enlaces Rápidos
+              Enlaces Rapidos
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {['Servicios', 'Testimonios', 'Ubicación', 'Contacto'].map((link) => (
+              {quickLinks.map((link) => (
                 <MuiLink
-                  key={link}
-                  href="#"
+                  key={link.label}
+                  href={link.href}
                   sx={{
                     color: '#7A7A7A',
                     textDecoration: 'none',
@@ -95,71 +98,67 @@ export function Footer() {
                     },
                   }}
                 >
-                  {link}
+                  {link.label}
                 </MuiLink>
               ))}
             </Box>
           </Box>
 
-          {/* Contacto */}
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
               Contacto
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
-                📞 {contactInfo.phone}
+                Telefono: +54 341 751-1529
               </Typography>
               <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
-                💬{' '}
-                <MuiLink href={`https://wa.me/${contactInfo.whatsapp.replace(/\s/g, '')}`}>
-                  {contactInfo.whatsapp}
+                Instagram:{' '}
+                <MuiLink
+                  href="https://www.instagram.com/dra.jaquelinagrassetti"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ color: '#7A7A7A', textDecoration: 'none' }}
+                >
+                  @dra.jaquelinagrassetti
                 </MuiLink>
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
-                ✉️ <MuiLink href={`mailto:${contactInfo.email}`}>{contactInfo.email}</MuiLink>
               </Typography>
             </Box>
           </Box>
 
-          {/* Horarios */}
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
               Horarios
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box>
-                <Typography variant="body2" sx={{ color: '#7A7A7A', fontSize: '0.85rem' }}>
-                  Lunes a Viernes
+                <Typography variant="body2" sx={{ color: '#3A3A3A', fontWeight: 600 }}>
+                  Rosario
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#3A3A3A' }}>
-                  {contactInfo.hours.weekday}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2" sx={{ color: '#7A7A7A', fontSize: '0.85rem' }}>
-                  Sábado
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#3A3A3A' }}>
-                  {contactInfo.hours.saturday}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2" sx={{ color: '#7A7A7A', fontSize: '0.85rem' }}>
-                  Domingo
+                  Lunes: 14:00 - 19:30
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
-                  {contactInfo.hours.sunday}
+                  Jueves: 08:00 - 15:00
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
+                  Viernes: 08:00 - 14:00
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ color: '#3A3A3A', fontWeight: 600 }}>
+                  Correa
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
+                  Martes: 07:00 - 16:00
                 </Typography>
               </Box>
             </Box>
           </Box>
         </Box>
 
-        {/* Divider */}
         <Divider sx={{ backgroundColor: '#E9E4E2', my: 4 }} />
 
-        {/* Copyright */}
         <Box
           sx={{
             display: 'flex',
@@ -170,7 +169,7 @@ export function Footer() {
           }}
         >
           <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
-            &copy; {currentYear} MOK - Consultorio Médico Estético. Todos los derechos reservados.
+            &copy; {currentYear} MOK - Consultorio Medico Estetico. Todos los derechos reservados.
           </Typography>
           <Box sx={{ display: 'flex', gap: 3 }}>
             <MuiLink
@@ -184,7 +183,7 @@ export function Footer() {
                 },
               }}
             >
-              Política de Privacidad
+              Politica de Privacidad
             </MuiLink>
             <MuiLink
               href="#"
@@ -197,7 +196,7 @@ export function Footer() {
                 },
               }}
             >
-              Términos de Uso
+              Terminos de Uso
             </MuiLink>
           </Box>
         </Box>

@@ -44,6 +44,11 @@ export function ReservaModal() {
   const [selectedLocation, setSelectedLocation] = useState<LocationKey | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [selectedTreatment, setSelectedTreatment] = useState('');
+  const [patientName, setPatientName] = useState('');
+  const [patientPhone, setPatientPhone] = useState('');
+  const [patientEmail, setPatientEmail] = useState('');
+  const [patientNote, setPatientNote] = useState('');
 
   useEffect(() => {
     const handler = () => setOpen(true);
@@ -125,8 +130,32 @@ export function ReservaModal() {
   const timeSlots =
     selectedLocation && selectedDate ? getTimeSlots(selectedLocation, selectedDate) : [];
   const shouldShowNoSlotsMessage =
-    Boolean(selectedLocation && selectedDate) &&
-    (!isDateAvailable(selectedLocation, selectedDate) || timeSlots.length === 0);
+    selectedLocation && selectedDate
+      ? !isDateAvailable(selectedLocation, selectedDate) || timeSlots.length === 0
+      : false;
+  const selectedLocationLabel = selectedLocation
+    ? LOCATIONS.find((item) => item.id === selectedLocation)?.label ?? ''
+    : '';
+  const formatDate = (value: string) => {
+    if (!value) return '';
+    const date = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('es-AR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+  const summaryItems = [
+    { label: 'Tratamiento', value: selectedTreatment || 'Pendiente' },
+    { label: 'Sede', value: selectedLocationLabel || 'Pendiente' },
+    { label: 'Fecha', value: formatDate(selectedDate) || 'Pendiente' },
+    { label: 'Horario', value: selectedTime || 'Pendiente' },
+    { label: 'Nombre', value: patientName || 'Pendiente' },
+    { label: 'Telefono', value: patientPhone || 'Pendiente' },
+    { label: 'Email', value: patientEmail || 'Pendiente' },
+  ];
+  const summaryNote = patientNote.trim();
 
   return (
     <Dialog
@@ -191,15 +220,33 @@ export function ReservaModal() {
               <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
                 Nombre completo
               </Typography>
-              <TextField fullWidth placeholder="Ingresá tu nombre" sx={textFieldSx} />
+              <TextField
+                fullWidth
+                placeholder="Ingresá tu nombre"
+                value={patientName}
+                onChange={(event) => setPatientName(event.target.value)}
+                sx={textFieldSx}
+              />
             </Box>
             <Box>
               <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>Teléfono</Typography>
-              <TextField fullWidth placeholder="+54 9 11 1234-5678" sx={textFieldSx} />
+              <TextField
+                fullWidth
+                placeholder="+54 9 11 1234-5678"
+                value={patientPhone}
+                onChange={(event) => setPatientPhone(event.target.value)}
+                sx={textFieldSx}
+              />
             </Box>
             <Box>
               <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>Email</Typography>
-              <TextField fullWidth placeholder="Ingresá tu email" sx={textFieldSx} />
+              <TextField
+                fullWidth
+                placeholder="Ingresá tu email"
+                value={patientEmail}
+                onChange={(event) => setPatientEmail(event.target.value)}
+                sx={textFieldSx}
+              />
             </Box>
             <Box>
               <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
@@ -208,7 +255,8 @@ export function ReservaModal() {
               <TextField
                 fullWidth
                 select
-                defaultValue=""
+                value={selectedTreatment}
+                onChange={(event) => setSelectedTreatment(event.target.value)}
                 SelectProps={{
                   IconComponent: KeyboardArrowDownIcon,
                   displayEmpty: true,
@@ -341,8 +389,55 @@ export function ReservaModal() {
               multiline
               minRows={3}
               placeholder="Contanos tu consulta"
+              value={patientNote}
+              onChange={(event) => setPatientNote(event.target.value)}
               sx={textFieldSx}
             />
+          </Box>
+
+          <Box
+            sx={{
+              mb: 4,
+              p: 3,
+              borderRadius: '16px',
+              backgroundColor: '#FDF4F6',
+              border: '1px solid #F5E6E8',
+            }}
+          >
+            <Typography sx={{ fontWeight: 600, color: '#2C2C2C' }}>Resumen del turno</Typography>
+            <Box sx={{ display: 'grid', gap: 1.2, mt: 2 }}>
+              {summaryItems.map((item) => {
+                const isPending = item.value === 'Pendiente';
+                return (
+                  <Box
+                    key={item.label}
+                    sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}
+                  >
+                    <Typography sx={{ fontSize: '0.86rem', color: '#6B6B6B' }}>
+                      {item.label}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: '0.9rem',
+                        color: isPending ? '#B28C8C' : '#2C2C2C',
+                        fontWeight: isPending ? 500 : 600,
+                        textAlign: 'right',
+                      }}
+                    >
+                      {item.value}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+            {summaryNote && (
+              <Typography sx={{ mt: 2, fontSize: '0.86rem', color: '#6B6B6B' }}>
+                Motivo: {summaryNote}
+              </Typography>
+            )}
+            <Typography sx={{ mt: 1.5, fontSize: '0.78rem', color: '#9C6B6B' }}>
+              Revisá que los datos sean correctos antes de confirmar.
+            </Typography>
           </Box>
 
           <Button

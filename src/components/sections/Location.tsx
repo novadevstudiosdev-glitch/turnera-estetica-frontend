@@ -48,7 +48,7 @@ export function LocationSection() {
                 frameBorder="0"
                 src="https://www.google.com/maps?q=Jun%C3%ADn+191,+Alto+Bur%C3%B3,+Rosario,+Argentina&output=embed"
                 style={{ border: 0 }}
-                allowFullScreen=""
+                allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               ></iframe>

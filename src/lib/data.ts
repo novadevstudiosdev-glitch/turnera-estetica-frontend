@@ -3,6 +3,7 @@ export interface Service {
   name: string;
   description: string;
   icon: string;
+  image?: string;
 }
 
 export interface Testimonial {
