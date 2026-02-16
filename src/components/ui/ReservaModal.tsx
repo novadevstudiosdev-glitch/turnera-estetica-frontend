@@ -130,8 +130,9 @@ export function ReservaModal() {
   const timeSlots =
     selectedLocation && selectedDate ? getTimeSlots(selectedLocation, selectedDate) : [];
   const shouldShowNoSlotsMessage =
-    Boolean(selectedLocation && selectedDate) &&
-    (!isDateAvailable(selectedLocation, selectedDate) || timeSlots.length === 0);
+    selectedLocation && selectedDate
+      ? !isDateAvailable(selectedLocation, selectedDate) || timeSlots.length === 0
+      : false;
   const selectedLocationLabel = selectedLocation
     ? LOCATIONS.find((item) => item.id === selectedLocation)?.label ?? ''
     : '';

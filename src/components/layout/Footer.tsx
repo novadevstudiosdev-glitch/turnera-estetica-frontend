@@ -1,23 +1,22 @@
 'use client';
 
+import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import { Box, Container, Divider, Link as MuiLink, Typography } from '@mui/material';
+
+const quickLinks = [
+  { label: 'Inicio', href: '#' },
+  { label: 'Servicios', href: '#servicios' },
+  { label: 'Ubicacion', href: '#ubicacion' },
+  { label: 'Contacto', href: '#contacto' },
+];
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
-    {
-      icon: InstagramIcon,
-      href: 'https://www.instagram.com/dra.jaquelinagrassetti',
-      label: 'Instagram',
-    },
-  ];
-
-  const quickLinks = [
-    { label: 'Servicios', href: '#servicios' },
-    { label: 'Testimonios', href: '#testimonios' },
-    { label: 'Ubicacion', href: '#ubicacion' },
+    { icon: FacebookIcon, href: '#', label: 'Facebook' },
+    { icon: InstagramIcon, href: 'https://www.instagram.com/dra.jaquelinagrassetti', label: 'Instagram' },
   ];
 
   return (
@@ -53,8 +52,7 @@ export function Footer() {
               JG
             </Typography>
             <Typography variant="body2" sx={{ color: '#7A7A7A', mb: 3 }}>
-              Consultorio Medico Estetico de excelencia. Tratamientos profesionales con resultados
-              garantizados.
+              Consultorio Medico Estetico de excelencia. Tratamientos profesionales con resultados garantizados.
             </Typography>
             <Box sx={{ display: 'flex', gap: 2 }}>
               {socialLinks.map((social) => {
