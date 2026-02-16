@@ -183,6 +183,8 @@ export function Footer() {
                 },
               }}
             >
+
+              
               Politica de Privacidad
             </MuiLink>
             <MuiLink
