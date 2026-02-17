@@ -3,10 +3,15 @@
 import {
   AppBar,
   Box,
+  Chip,
   Container,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Toolbar,
   Button,
   IconButton,
+  Stack,
   Tooltip,
   Typography,
   useTheme,
@@ -20,6 +25,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { AuthModal } from '../ui/AuthModal';
 import { keyframes } from '@mui/system';
+import { products } from '@/lib/data';
 
 const NAVIGATION_LINKS = [
   { label: 'Inicio', href: '#hero' },
@@ -95,6 +101,7 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [productsModalOpen, setProductsModalOpen] = useState(false);
   const [tab, setTab] = useState(0);
 
   useEffect(() => {
@@ -123,6 +130,14 @@ export function Navbar() {
     setTab(nextTab ?? 0);
     setMobileMenuOpen(false);
   };
+
+  const productsByCategory = products.reduce<Record<string, typeof products>>((acc, product) => {
+    if (!acc[product.category]) {
+      acc[product.category] = [];
+    }
+    acc[product.category].push(product);
+    return acc;
+  }, {});
 
   const navItemStyle = {
     color: '#2C2C2C',
@@ -239,6 +254,14 @@ export function Navbar() {
           {/* Desktop Navigation */}
           {!isMobile && (
             <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 1.5 }}>
+              <Button
+                onClick={() => setProductsModalOpen(true)}
+                disableRipple
+                disableFocusRipple
+                sx={navItemStyle}
+              >
+                Productos
+              </Button>
               {NAVIGATION_LINKS.map((link) => (
                 <Button
                   key={link.href}
@@ -414,6 +437,24 @@ export function Navbar() {
             ))}
             <Button
               fullWidth
+              onClick={() => {
+                setProductsModalOpen(true);
+                setMobileMenuOpen(false);
+              }}
+              disableRipple
+              disableFocusRipple
+              sx={{
+                ...navItemStyle,
+                justifyContent: 'flex-start',
+                width: '100%',
+                fontSize: '1rem',
+                px: 0,
+              }}
+            >
+              Productos
+            </Button>
+            <Button
+              fullWidth
               onClick={() => handleOpenAuth(0)}
               startIcon={<PersonOutlineIcon />}
               sx={{
@@ -448,6 +489,82 @@ export function Navbar() {
           </Box>
         )}
       </Container>
+      <Dialog
+        open={productsModalOpen}
+        onClose={() => setProductsModalOpen(false)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle sx={{ pr: 6 }}>
+          Todos los productos por categoria
+          <IconButton
+            onClick={() => setProductsModalOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+            aria-label="Cerrar productos"
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2.5}>
+            {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
+              <Box key={category}>
+                <Typography sx={{ fontWeight: 700, color: '#8F5161', mb: 1.2 }}>
+                  {category}
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+                    gap: 1.5,
+                  }}
+                >
+                  {categoryProducts.map((product) => (
+                    <Box
+                      key={product.id}
+                      sx={{
+                        border: '1px solid #ECE7E3',
+                        borderRadius: '12px',
+                        p: 1.5,
+                        backgroundColor: '#FFFFFF',
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={product.image}
+                        alt={product.name}
+                        sx={{
+                          width: '100%',
+                          height: 120,
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          mb: 1,
+                        }}
+                      />
+                      <Typography sx={{ fontWeight: 700, color: '#1A1A1A' }}>
+                        {product.icon} {product.name}
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.88rem', color: '#666666', mt: 0.5 }}>
+                        {product.description}
+                      </Typography>
+                      <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
+                        <Chip
+                          label={product.presentation}
+                          size="small"
+                          sx={{ backgroundColor: '#EFEDEB', color: '#555555' }}
+                        />
+                      </Stack>
+                      <Typography sx={{ fontWeight: 700, color: '#C48A9A', mt: 1 }}>
+                        {product.price}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            ))}
+          </Stack>
+        </DialogContent>
+      </Dialog>
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} tab={tab} onTabChange={setTab} />
     </AppBar>
   );
