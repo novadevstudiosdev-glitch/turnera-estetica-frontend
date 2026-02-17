@@ -30,6 +30,7 @@ export interface Product {
   price: string;
   benefits: string[];
   icon: string;
+  image: string;
 }
 
 export const services: Service[] = [
@@ -147,6 +148,7 @@ export const products: Product[] = [
       'Aporta hidratacion profunda',
     ],
     icon: '🧴',
+    image: '/imagenes/hidratacion-profunda-de-la-piel.jpg',
   },
   {
     id: 2,
@@ -161,6 +163,7 @@ export const products: Product[] = [
       'Ideal para uso diario post-tratamiento',
     ],
     icon: '☀️',
+    image: '/portada.png',
   },
   {
     id: 3,
@@ -175,6 +178,7 @@ export const products: Product[] = [
       'Compatible con rutinas sensibles',
     ],
     icon: '🌙',
+    image: '/imagenes/Peeling-quimico-en-madrid.webp',
   },
   {
     id: 4,
@@ -189,6 +193,7 @@ export const products: Product[] = [
       'Uso diario manana y noche',
     ],
     icon: '🫧',
+    image: '/imagenes/limpieza facial.png',
   },
   {
     id: 5,
@@ -203,6 +208,7 @@ export const products: Product[] = [
       'Refuerza hidratacion y suavidad',
     ],
     icon: '✨',
+    image: '/mesoterapia-facial-piel-1620x1080.jpg',
   },
   {
     id: 6,
@@ -217,6 +223,7 @@ export const products: Product[] = [
       'Mejora luminosidad del contorno',
     ],
     icon: '👁️',
+    image: '/imagenes/relleno.webp',
   },
 ];
 
@@ -240,3 +247,4 @@ export const contactInfo = {
     },
   },
 };
+

@@ -2,6 +2,7 @@
 
 import {
   Box,
+  Button,
   Card,
   CardContent,
   Chip,
@@ -122,27 +123,25 @@ export function ProductsCatalogSection() {
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#C48A9A', mb: 2 }}>
                   {product.price}
                 </Typography>
-                <Box
-                  component="button"
+                <Button
+                  variant="contained"
                   onClick={() => setSelectedProduct(product)}
                   sx={{
-                    border: 'none',
                     borderRadius: '10px',
-                    backgroundColor: '#1A1A1A',
-                    color: '#FFFFFF',
+                    backgroundColor: '#EEBBC3',
+                    color: '#2C2C2C',
                     px: 2,
                     py: 1,
                     fontSize: '0.9rem',
                     fontWeight: 600,
-                    cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     '&:hover': {
-                      backgroundColor: '#2B2B2B',
+                      backgroundColor: '#FFB8C6',
                     },
                   }}
                 >
                   Ver detalle
-                </Box>
+                </Button>
               </CardContent>
             </Card>
           ))}
