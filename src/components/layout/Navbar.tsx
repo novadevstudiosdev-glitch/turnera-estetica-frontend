@@ -13,17 +13,23 @@ import {
   IconButton,
   Stack,
   Tooltip,
+  Menu,
+  MenuItem,
+  Divider,
+  ListItemIcon,
   Typography,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, MouseEvent } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import LogoutIcon from '@mui/icons-material/Logout';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { AuthModal } from '../ui/AuthModal';
+import { useRouter } from 'next/navigation';
 import { keyframes } from '@mui/system';
 import { products } from '@/lib/data';
 
@@ -97,18 +103,66 @@ const heartFloat = keyframes`
 
 export function Navbar() {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [productsModalOpen, setProductsModalOpen] = useState(false);
   const [tab, setTab] = useState(0);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [accountAnchorEl, setAccountAnchorEl] = useState<null | HTMLElement>(null);
+  const router = useRouter();
+  const displayName = userName
+    ? userName.includes('@')
+      ? userName.split('@')[0]
+      : userName.split(' ')[0]
+    : null;
+  const accountMenuOpen = Boolean(accountAnchorEl);
+  const accountInitial = displayName ? displayName.charAt(0).toUpperCase() : '';
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const readUser = () => {
+      if (typeof window === 'undefined') return;
+      const stored = localStorage.getItem('turnera_user');
+      if (!stored) {
+        setUserName(null);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(stored) as {
+          fullName?: string;
+          name?: string;
+          firstName?: string;
+          email?: string;
+        };
+        const nameCandidates = [
+          parsed?.fullName,
+          parsed?.name,
+          parsed?.firstName,
+          parsed?.email,
+        ]
+          .map((value) => (value ?? '').trim())
+          .filter((value) => value.length > 0);
+        setUserName(nameCandidates[0] ?? null);
+      } catch {
+        setUserName(null);
+      }
+    };
+
+    readUser();
+    window.addEventListener('auth-changed', readUser);
+    window.addEventListener('storage', readUser);
+    return () => {
+      window.removeEventListener('auth-changed', readUser);
+      window.removeEventListener('storage', readUser);
+    };
   }, []);
 
   const handleNavClick = (href: string) => {
@@ -129,6 +183,34 @@ export function Navbar() {
     setAuthOpen(true);
     setTab(nextTab ?? 0);
     setMobileMenuOpen(false);
+  };
+
+  const handleAccountClick = (event: MouseEvent<HTMLElement>) => {
+    if (userName) {
+      setAccountAnchorEl(event.currentTarget);
+    } else {
+      handleOpenAuth(0);
+    }
+  };
+
+  const handleCloseAccountMenu = () => {
+    setAccountAnchorEl(null);
+  };
+
+  const handleGoProfile = () => {
+    handleCloseAccountMenu();
+    setMobileMenuOpen(false);
+    router.push('/dashboard');
+  };
+
+  const handleLogout = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem('turnera_access_token');
+    localStorage.removeItem('turnera_user');
+    window.dispatchEvent(new Event('auth-changed'));
+    router.push('/');
+    setMobileMenuOpen(false);
+    handleCloseAccountMenu();
   };
 
   const productsByCategory = products.reduce<Record<string, typeof products>>((acc, product) => {
@@ -301,92 +383,171 @@ export function Navbar() {
             >
               Reservar
             </Button>
-            <Tooltip title="Ingresar / Registrarse" placement="bottom" arrow>
-              <IconButton
-                aria-label="Cuenta"
-                onClick={() => handleOpenAuth(0)}
-                disableRipple
-                sx={{
-                  p: 1.3,
-                  color: '#D4A5A5',
-                  backgroundColor: 'transparent',
-                  borderRadius: '999px',
-                  position: 'relative',
-                  animation: `${accountBreathing} 1.4s ease-in-out infinite`,
-                  transition: 'color 0.2s ease, transform 0.2s ease',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    left: '50%',
-                    top: '50%',
-                    width: 34,
-                    height: 34,
-                    borderRadius: '50%',
-                    border: '1px solid rgba(212, 165, 165, 0.35)',
-                    transform: 'translate(-50%, -50%) scale(0.85)',
-                    opacity: 0,
-                    animation: `${accountPing} 8s ease-out infinite`,
-                    pointerEvents: 'none',
-                  },
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    left: '50%',
-                    bottom: 2,
-                    width: '0%',
-                    height: 2,
-                    borderRadius: 999,
-                    background: 'rgba(212, 165, 165, 0.6)',
-                    transform: 'translateX(-50%)',
-                    opacity: 0,
-                    transition: 'all 0.2s ease',
-                  },
-                '&:hover': {
-                  animationPlayState: 'paused',
-                  transform: 'translateY(-3px)',
-                  color: '#B68484',
-                  backgroundColor: 'transparent',
-                },
-                  '&:hover::before': {
-                    animationPlayState: 'paused',
-                  },
-                  '&:hover::after': {
-                    width: '70%',
-                    opacity: 1,
-                  },
-                  '&:active': {
-                    transform: 'translateY(-3px) scale(0.96)',
-                  },
-                  '&.Mui-focusVisible': {
-                    animationPlayState: 'paused',
-                    boxShadow: '0 0 0 4px rgba(238, 187, 195, 0.18)',
-                  },
-                }}
-              >
-                <PersonOutlineIcon sx={{ fontSize: 28 }} />
-                <Box
+            {displayName ? (
+              <>
+                <Button
+                  onClick={handleAccountClick}
+                  endIcon={<PersonOutlineIcon sx={{ fontSize: 20 }} />}
                   sx={{
-                    position: 'absolute',
-                    left: '50%',
-                    top: 6,
-                    width: 13,
-                    height: 13,
-                    transform: 'translateX(-50%)',
-                    pointerEvents: 'none',
-                    animation: `${heartFloat} 2.8s ease-in-out infinite`,
-                    animationDelay: '0.4s',
-                    color: '#EE8FA0',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    color: '#2C2C2C',
+                    borderRadius: '999px',
+                    px: 1.2,
+                    py: 0.8,
+                    gap: 1.2,
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    border: '1px solid rgba(212, 165, 165, 0.4)',
+                    boxShadow: '0 8px 18px rgba(212, 165, 165, 0.16)',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 1)',
+                    },
                   }}
                 >
-                  <FavoriteIcon
+                  <Box
                     sx={{
-                      fontSize: 13,
-                      filter: 'drop-shadow(0 6px 10px rgba(238, 143, 160, 0.35))',
+                      width: 34,
+                      height: 34,
+                      borderRadius: '50%',
+                      background:
+                        'linear-gradient(135deg, rgba(238,187,195,0.85), rgba(212,165,165,0.9))',
+                      color: '#2C2C2C',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      letterSpacing: '0.02em',
                     }}
-                  />
-                </Box>
-              </IconButton>
-            </Tooltip>
+                  >
+                    {accountInitial}
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <Typography sx={{ fontSize: '0.78rem', color: '#9B7C7C', lineHeight: 1.2 }}>
+                      Mi cuenta
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.98rem', fontWeight: 600, lineHeight: 1.3 }}>
+                      {displayName}
+                    </Typography>
+                  </Box>
+                </Button>
+                <Menu
+                  anchorEl={accountAnchorEl}
+                  open={accountMenuOpen}
+                  onClose={handleCloseAccountMenu}
+                  PaperProps={{
+                    sx: {
+                      borderRadius: 2,
+                      mt: 1,
+                      minWidth: 220,
+                      boxShadow: '0 20px 45px rgba(0,0,0,0.12)',
+                      border: '1px solid rgba(212, 165, 165, 0.25)',
+                    },
+                  }}
+                >
+                  <MenuItem onClick={handleGoProfile}>
+                    <ListItemIcon>
+                      <PersonOutlineIcon fontSize="small" />
+                    </ListItemIcon>
+                    Mi perfil
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem onClick={handleLogout} sx={{ color: '#B02E2E' }}>
+                    <ListItemIcon sx={{ color: 'inherit' }}>
+                      <LogoutIcon fontSize="small" />
+                    </ListItemIcon>
+                    Cerrar sesión
+                  </MenuItem>
+                </Menu>
+              </>
+            ) : (
+              <Tooltip title="Ingresar / Registrarse" placement="bottom" arrow>
+                <IconButton
+                  aria-label="Cuenta"
+                  onClick={() => handleOpenAuth(0)}
+                  disableRipple
+                  sx={{
+                    p: 1.3,
+                    color: '#D4A5A5',
+                    backgroundColor: 'transparent',
+                    borderRadius: '999px',
+                    position: 'relative',
+                    animation: `${accountBreathing} 1.4s ease-in-out infinite`,
+                    transition: 'color 0.2s ease, transform 0.2s ease',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: '50%',
+                      top: '50%',
+                      width: 34,
+                      height: 34,
+                      borderRadius: '50%',
+                      border: '1px solid rgba(212, 165, 165, 0.35)',
+                      transform: 'translate(-50%, -50%) scale(0.85)',
+                      opacity: 0,
+                      animation: `${accountPing} 8s ease-out infinite`,
+                      pointerEvents: 'none',
+                    },
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      left: '50%',
+                      bottom: 2,
+                      width: '0%',
+                      height: 2,
+                      borderRadius: 999,
+                      background: 'rgba(212, 165, 165, 0.6)',
+                      transform: 'translateX(-50%)',
+                      opacity: 0,
+                      transition: 'all 0.2s ease',
+                    },
+                    '&:hover': {
+                      animationPlayState: 'paused',
+                      transform: 'translateY(-3px)',
+                      color: '#B68484',
+                      backgroundColor: 'transparent',
+                    },
+                    '&:hover::before': {
+                      animationPlayState: 'paused',
+                    },
+                    '&:hover::after': {
+                      width: '70%',
+                      opacity: 1,
+                    },
+                    '&:active': {
+                      transform: 'translateY(-3px) scale(0.96)',
+                    },
+                    '&.Mui-focusVisible': {
+                      animationPlayState: 'paused',
+                      boxShadow: '0 0 0 4px rgba(238, 187, 195, 0.18)',
+                    },
+                  }}
+                >
+                  <PersonOutlineIcon sx={{ fontSize: 28 }} />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      left: '50%',
+                      top: 6,
+                      width: 13,
+                      height: 13,
+                      transform: 'translateX(-50%)',
+                      pointerEvents: 'none',
+                      animation: `${heartFloat} 2.8s ease-in-out infinite`,
+                      animationDelay: '0.4s',
+                      color: '#EE8FA0',
+                    }}
+                  >
+                    <FavoriteIcon
+                      sx={{
+                        fontSize: 13,
+                        filter: 'drop-shadow(0 6px 10px rgba(238, 143, 160, 0.35))',
+                      }}
+                    />
+                  </Box>
+                </IconButton>
+              </Tooltip>
+            )}
 
             {/* Mobile Menu Button */}
             {isMobile && (
@@ -455,7 +616,7 @@ export function Navbar() {
             </Button>
             <Button
               fullWidth
-              onClick={() => handleOpenAuth(0)}
+              onClick={displayName ? handleGoProfile : () => handleOpenAuth(0)}
               startIcon={<PersonOutlineIcon />}
               sx={{
                 ...navItemStyle,
@@ -466,8 +627,24 @@ export function Navbar() {
                 color: '#2C2C2C',
               }}
             >
-              Cuenta
+              {displayName ? `Perfil de ${displayName}` : 'Cuenta'}
             </Button>
+            {displayName && (
+              <Button
+                fullWidth
+                onClick={handleLogout}
+                sx={{
+                  ...navItemStyle,
+                  justifyContent: 'flex-start',
+                  width: '100%',
+                  fontSize: '1rem',
+                  px: 0,
+                  color: '#7A5A5A',
+                }}
+              >
+                Cerrar sesión
+              </Button>
+            )}
             <Button
               fullWidth
               variant="contained"

@@ -169,7 +169,7 @@ export function Footer() {
           }}
         >
           <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
-            &copy; {currentYear} MOK - Consultorio Medico Estetico. Todos los derechos reservados.
+            &copy; {currentYear} Consultorio Medico Estetico. Todos los derechos reservados.
           </Typography>
           <Box sx={{ display: 'flex', gap: 3 }}>
             <MuiLink

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -9,6 +10,7 @@ import {
   Grow,
   IconButton,
   MenuItem,
+  Snackbar,
   TextField,
   Typography,
 } from '@mui/material';
@@ -18,6 +20,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   LOCATIONS,
   LocationKey,
@@ -40,6 +43,7 @@ const TREATMENTS = [
 ];
 
 export function ReservaModal() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationKey | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
@@ -49,6 +53,12 @@ export function ReservaModal() {
   const [patientPhone, setPatientPhone] = useState('');
   const [patientEmail, setPatientEmail] = useState('');
   const [patientNote, setPatientNote] = useState('');
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
+  const appointmentsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/appointments`;
 
   useEffect(() => {
     const handler = () => setOpen(true);
@@ -157,6 +167,78 @@ export function ReservaModal() {
   ];
   const summaryNote = patientNote.trim();
 
+  const showAlert = (message: string) => {
+    setAlertMessage(message);
+    setAlertOpen(true);
+  };
+
+  const handleConfirm = async () => {
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('turnera_access_token');
+    if (!token) {
+      showAlert('Para confirmar la reserva necesitas iniciar sesion.');
+      return;
+    }
+    if (
+      !selectedLocation ||
+      !selectedDate ||
+      !selectedTime ||
+      !selectedTreatment ||
+      !patientName ||
+      !patientPhone ||
+      !patientEmail
+    ) {
+      showAlert('Completa todos los datos para confirmar la reserva.');
+      return;
+    }
+    if (!apiBaseUrl) {
+      showAlert('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        treatment: selectedTreatment,
+        location: selectedLocation,
+        date: selectedDate,
+        time: selectedTime,
+        patientName,
+        patientPhone,
+        patientEmail,
+        patientNote: summaryNote || undefined,
+      };
+
+      const sendRequest = async (body?: Record<string, unknown>) => {
+        const hasBody = body && Object.keys(body).length > 0;
+        return fetch(appointmentsUrl, {
+          method: 'POST',
+          headers: {
+            ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
+            Authorization: `Bearer ${token}`,
+          },
+          ...(hasBody ? { body: JSON.stringify(body) } : {}),
+        });
+      };
+
+      let response = await sendRequest(payload);
+      if (response.status === 400) {
+        response = await sendRequest({});
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      setOpen(false);
+      router.push('/dashboard');
+    } catch {
+      showAlert('No se pudo confirmar la reserva. Intenta nuevamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Dialog
       open={open}
@@ -181,7 +263,13 @@ export function ReservaModal() {
       }}
     >
       <DialogContent sx={{ p: { xs: 3, md: 5 }, position: 'relative' }}>
-        <Box component="form" onSubmit={(event) => event.preventDefault()}>
+        <Box
+          component="form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleConfirm();
+          }}
+        >
           <IconButton
             aria-label="Cerrar"
             onClick={handleClose}
@@ -446,6 +534,7 @@ export function ReservaModal() {
             size="large"
             type="submit"
             startIcon={<CalendarMonthIcon />}
+            disabled={isSubmitting}
             sx={{
               borderRadius: '12px',
               py: '18px',
@@ -460,7 +549,7 @@ export function ReservaModal() {
               },
             }}
           >
-            Confirmar reserva
+            {isSubmitting ? 'Confirmando...' : 'Confirmar reserva'}
           </Button>
 
           <Box
@@ -499,6 +588,16 @@ export function ReservaModal() {
           </Box>
         </Box>
       </DialogContent>
+      <Snackbar
+        open={alertOpen}
+        autoHideDuration={4000}
+        onClose={() => setAlertOpen(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setAlertOpen(false)} severity="warning" sx={{ width: '100%' }}>
+          {alertMessage}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 }
