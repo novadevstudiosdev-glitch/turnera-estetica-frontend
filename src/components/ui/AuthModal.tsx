@@ -613,7 +613,7 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
                         {showLoginPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                       </IconButton>
                     </InputAdornment>
-                  ),
+                  ), //hola
                 }}
                 sx={textFieldSx}
               />
