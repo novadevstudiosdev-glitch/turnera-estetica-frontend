@@ -27,76 +27,112 @@ type ModalService = {
 
 const modalServices: ModalService[] = [
   {
-    id: 101,
-    name: 'Armonizacion facial personalizada',
-    shortDescription: 'Balance y proporcion de rasgos para un resultado natural.',
+    id: 1,
+    name: 'Toxina Botulinica',
+    shortDescription:
+      'Tratamiento inyectable que relaja de forma controlada los musculos responsables de las arrugas de expresion.',
     details:
-      'Analisis integral del rostro para definir armonia en menton, pomulos, labios y perfil, con enfoque medico personalizado.',
-    image: '/imagenes/relleno.jpg',
-  },
-  {
-    id: 102,
-    name: 'Toxina botulinica (Botox)',
-    shortDescription: 'Tratamiento para lineas de expresion y arrugas dinamicas.',
-    details:
-      'Aplicacion precisa en zonas estrategicas para suavizar arrugas y prevenir su progresion sin perder naturalidad en el gesto.',
+      'Tratamiento inyectable que relaja de forma controlada los musculos responsables de las arrugas de expresion (frente, entrecejo, patas de gallo). Resultado: rostro mas descansado y juvenil, sin perder naturalidad.',
     image: '/portada.png',
   },
   {
-    id: 103,
-    name: 'Rellenos dermicos (acido hialuronico)',
-    shortDescription: 'Pomulos, labios y surcos nasogenianos con efecto armonico.',
+    id: 2,
+    name: 'Bioestimuladores',
+    shortDescription:
+      'Sustancias que estimulan la produccion natural de colageno para mejorar firmeza y elasticidad.',
     details:
-      'Tecnicas de relleno para restaurar volumen y mejorar contornos faciales con productos biocompatibles de alta calidad.',
+      'Sustancias que estimulan la produccion natural de colageno. Mejoran firmeza, elasticidad y calidad de piel de manera progresiva. Ideal para flacidez facial y corporal.',
+    image: '/mesoterapia-facial-piel-1620x1080.jpg',
+  },
+  {
+    id: 3,
+    name: 'Tratamientos faciales y corporales con Acido Hialuronico',
+    shortDescription:
+      'Rellenos que aportan volumen, definicion e hidratacion profunda en rostro y cuerpo.',
+    details:
+      'Rellenos que aportan volumen, definicion e hidratacion profunda. Se utilizan para labios, pomulos, menton, ojeras y tambien para mejorar contorno corporal.',
     image: '/imagenes/relleno.webp',
   },
   {
-    id: 104,
-    name: 'Medicina regenerativa',
-    shortDescription: 'Estimulo de tejidos para mejorar textura y calidad de piel.',
+    id: 4,
+    name: 'Plasma Rico en Plaquetas (Facial, Corporal y Capilar)',
+    shortDescription:
+      'Procedimiento regenerativo con factores de crecimiento obtenidos de la sangre del paciente.',
     details:
-      'Protocolos regenerativos orientados a mejorar firmeza, luminosidad y reparacion de la piel con enfoque progresivo.',
+      'Procedimiento regenerativo que utiliza factores de crecimiento obtenidos de la propia sangre del paciente. Mejora textura, luminosidad, cicatrices y estimula el crecimiento capilar.',
     image: '/mesoterapia-facial-piel-1620x1080.jpg',
   },
   {
-    id: 105,
-    name: 'Diagnostico con ecografia cutanea',
-    shortDescription: 'Evaluacion anatomica previa para mayor precision y seguridad.',
+    id: 5,
+    name: 'Mesoterapia Facial, Corporal y Capilar',
+    shortDescription:
+      'Microinyecciones con activos especificos para rejuvenecimiento, reduccion localizada o fortalecimiento capilar.',
     details:
-      'Estudio ecografico para planificar tratamientos, identificar estructuras y reducir riesgos en procedimientos esteticos.',
+      'Microinyecciones con vitaminas, minerales y activos especificos segun el objetivo: rejuvenecimiento facial, reduccion de grasa localizada o fortalecimiento capilar.',
+    image: '/mesoterapia-facial-piel-1620x1080.jpg',
+  },
+  {
+    id: 6,
+    name: 'Skinbooster',
+    shortDescription:
+      'Microinyecciones de acido hialuronico de baja densidad para hidratacion profunda sin volumen.',
+    details:
+      'Microinyecciones de acido hialuronico de baja densidad para hidratar profundamente la piel desde adentro. Mejora brillo, suavidad y elasticidad sin aportar volumen.',
+    image: '/imagenes/hidratacion-profunda-de-la-piel.jpg',
+  },
+  {
+    id: 7,
+    name: 'Peelings Quimicos',
+    shortDescription:
+      'Exfoliacion quimica para reducir manchas, acne, poros dilatados y lineas finas.',
+    details:
+      'Aplicacion de sustancias quimicas que exfolian capas superficiales de la piel. Reduce manchas, acne, poros dilatados y lineas finas. Renueva la piel y mejora su textura.',
+    image: '/imagenes/Peeling-quimico-en-madrid.webp',
+  },
+  {
+    id: 8,
+    name: 'Dermaplaning',
+    shortDescription:
+      'Exfoliacion mecanica que elimina celulas muertas y vello fino del rostro.',
+    details:
+      'Exfoliacion mecanica que elimina celulas muertas y vello fino del rostro. Deja la piel mas lisa, luminosa y mejora la penetracion de activos.',
+    image: '/imagenes/limpieza facial.png',
+  },
+  {
+    id: 9,
+    name: 'Mesoterapia Suiza',
+    shortDescription:
+      'Version premium con activos de alta calidad y protocolos europeos.',
+    details:
+      'Version premium de mesoterapia con principios activos de alta calidad y protocolos europeos. Enfoque en revitalizacion intensiva y resultados visibles en menor tiempo.',
+    image: '/mesoterapia-facial-piel-1620x1080.jpg',
+  },
+  {
+    id: 10,
+    name: 'Microneedling',
+    shortDescription:
+      'Tratamiento con microagujas que estimula colageno y elastina.',
+    details:
+      'Tratamiento con microagujas que estimula la produccion de colageno y elastina. Mejora cicatrices, manchas, arrugas y textura general de la piel.',
+    image: '/mesoterapia-facial-piel-1620x1080.jpg',
+  },
+  {
+    id: 11,
+    name: 'Exosomas',
+    shortDescription:
+      'Terapia avanzada de regeneracion celular para mejorar calidad de piel y recuperacion.',
+    details:
+      'Terapia avanzada de regeneracion celular. Potencia la reparacion de tejidos, mejora firmeza, calidad de piel y acelera recuperacion post procedimientos.',
     image: '/portada.png',
   },
   {
-    id: 106,
-    name: 'Asesoramiento medico estetico clinico',
-    shortDescription: 'Diagnostico medico y plan de tratamiento por objetivos.',
+    id: 12,
+    name: 'Enzimas',
+    shortDescription:
+      'Aplicacion de enzimas para disolver grasa localizada o mejorar fibrosis.',
     details:
-      'Consulta profesional para definir prioridades, tiempos y combinaciones terapeuticas segun la necesidad de cada paciente.',
-    image: '/mesoterapia-facial-piel-1620x1080.jpg',
-  },
-  {
-    id: 107,
-    name: 'Skincare medico personalizado',
-    shortDescription: 'Rutina indicada segun tipo de piel y necesidades reales.',
-    details:
-      'Seleccion de productos y frecuencia de uso para potenciar resultados clinicos y mantener la salud cutanea en casa.',
-    image: '/imagenes/hidratacion-profunda-de-la-piel.jpg',
-  },
-  {
-    id: 108,
-    name: 'Tratamientos preventivos antiedad',
-    shortDescription: 'Prevencion temprana para sostener juventud y elasticidad.',
-    details:
-      'Planes de mantenimiento para retrasar signos de envejecimiento y preservar calidad de piel a largo plazo.',
-    image: '/imagenes/hidratacion-profunda-de-la-piel.jpg',
-  },
-  {
-    id: 109,
-    name: 'Medicina funcional y ortomolecular',
-    shortDescription: 'Integracion sistemica para optimizar resultados esteticos.',
-    details:
-      'Abordaje complementario con evaluacion integral de habitos y soporte nutricional orientado al bienestar y la piel.',
-    image: '/mesoterapia-facial-piel-1620x1080.jpg',
+      'Aplicacion de enzimas especificas para disolver grasa localizada o mejorar fibrosis. Se usa en rostro y cuerpo para redefinir contornos sin cirugia.',
+    image: '/imagenes/relleno.jpg',
   },
 ];
 
@@ -376,3 +412,4 @@ export function ServicesSection() {
     </Box>
   );
 }
+
