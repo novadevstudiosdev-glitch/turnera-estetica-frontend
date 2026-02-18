@@ -3,6 +3,7 @@ export interface Service {
   name: string;
   description: string;
   icon: string;
+  image?: string;
 }
 
 export interface Testimonial {
@@ -18,6 +19,18 @@ export interface Brand {
   id: number;
   name: string;
   logo: string;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  category: string;
+  description: string;
+  presentation: string;
+  price: string;
+  benefits: string[];
+  icon: string;
+  image: string;
 }
 
 export const services: Service[] = [
@@ -121,6 +134,99 @@ export const brands: Brand[] = [
   },
 ];
 
+export const products: Product[] = [
+  {
+    id: 1,
+    name: 'Serum Reafirmante',
+    category: 'Anti-edad',
+    description: 'Con peptidos y acido hialuronico para mejorar firmeza y elasticidad.',
+    presentation: '30 ml',
+    price: '$39.900',
+    benefits: [
+      'Reduce lineas de expresion',
+      'Mejora la textura en 4 semanas',
+      'Aporta hidratacion profunda',
+    ],
+    icon: '🧴',
+    image: '/imagenes/hidratacion-profunda-de-la-piel.jpg',
+  },
+  {
+    id: 2,
+    name: 'Protector Solar Derma+',
+    category: 'Fotoproteccion',
+    description: 'Protector SPF 50+ de amplio espectro, acabado liviano no graso.',
+    presentation: '50 ml',
+    price: '$24.900',
+    benefits: [
+      'Protege contra UVA y UVB',
+      'Ayuda a prevenir manchas',
+      'Ideal para uso diario post-tratamiento',
+    ],
+    icon: '☀️',
+    image: '/portada.png',
+  },
+  {
+    id: 3,
+    name: 'Crema Despigmentante Noche',
+    category: 'Manchas',
+    description: 'Formula renovadora con niacinamida y acidos suaves para tono uniforme.',
+    presentation: '40 g',
+    price: '$34.500',
+    benefits: [
+      'Unifica el tono de la piel',
+      'Aporta luminosidad progresiva',
+      'Compatible con rutinas sensibles',
+    ],
+    icon: '🌙',
+    image: '/imagenes/Peeling-quimico-en-madrid.webp',
+  },
+  {
+    id: 4,
+    name: 'Gel Limpiador Dermobalance',
+    category: 'Limpieza',
+    description: 'Limpieza profunda sin resecar. Controla brillo y respeta barrera cutanea.',
+    presentation: '200 ml',
+    price: '$19.900',
+    benefits: [
+      'Remueve impurezas y maquillaje',
+      'Ayuda a equilibrar piel mixta/grasa',
+      'Uso diario manana y noche',
+    ],
+    icon: '🫧',
+    image: '/imagenes/limpieza facial.png',
+  },
+  {
+    id: 5,
+    name: 'Ampollas Revitalizantes',
+    category: 'Shock',
+    description: 'Concentrado para eventos y recuperacion post-procedimientos esteticos.',
+    presentation: 'Caja x7',
+    price: '$29.900',
+    benefits: [
+      'Efecto glow inmediato',
+      'Mejora aspecto de fatiga',
+      'Refuerza hidratacion y suavidad',
+    ],
+    icon: '✨',
+    image: '/mesoterapia-facial-piel-1620x1080.jpg',
+  },
+  {
+    id: 6,
+    name: 'Contorno de Ojos Pro',
+    category: 'Ojos',
+    description: 'Tratamiento con cafeina y activos drenantes para bolsas y ojeras.',
+    presentation: '15 ml',
+    price: '$27.900',
+    benefits: [
+      'Disminuye apariencia de bolsas',
+      'Suaviza lineas finas',
+      'Mejora luminosidad del contorno',
+    ],
+    icon: '👁️',
+    image: '/imagenes/relleno.webp',
+  },
+];
+
 export const contactInfo = {
   phone: '+54 341 751-1529',
   whatsapp: '+54 9 261 XXXXXXX',
@@ -141,3 +247,4 @@ export const contactInfo = {
     },
   },
 };
+
