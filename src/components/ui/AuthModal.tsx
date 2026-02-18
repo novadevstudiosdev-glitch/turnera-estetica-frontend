@@ -37,6 +37,27 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
+type GoogleProfile = {
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+  picture?: string;
+  email?: string;
+};
+
+const decodeGoogleProfile = (credential: string): GoogleProfile | null => {
+  try {
+    const payload = credential.split('.')[1];
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
+    const decoded = atob(padded);
+    return JSON.parse(decoded) as GoogleProfile;
+  } catch {
+    return null;
+  }
+};
+
 const GoogleLogo = () => (
   <Box
     component="svg"
@@ -151,6 +172,11 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
         if (typeof window !== 'undefined') {
           localStorage.setItem('turnera_access_token', data.accessToken);
           localStorage.setItem('turnera_user', JSON.stringify(data.user));
+          if (data.user.avatarUrl) {
+            localStorage.setItem('turnera_google_picture', data.user.avatarUrl);
+          } else {
+            localStorage.removeItem('turnera_google_picture');
+          }
           window.dispatchEvent(new Event('auth-changed'));
         }
 
@@ -302,8 +328,17 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
       };
 
       if (typeof window !== 'undefined') {
+        const googleProfile = decodeGoogleProfile(googleToken);
+        const userPayload = {
+          ...data.user,
+          fullName: data.user.fullName || googleProfile?.name || googleProfile?.given_name || '',
+          avatarUrl: data.user.avatarUrl || googleProfile?.picture,
+        };
         localStorage.setItem('turnera_access_token', data.accessToken);
-        localStorage.setItem('turnera_user', JSON.stringify(data.user));
+        localStorage.setItem('turnera_user', JSON.stringify(userPayload));
+        if (googleProfile?.picture) {
+          localStorage.setItem('turnera_google_picture', googleProfile.picture);
+        }
         window.dispatchEvent(new Event('auth-changed'));
       }
 

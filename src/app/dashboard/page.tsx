@@ -17,6 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type AppointmentStatus = 'Pendiente' | 'Confirmado' | 'Reprogramado' | 'Cancelado';
 
@@ -156,6 +157,7 @@ const normalizeAppointment = (raw: ApiAppointment, index: number): Appointment =
 };
 
 export default function ClientDashboardPage() {
+  const router = useRouter();
   const [appointments, setAppointments] = useState(initialAppointments);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
@@ -163,6 +165,21 @@ export default function ClientDashboardPage() {
   const [newTime, setNewTime] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = localStorage.getItem('turnera_user');
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored) as { role?: string };
+      const role = parsed?.role?.toLowerCase();
+      if (role === 'admin') {
+        router.replace('/admin');
+      }
+    } catch {
+      // ignore
+    }
+  }, [router]);
 
   const pendingAppointments = useMemo(
     () => appointments.filter((appt) => appt.status !== 'Cancelado'),
