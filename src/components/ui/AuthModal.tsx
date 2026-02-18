@@ -1,13 +1,16 @@
 'use client';
 
 import {
+  Alert,
   Box,
   Button,
+  Collapse,
   Dialog,
   DialogContent,
   Grow,
   IconButton,
   InputAdornment,
+  Snackbar,
   Tab,
   Tabs,
   TextField,
@@ -16,7 +19,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 type AuthModalProps = {
   open: boolean;
@@ -26,6 +29,13 @@ type AuthModalProps = {
 };
 
 const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const isStrongPassword = (value: string) =>
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).*$/.test(value);
+
+// 🔥 IMPORTANTE: Cambiar estas URLs según tu configuración
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
 const GoogleLogo = () => (
   <Box
@@ -62,6 +72,16 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
   const [submitted, setSubmitted] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+  const [registerSuccessOpen, setRegisterSuccessOpen] = useState(false);
+
+  // Referencias para Google OAuth
+  const googleInitializedRef = useRef(false);
 
   const resetValidation = () => setSubmitted(false);
 
@@ -78,29 +98,256 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
     return {
       name: !registerName.trim(),
       email: !registerEmail || !isValidEmail(registerEmail),
-      password: !registerPassword || registerPassword.length < 6,
+      password:
+        !registerPassword || registerPassword.length < 8 || !isStrongPassword(registerPassword),
     };
   }, [registerEmail, registerName, registerPassword, submitted]);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setSubmitted(true);
     if (!loginErrors.email && !loginErrors.password) {
-      console.log('login', { email: loginEmail });
-      onClose();
+      setLoginError(null);
+      setLoginLoading(true);
+
+      try {
+        const recaptchaToken = await getRecaptchaToken('login');
+        const baseUrl = API_BASE_URL.replace(/\/$/, '');
+        const loginUrl = `${baseUrl}/api/auth/login`;
+
+        const response = await fetch(loginUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: loginEmail.trim(),
+            password: loginPassword,
+            recaptchaToken,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = (await response.json().catch(() => null)) as {
+            message?: string | string[];
+          } | null;
+          const message = Array.isArray(errorData?.message)
+            ? errorData?.message.join(' ')
+            : errorData?.message;
+          throw new Error(message ?? 'No se pudo iniciar sesión.');
+        }
+
+        const data = (await response.json()) as {
+          accessToken: string;
+          user: {
+            id: string;
+            email: string;
+            fullName: string;
+            role: string;
+            emailVerified: boolean;
+            avatarUrl?: string;
+          };
+        };
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('turnera_access_token', data.accessToken);
+          localStorage.setItem('turnera_user', JSON.stringify(data.user));
+          window.dispatchEvent(new Event('auth-changed'));
+        }
+
+        onClose();
+      } catch (error) {
+        setLoginError(error instanceof Error ? error.message : 'Error al iniciar sesión.');
+      } finally {
+        setLoginLoading(false);
+      }
     }
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     setSubmitted(true);
     if (!registerErrors.name && !registerErrors.email && !registerErrors.password) {
-      console.log('register', { name: registerName, email: registerEmail });
+      setRegisterError(null);
+      setRegisterLoading(true);
+
+      try {
+        const recaptchaToken = await getRecaptchaToken('register');
+        const baseUrl = API_BASE_URL.replace(/\/$/, '');
+        const registerUrl = `${baseUrl}/api/auth/register`;
+
+        const response = await fetch(registerUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fullName: registerName.trim(),
+            email: registerEmail.trim(),
+            password: registerPassword,
+            recaptchaToken,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = (await response.json().catch(() => null)) as {
+            message?: string | string[];
+          } | null;
+          const message = Array.isArray(errorData?.message)
+            ? errorData?.message.join(' ')
+            : errorData?.message;
+          throw new Error(message ?? 'No se pudo crear la cuenta.');
+        }
+
+        setRegisterSuccessOpen(true);
+        setSubmitted(false);
+        setRegisterName('');
+        setRegisterPassword('');
+        setLoginEmail(registerEmail.trim());
+        setRegisterEmail('');
+        onTabChange(0);
+      } catch (error) {
+        setRegisterError(error instanceof Error ? error.message : 'Error al registrar la cuenta.');
+      } finally {
+        setRegisterLoading(false);
+      }
+    }
+  };
+
+  const getRecaptchaToken = async (action: string) => {
+    if (!RECAPTCHA_SITE_KEY) {
+      console.warn('⚠️ RECAPTCHA_SITE_KEY no configurada, usando token fake');
+      return 'fake-recaptcha-token-for-development';
+    }
+
+    if (typeof window === 'undefined' || !window.grecaptcha) {
+      console.warn('⚠️ reCAPTCHA no disponible, usando token fake');
+      return 'fake-recaptcha-token-for-development';
+    }
+
+    try {
+      await new Promise<void>((resolve) => {
+        window.grecaptcha?.ready(() => resolve());
+      });
+      return await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action });
+    } catch (error) {
+      console.error('Error getting reCAPTCHA token:', error);
+      return 'fake-recaptcha-token-for-development';
+    }
+  };
+
+  const initializeGoogleSignIn = () => {
+    if (googleInitializedRef.current) return;
+    if (!GOOGLE_CLIENT_ID) {
+      console.error('❌ GOOGLE_CLIENT_ID no configurado');
+      return;
+    }
+    if (typeof window === 'undefined' || !window.google?.accounts?.id) {
+      console.error('❌ Google Identity Services no disponible');
+      return;
+    }
+
+    try {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCallback,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+      googleInitializedRef.current = true;
+      console.log('✅ Google Sign-In inicializado');
+    } catch (error) {
+      console.error('Error inicializando Google Sign-In:', error);
+    }
+  };
+
+  const handleGoogleCallback = async (response: any) => {
+    if (!response?.credential) {
+      setGoogleError('No se pudo obtener el token de Google.');
+      setGoogleLoading(false);
+      return;
+    }
+
+    try {
+      const googleToken = response.credential;
+      const recaptchaToken = await getRecaptchaToken('google_auth');
+      const baseUrl = API_BASE_URL.replace(/\/$/, '');
+      const googleAuthUrl = `${baseUrl}/api/auth/google`;
+
+      console.log('🔑 Enviando token a:', googleAuthUrl);
+
+      const apiResponse = await fetch(googleAuthUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ googleToken, recaptchaToken }),
+      });
+
+      if (!apiResponse.ok) {
+        const errorData = (await apiResponse.json().catch(() => null)) as {
+          message?: string;
+        } | null;
+        throw new Error(errorData?.message ?? 'No se pudo iniciar sesión con Google.');
+      }
+
+      const data = (await apiResponse.json()) as {
+        accessToken: string;
+        user: {
+          id: string;
+          email: string;
+          fullName: string;
+          role: string;
+          emailVerified: boolean;
+          avatarUrl?: string;
+        };
+      };
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('turnera_access_token', data.accessToken);
+        localStorage.setItem('turnera_user', JSON.stringify(data.user));
+        window.dispatchEvent(new Event('auth-changed'));
+      }
+
+      console.log('✅ Login con Google exitoso');
+      setGoogleLoading(false);
       onClose();
+    } catch (error) {
+      console.error('❌ Error en Google auth:', error);
+      setGoogleError(error instanceof Error ? error.message : 'Error al autenticar con Google.');
+      setGoogleLoading(false);
     }
   };
 
   const handleGoogleAuth = () => {
-    // TODO: Integrar con tu proveedor de autenticación (NextAuth/Firebase) cuando corresponda.
-    console.log('google-auth');
+    if (!GOOGLE_CLIENT_ID) {
+      setGoogleError('Falta configurar el Client ID de Google.');
+      return;
+    }
+
+    setGoogleError(null);
+    setGoogleLoading(true);
+
+    try {
+      // Inicializar si no está inicializado
+      if (!googleInitializedRef.current) {
+        initializeGoogleSignIn();
+      }
+
+      // Mostrar el prompt de Google
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            setGoogleError('No se pudo mostrar el login de Google.');
+            setGoogleLoading(false);
+          }
+        });
+      } else {
+        throw new Error('Google Identity Services no está disponible');
+      }
+    } catch (error) {
+      console.error('Error al iniciar Google auth:', error);
+      setGoogleError('Error al iniciar autenticación con Google.');
+      setGoogleLoading(false);
+    }
   };
 
   const textFieldSx = {
@@ -154,235 +401,286 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
   } as const;
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      TransitionComponent={Grow}
-      TransitionProps={{ timeout: 220 }}
-      fullWidth
-      maxWidth="xs"
-      BackdropProps={{
-        sx: {
-          backgroundColor: 'rgba(0, 0, 0, 0.55)',
-          backdropFilter: 'blur(4px)',
-        },
-      }}
-      PaperProps={{
-        sx: {
-          borderRadius: '24px',
-          backgroundColor: '#FFFCFA',
-          boxShadow: '0 20px 55px rgba(0,0,0,0.14)',
-          maxWidth: 440,
-          width: '100%',
-          overflow: 'visible',
-        },
-      }}
-    >
-      <DialogContent sx={{ p: { xs: 3, md: 4 }, position: 'relative' }}>
-        <IconButton
-          aria-label="Cerrar"
-          onClick={onClose}
-          sx={{ position: 'absolute', right: 12, top: 12, color: '#3D3D3D' }}
-        >
-          <CloseIcon />
-        </IconButton>
-
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontFamily: '"Cormorant Garamond", serif',
-              fontWeight: 600,
-              color: '#2C2C2C',
-              mb: 0.5,
-            }}
+    <>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        TransitionComponent={Grow}
+        TransitionProps={{ timeout: 220 }}
+        fullWidth
+        maxWidth="xs"
+        BackdropProps={{
+          sx: {
+            backgroundColor: 'rgba(0, 0, 0, 0.55)',
+            backdropFilter: 'blur(4px)',
+          },
+        }}
+        PaperProps={{
+          sx: {
+            borderRadius: '24px',
+            backgroundColor: '#FFFCFA',
+            boxShadow: '0 20px 55px rgba(0,0,0,0.14)',
+            maxWidth: 440,
+            width: '100%',
+            overflow: 'visible',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: { xs: 3, md: 4 }, position: 'relative' }}>
+          <IconButton
+            aria-label="Cerrar"
+            onClick={onClose}
+            sx={{ position: 'absolute', right: 12, top: 12, color: '#3D3D3D' }}
           >
-            Mi cuenta
-          </Typography>
-          <Typography sx={{ color: '#6B6B6B' }}>Accedé para reservar más rápido</Typography>
-        </Box>
+            <CloseIcon />
+          </IconButton>
 
-        <Tabs
-          value={tab}
-          onChange={(_, value) => {
-            resetValidation();
-            onTabChange(value);
-          }}
-          variant="fullWidth"
-          aria-label="Autenticación"
-          sx={{
-            mb: 3,
-            p: 0.5,
-            backgroundColor: '#F5EAEA',
-            borderRadius: '999px',
-            border: '1px solid #EFE3E3',
-            minHeight: 44,
-            '& .MuiTabs-indicator': {
-              display: 'none',
-            },
-          }}
-        >
-          <Tab
-            disableRipple
-            label="Ingresar"
-            sx={{
-              minHeight: 38,
-              textTransform: 'none',
-              fontWeight: 600,
-              color: '#7A7A7A',
-              borderRadius: '999px',
-              '&.Mui-selected': {
+          <Box sx={{ textAlign: 'center', mb: 3 }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: '"Cormorant Garamond", serif',
+                fontWeight: 600,
                 color: '#2C2C2C',
-                backgroundColor: '#FFFFFF',
-                boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
-              },
-            }}
-          />
-          <Tab
-            disableRipple
-            label="Crear cuenta"
-            sx={{
-              minHeight: 38,
-              textTransform: 'none',
-              fontWeight: 600,
-              color: '#7A7A7A',
-              borderRadius: '999px',
-              '&.Mui-selected': {
-                color: '#2C2C2C',
-                backgroundColor: '#FFFFFF',
-                boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
-              },
-            }}
-          />
-        </Tabs>
+                mb: 0.5,
+              }}
+            >
+              Mi cuenta
+            </Typography>
+            <Typography sx={{ color: '#6B6B6B' }}>Accedé para reservar más rápido</Typography>
+          </Box>
 
-        <Box sx={{ display: 'grid', gap: 2, mb: 3 }}>
-          <Button
-            fullWidth
-            onClick={handleGoogleAuth}
-            startIcon={<GoogleLogo />}
-            aria-label="Continuar con Google"
+          <Tabs
+            value={tab}
+            onChange={(_, value) => {
+              resetValidation();
+              onTabChange(value);
+            }}
+            variant="fullWidth"
+            aria-label="Autenticación"
             sx={{
-              borderRadius: '12px',
-              minHeight: 48,
-              backgroundColor: '#FFFFFF',
-              color: '#2C2C2C',
-              border: '1px solid #E1DDD8',
-              textTransform: 'none',
-              fontWeight: 600,
-              boxShadow: '0 6px 18px rgba(0,0,0,0.04)',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                backgroundColor: '#FFF7F8',
-                boxShadow: '0 10px 22px rgba(0,0,0,0.08)',
+              mb: 3,
+              p: 0.5,
+              backgroundColor: '#F5EAEA',
+              borderRadius: '999px',
+              border: '1px solid #EFE3E3',
+              minHeight: 44,
+              '& .MuiTabs-indicator': {
+                display: 'none',
               },
             }}
           >
-            Continuar con Google
-          </Button>
-        </Box>
-
-        {tab === 0 && (
-          <Box sx={{ display: 'grid', gap: 2 }}>
-            <TextField
-              fullWidth
-              label="Email"
-              variant="outlined"
-              value={loginEmail}
-              onChange={(event) => setLoginEmail(event.target.value)}
-              error={loginErrors.email}
-              helperText={loginErrors.email ? 'Ingresá un email válido.' : ' '}
-              FormHelperTextProps={{ sx: { marginLeft: 0 } }}
-              sx={textFieldSx}
-            />
-            <TextField
-              fullWidth
-              label="Contraseña"
-              type={showLoginPassword ? 'text' : 'password'}
-              variant="outlined"
-              value={loginPassword}
-              onChange={(event) => setLoginPassword(event.target.value)}
-              error={loginErrors.password}
-              helperText={loginErrors.password ? 'Mínimo 6 caracteres.' : ' '}
-              FormHelperTextProps={{ sx: { marginLeft: 0 } }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label={showLoginPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                      onClick={() => setShowLoginPassword((prev) => !prev)}
-                      edge="end"
-                      sx={{ color: '#B68484' }}
-                    >
-                      {showLoginPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
+            <Tab
+              disableRipple
+              label="Ingresar"
+              sx={{
+                minHeight: 38,
+                textTransform: 'none',
+                fontWeight: 600,
+                color: '#7A7A7A',
+                borderRadius: '999px',
+                '&.Mui-selected': {
+                  color: '#2C2C2C',
+                  backgroundColor: '#FFFFFF',
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
+                },
               }}
-              sx={textFieldSx}
             />
-            <Button fullWidth onClick={handleLogin} sx={actionButtonSx}>
-              Ingresar
-            </Button>
-          </Box>
-        )}
-
-        {tab === 1 && (
-          <Box sx={{ display: 'grid', gap: 2 }}>
-            <TextField
-              fullWidth
-              label="Nombre"
-              variant="outlined"
-              value={registerName}
-              onChange={(event) => setRegisterName(event.target.value)}
-              error={registerErrors.name}
-              helperText={registerErrors.name ? 'Ingresá tu nombre.' : ' '}
-              FormHelperTextProps={{ sx: { marginLeft: 0 } }}
-              sx={textFieldSx}
-            />
-            <TextField
-              fullWidth
-              label="Email"
-              variant="outlined"
-              value={registerEmail}
-              onChange={(event) => setRegisterEmail(event.target.value)}
-              error={registerErrors.email}
-              helperText={registerErrors.email ? 'Ingresá un email válido.' : ' '}
-              FormHelperTextProps={{ sx: { marginLeft: 0 } }}
-              sx={textFieldSx}
-            />
-            <TextField
-              fullWidth
-              label="Contraseña"
-              type={showRegisterPassword ? 'text' : 'password'}
-              variant="outlined"
-              value={registerPassword}
-              onChange={(event) => setRegisterPassword(event.target.value)}
-              error={registerErrors.password}
-              helperText={registerErrors.password ? 'Mínimo 6 caracteres.' : ' '}
-              FormHelperTextProps={{ sx: { marginLeft: 0 } }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label={showRegisterPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                      onClick={() => setShowRegisterPassword((prev) => !prev)}
-                      edge="end"
-                      sx={{ color: '#B68484' }}
-                    >
-                      {showRegisterPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
+            <Tab
+              disableRipple
+              label="Crear cuenta"
+              sx={{
+                minHeight: 38,
+                textTransform: 'none',
+                fontWeight: 600,
+                color: '#7A7A7A',
+                borderRadius: '999px',
+                '&.Mui-selected': {
+                  color: '#2C2C2C',
+                  backgroundColor: '#FFFFFF',
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
+                },
               }}
-              sx={textFieldSx}
             />
-            <Button fullWidth onClick={handleRegister} sx={actionButtonSx}>
-              Crear cuenta
+          </Tabs>
+
+          <Box sx={{ display: 'grid', gap: 2, mb: 3 }}>
+            <Button
+              fullWidth
+              onClick={handleGoogleAuth}
+              disabled={googleLoading}
+              startIcon={<GoogleLogo />}
+              aria-label="Continuar con Google"
+              sx={{
+                borderRadius: '12px',
+                minHeight: 48,
+                backgroundColor: '#FFFFFF',
+                color: '#2C2C2C',
+                border: '1px solid #E1DDD8',
+                textTransform: 'none',
+                fontWeight: 600,
+                boxShadow: '0 6px 18px rgba(0,0,0,0.04)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: '#FFF7F8',
+                  boxShadow: '0 10px 22px rgba(0,0,0,0.08)',
+                },
+              }}
+            >
+              {googleLoading ? 'Conectando...' : 'Continuar con Google'}
             </Button>
+            {googleError ? (
+              <Typography sx={{ color: '#B00020', fontSize: '0.9rem' }}>{googleError}</Typography>
+            ) : null}
           </Box>
-        )}
-      </DialogContent>
-    </Dialog>
+
+          {tab === 0 && (
+            <Box sx={{ display: 'grid', gap: 2 }}>
+              <Collapse in={registerSuccessOpen}>
+                <Alert
+                  severity="success"
+                  onClose={() => setRegisterSuccessOpen(false)}
+                  sx={{ mb: 1 }}
+                >
+                  Registro exitoso. Inicia sesión para continuar.
+                </Alert>
+              </Collapse>
+              <TextField
+                fullWidth
+                label="Email"
+                variant="outlined"
+                value={loginEmail}
+                onChange={(event) => setLoginEmail(event.target.value)}
+                error={loginErrors.email}
+                helperText={loginErrors.email ? 'Ingresá un email válido.' : ' '}
+                FormHelperTextProps={{ sx: { marginLeft: 0 } }}
+                sx={textFieldSx}
+              />
+              <TextField
+                fullWidth
+                label="Contraseña"
+                type={showLoginPassword ? 'text' : 'password'}
+                variant="outlined"
+                value={loginPassword}
+                onChange={(event) => setLoginPassword(event.target.value)}
+                error={loginErrors.password}
+                helperText={loginErrors.password ? 'Mínimo 6 caracteres.' : ' '}
+                FormHelperTextProps={{ sx: { marginLeft: 0 } }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={showLoginPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        onClick={() => setShowLoginPassword((prev) => !prev)}
+                        edge="end"
+                        sx={{ color: '#B68484' }}
+                      >
+                        {showLoginPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={textFieldSx}
+              />
+              <Button fullWidth onClick={handleLogin} disabled={loginLoading} sx={actionButtonSx}>
+                {loginLoading ? 'Ingresando...' : 'Ingresar'}
+              </Button>
+              {loginError ? (
+                <Typography sx={{ color: '#B00020', fontSize: '0.9rem' }}>{loginError}</Typography>
+              ) : null}
+            </Box>
+          )}
+
+          {tab === 1 && (
+            <Box sx={{ display: 'grid', gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Nombre"
+                variant="outlined"
+                value={registerName}
+                onChange={(event) => setRegisterName(event.target.value)}
+                error={registerErrors.name}
+                helperText={registerErrors.name ? 'Ingresá tu nombre.' : ' '}
+                FormHelperTextProps={{ sx: { marginLeft: 0 } }}
+                sx={textFieldSx}
+              />
+              <TextField
+                fullWidth
+                label="Email"
+                variant="outlined"
+                value={registerEmail}
+                onChange={(event) => setRegisterEmail(event.target.value)}
+                error={registerErrors.email}
+                helperText={registerErrors.email ? 'Ingresá un email válido.' : ' '}
+                FormHelperTextProps={{ sx: { marginLeft: 0 } }}
+                sx={textFieldSx}
+              />
+              <TextField
+                fullWidth
+                label="Contraseña"
+                type={showRegisterPassword ? 'text' : 'password'}
+                variant="outlined"
+                value={registerPassword}
+                onChange={(event) => setRegisterPassword(event.target.value)}
+                error={registerErrors.password}
+                helperText={
+                  registerErrors.password
+                    ? 'Minimo 8, mayuscula, minuscula, numero y simbolo.'
+                    : ' '
+                }
+                FormHelperTextProps={{ sx: { marginLeft: 0 } }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={
+                          showRegisterPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                        }
+                        onClick={() => setShowRegisterPassword((prev) => !prev)}
+                        edge="end"
+                        sx={{ color: '#B68484' }}
+                      >
+                        {showRegisterPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={textFieldSx}
+              />
+              <Button
+                fullWidth
+                onClick={handleRegister}
+                disabled={registerLoading}
+                sx={actionButtonSx}
+              >
+                {registerLoading ? 'Creando cuenta...' : 'Crear cuenta'}
+              </Button>
+              {registerError ? (
+                <Typography sx={{ color: '#B00020', fontSize: '0.9rem' }}>
+                  {registerError}
+                </Typography>
+              ) : null}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Snackbar
+        open={registerSuccessOpen}
+        autoHideDuration={4000}
+        onClose={(_, reason) => {
+          if (reason === 'clickaway') return;
+          setRegisterSuccessOpen(false);
+        }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          severity="success"
+          onClose={() => setRegisterSuccessOpen(false)}
+          sx={{ width: '100%' }}
+        >
+          Registro exitoso
+        </Alert>
+      </Snackbar>
+    </>
   );
 }
