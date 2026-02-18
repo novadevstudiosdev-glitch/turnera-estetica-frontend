@@ -108,7 +108,6 @@ export function ProductsCarouselSection() {
                     mb: 1.2,
                   }}
                 />
-                <Typography sx={{ fontSize: '2rem', mb: 1 }}>{product.icon}</Typography>
                 <Typography variant="h6" sx={{ fontWeight: 700, color: '#1A1A1A', mb: 1, minHeight: 64 }}>
                   {product.name}
                 </Typography>
@@ -134,9 +133,6 @@ export function ProductsCarouselSection() {
                     sx={{ backgroundColor: '#F0E7EA', color: '#8F5161' }}
                   />
                 </Stack>
-                <Typography variant="subtitle1" sx={{ mt: 'auto', fontWeight: 700, color: '#C48A9A' }}>
-                  {product.price}
-                </Typography>
               </Box>
             ))}
           </Box>
@@ -230,13 +226,10 @@ export function ProductsCarouselSection() {
                         }}
                       />
                       <Typography sx={{ fontWeight: 600, color: '#1A1A1A' }}>
-                        {product.icon} {product.name}
+                        {product.name}
                       </Typography>
                       <Typography sx={{ color: '#666666', fontSize: '0.88rem', mt: 0.4 }}>
                         {product.description}
-                      </Typography>
-                      <Typography sx={{ color: '#C48A9A', fontWeight: 700, mt: 0.8 }}>
-                        {product.price}
                       </Typography>
                       <Button
                         variant="contained"
@@ -296,7 +289,6 @@ export function ProductsCarouselSection() {
                   mb: 1.5,
                 }}
               />
-              <Typography sx={{ fontSize: '2rem', mb: 1 }}>{selectedProduct.icon}</Typography>
               <Typography sx={{ fontWeight: 700, color: '#1A1A1A', mb: 1.2 }}>
                 {selectedProduct.name}
               </Typography>
@@ -314,9 +306,6 @@ export function ProductsCarouselSection() {
               </Stack>
               <Typography sx={{ color: '#666666', lineHeight: 1.7 }}>
                 {selectedProduct.description}
-              </Typography>
-              <Typography sx={{ color: '#C48A9A', fontWeight: 700, mt: 1.5 }}>
-                {selectedProduct.price}
               </Typography>
               <Divider sx={{ my: 2 }} />
               <Typography sx={{ color: '#1A1A1A', fontWeight: 700, mb: 1 }}>

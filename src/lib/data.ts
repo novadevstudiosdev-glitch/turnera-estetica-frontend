@@ -36,51 +36,99 @@ export interface Product {
 export const services: Service[] = [
   {
     id: 1,
-    name: 'Botox y Rellenos',
+    name: 'Toxina Botulinica',
     description:
-      'Tratamientos con materiales premium para eliminar arrugas y restaurar volumen facial con resultados naturales.',
+      'Tratamiento inyectable que relaja de forma controlada los musculos responsables de las arrugas de expresion (frente, entrecejo, patas de gallo). Resultado: rostro mas descansado y juvenil, sin perder naturalidad.',
     icon: '💉',
-    image: '/imagenes/relleno.jpg',
+    image: '/portada.png',
   },
   {
     id: 2,
-    name: 'Limpieza Facial',
+    name: 'Bioestimuladores',
     description:
-      'Limpieza profunda y tratamiento dermatológico personalizado para revitalizar y purificar la piel.',
+      'Sustancias que estimulan la produccion natural de colageno. Mejoran firmeza, elasticidad y calidad de piel de manera progresiva. Ideal para flacidez facial y corporal.',
+    icon: '✨',
+    image: '/mesoterapia-facial-piel-1620x1080.jpg',
+  },
+  {
+    id: 3,
+    name: 'Tratamientos faciales y corporales con Acido Hialuronico',
+    description:
+      'Rellenos que aportan volumen, definicion e hidratacion profunda. Se utilizan para labios, pomulos, menton, ojeras y tambien para mejorar contorno corporal.',
+    icon: '💧',
+    image: '/imagenes/relleno.webp',
+  },
+  {
+    id: 4,
+    name: 'Plasma Rico en Plaquetas (Facial, Corporal y Capilar)',
+    description:
+      'Procedimiento regenerativo que utiliza factores de crecimiento obtenidos de la propia sangre del paciente. Mejora textura, luminosidad, cicatrices y estimula el crecimiento capilar.',
+    icon: '🩸',
+    image: '/mesoterapia-facial-piel-1620x1080.jpg',
+  },
+  {
+    id: 5,
+    name: 'Mesoterapia Facial, Corporal y Capilar',
+    description:
+      'Microinyecciones con vitaminas, minerales y activos especificos segun el objetivo: rejuvenecimiento facial, reduccion de grasa localizada o fortalecimiento capilar.',
+    icon: '💉',
+    image: '/mesoterapia-facial-piel-1620x1080.jpg',
+  },
+  {
+    id: 6,
+    name: 'Skinbooster',
+    description:
+      'Microinyecciones de acido hialuronico de baja densidad para hidratar profundamente la piel desde adentro. Mejora brillo, suavidad y elasticidad sin aportar volumen.',
+    icon: '💦',
+    image: '/imagenes/hidratacion-profunda-de-la-piel.jpg',
+  },
+  {
+    id: 7,
+    name: 'Peelings Quimicos',
+    description:
+      'Aplicacion de sustancias quimicas que exfolian capas superficiales de la piel. Reduce manchas, acne, poros dilatados y lineas finas. Renueva la piel y mejora su textura.',
+    icon: '🧪',
+    image: '/imagenes/Peeling-quimico-en-madrid.webp',
+  },
+  {
+    id: 8,
+    name: 'Dermaplaning',
+    description:
+      'Exfoliacion mecanica que elimina celulas muertas y vello fino del rostro. Deja la piel mas lisa, luminosa y mejora la penetracion de activos.',
     icon: '✨',
     image: '/imagenes/limpieza facial.png',
   },
   {
-    id: 3,
-    name: 'Depilación Láser',
+    id: 9,
+    name: 'Mesoterapia Suiza',
     description:
-      'Depilación permanente con tecnología láser de última generación. Segura, rápida y efectiva.',
-    icon: '🔆',
-    image: '/imagenes/La-depilación-láser.png',
+      'Version premium de mesoterapia con principios activos de alta calidad y protocolos europeos. Enfoque en revitalizacion intensiva y resultados visibles en menor tiempo.',
+    icon: '🇨🇭',
+    image: '/mesoterapia-facial-piel-1620x1080.jpg',
   },
   {
-    id: 4,
-    name: 'Microblading',
+    id: 10,
+    name: 'Microneedling',
     description:
-      'Tatuaje semi-permanente de cejas con técnica artesanal para realzar la belleza natural.',
-    icon: '🎨',
-    image: '/imagenes/Microblading.jpeg',
+      'Tratamiento con microagujas que estimula la produccion de colageno y elastina. Mejora cicatrices, manchas, arrugas y textura general de la piel.',
+    icon: '🎯',
+    image: '/mesoterapia-facial-piel-1620x1080.jpg',
   },
   {
-    id: 5,
-    name: 'Hidratación Profunda',
+    id: 11,
+    name: 'Exosomas',
     description:
-      'Tratamientos con ácido hialurónico y serums especializados para devolver brillo y elasticidad.',
-    icon: '💧',
-    image: '/imagenes/hidratacion-profunda-de-la-piel.jpg',
+      'Terapia avanzada de regeneracion celular. Potencia la reparacion de tejidos, mejora firmeza, calidad de piel y acelera recuperacion post procedimientos.',
+    icon: '🧬',
+    image: '/portada.png',
   },
   {
-    id: 6,
-    name: 'Peeling Químico',
+    id: 12,
+    name: 'Enzimas',
     description:
-      'Exfoliación controlada para renovar la piel, reducir manchas y mejorar la textura facial.',
-    icon: '🧪',
-    image: '/imagenes/Peeling-quimico-en-madrid.webp',
+      'Aplicacion de enzimas especificas para disolver grasa localizada o mejorar fibrosis. Se usa en rostro y cuerpo para redefinir contornos sin cirugia.',
+    icon: '💊',
+    image: '/imagenes/relleno.jpg',
   },
 ];
 
@@ -247,4 +295,5 @@ export const contactInfo = {
     },
   },
 };
+
 
