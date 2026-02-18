@@ -2,6 +2,7 @@
 
 import {
   AppBar,
+  Avatar,
   Box,
   Chip,
   Container,
@@ -110,6 +111,8 @@ export function Navbar() {
   const [productsModalOpen, setProductsModalOpen] = useState(false);
   const [tab, setTab] = useState(0);
   const [userName, setUserName] = useState<string | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [accountAnchorEl, setAccountAnchorEl] = useState<null | HTMLElement>(null);
   const router = useRouter();
   const displayName = userName
@@ -117,8 +120,10 @@ export function Navbar() {
       ? userName.split('@')[0]
       : userName.split(' ')[0]
     : null;
+  const normalizedAvatar = userAvatar
+    ? userAvatar.replace(/=s\d+-c$/, '=s200-c')
+    : null;
   const accountMenuOpen = Boolean(accountAnchorEl);
-  const accountInitial = displayName ? displayName.charAt(0).toUpperCase() : '';
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 8);
@@ -133,6 +138,8 @@ export function Navbar() {
       const stored = localStorage.getItem('turnera_user');
       if (!stored) {
         setUserName(null);
+        setUserAvatar(null);
+        setUserRole(null);
         return;
       }
       try {
@@ -141,6 +148,11 @@ export function Navbar() {
           name?: string;
           firstName?: string;
           email?: string;
+          avatarUrl?: string;
+          photoUrl?: string;
+          picture?: string;
+          image?: string;
+          role?: string;
         };
         const nameCandidates = [
           parsed?.fullName,
@@ -151,8 +163,21 @@ export function Navbar() {
           .map((value) => (value ?? '').trim())
           .filter((value) => value.length > 0);
         setUserName(nameCandidates[0] ?? null);
+        const storedGooglePicture =
+          typeof window !== 'undefined' ? localStorage.getItem('turnera_google_picture') : null;
+        const avatarCandidate =
+          parsed?.avatarUrl ??
+          parsed?.photoUrl ??
+          parsed?.picture ??
+          parsed?.image ??
+          storedGooglePicture ??
+          null;
+        setUserAvatar(avatarCandidate);
+        setUserRole(parsed?.role ?? null);
       } catch {
         setUserName(null);
+        setUserAvatar(null);
+        setUserRole(null);
       }
     };
 
@@ -200,13 +225,15 @@ export function Navbar() {
   const handleGoProfile = () => {
     handleCloseAccountMenu();
     setMobileMenuOpen(false);
-    router.push('/dashboard');
+    const role = userRole?.toLowerCase();
+    router.push(role === 'admin' ? '/admin' : '/dashboard');
   };
 
   const handleLogout = () => {
     if (typeof window === 'undefined') return;
     localStorage.removeItem('turnera_access_token');
     localStorage.removeItem('turnera_user');
+    localStorage.removeItem('turnera_google_picture');
     window.dispatchEvent(new Event('auth-changed'));
     router.push('/');
     setMobileMenuOpen(false);
@@ -387,15 +414,14 @@ export function Navbar() {
               <>
                 <Button
                   onClick={handleAccountClick}
-                  endIcon={<PersonOutlineIcon sx={{ fontSize: 20 }} />}
                   sx={{
                     textTransform: 'none',
                     fontWeight: 600,
                     color: '#2C2C2C',
                     borderRadius: '999px',
-                    px: 1.2,
-                    py: 0.8,
-                    gap: 1.2,
+                    px: 1.6,
+                    py: 0.7,
+                    gap: 1,
                     backgroundColor: 'rgba(255, 255, 255, 0.9)',
                     border: '1px solid rgba(212, 165, 165, 0.4)',
                     boxShadow: '0 8px 18px rgba(212, 165, 165, 0.16)',
@@ -404,32 +430,22 @@ export function Navbar() {
                     },
                   }}
                 >
-                  <Box
+                  <Avatar
+                    key={normalizedAvatar ?? 'avatar'}
+                    src={normalizedAvatar ?? undefined}
+                    alt={displayName ?? 'Usuario'}
+                    imgProps={{ referrerPolicy: 'no-referrer', crossOrigin: 'anonymous' }}
                     sx={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: '50%',
-                      background:
-                        'linear-gradient(135deg, rgba(238,187,195,0.85), rgba(212,165,165,0.9))',
+                      width: 36,
+                      height: 36,
+                      fontSize: '0.9rem',
+                      backgroundColor: '#E7C7CC',
                       color: '#2C2C2C',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 700,
-                      fontSize: '0.85rem',
-                      letterSpacing: '0.02em',
                     }}
-                  >
-                    {accountInitial}
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                    <Typography sx={{ fontSize: '0.78rem', color: '#9B7C7C', lineHeight: 1.2 }}>
-                      Mi cuenta
-                    </Typography>
-                    <Typography sx={{ fontSize: '0.98rem', fontWeight: 600, lineHeight: 1.3 }}>
-                      {displayName}
-                    </Typography>
-                  </Box>
+                  />
+                  <Typography sx={{ fontSize: '0.98rem', fontWeight: 600, lineHeight: 1.3 }}>
+                    {displayName}
+                  </Typography>
                 </Button>
                 <Menu
                   anchorEl={accountAnchorEl}
