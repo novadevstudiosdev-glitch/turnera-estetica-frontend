@@ -29,18 +29,11 @@ import {
   isDateAvailable,
 } from '@/lib/booking';
 
-const TREATMENTS = [
-  'Toxina Botulínica',
-  'Rellenos con Ácido Hialurónico',
-  'Hilos Tensores',
-  'Bioestimuladores de Colágeno',
-  'Peeling Químico',
-  'Mesoterapia Facial',
-  'Plasma Rico en Plaquetas',
-  'Limpieza Facial Profunda',
-  'Radiofrecuencia',
-  'Otro / Consulta General',
-];
+
+type ServiceOption = {
+  id: string;
+  name: string;
+};
 
 export function ReservaModal() {
   const router = useRouter();
@@ -48,7 +41,7 @@ export function ReservaModal() {
   const [selectedLocation, setSelectedLocation] = useState<LocationKey | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [selectedTreatment, setSelectedTreatment] = useState('');
+  const [selectedServiceId, setSelectedServiceId] = useState('');
   const [patientName, setPatientName] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
   const [patientEmail, setPatientEmail] = useState('');
@@ -56,15 +49,74 @@ export function ReservaModal() {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [services, setServices] = useState<ServiceOption[]>([]);
+  const [servicesError, setServicesError] = useState<string | null>(null);
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
   const appointmentsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/appointments`;
+  const servicesUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/services`;
 
   useEffect(() => {
     const handler = () => setOpen(true);
     window.addEventListener('open-reserva-modal', handler);
     return () => window.removeEventListener('open-reserva-modal', handler);
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+
+    const loadServices = async () => {
+      if (!apiBaseUrl) {
+        setServicesError('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+        return;
+      }
+      try {
+        const response = await fetch(servicesUrl, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const rawText = await response.text();
+        let parsed: unknown = rawText;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch {
+          parsed = rawText;
+        }
+        const list = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray((parsed as { data?: unknown }).data)
+            ? ((parsed as { data?: unknown }).data as unknown[])
+            : [];
+        const normalized = list
+          .map((item) => ({
+            id: String((item as { id?: string }).id ?? ''),
+            name: String((item as { name?: string }).name ?? 'Servicio'),
+          }))
+          .filter((item) => item.id);
+        if (mounted) {
+          setServices(normalized);
+          if (normalized.length === 0) {
+            setServicesError('No hay servicios disponibles para reservar.');
+          } else {
+            setServicesError(null);
+          }
+        }
+      } catch {
+        if (mounted) {
+          setServicesError('No se pudieron cargar los servicios disponibles.');
+          setServices([]);
+        }
+      }
+    };
+
+    loadServices();
+
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, [apiBaseUrl, servicesUrl]);
 
   const handleClose = () => setOpen(false);
   const handleLocationChange = (location: LocationKey) => {
@@ -146,6 +198,7 @@ export function ReservaModal() {
   const selectedLocationLabel = selectedLocation
     ? LOCATIONS.find((item) => item.id === selectedLocation)?.label ?? ''
     : '';
+  const selectedService = services.find((service) => service.id === selectedServiceId);
   const formatDate = (value: string) => {
     if (!value) return '';
     const date = new Date(`${value}T00:00:00`);
@@ -157,7 +210,7 @@ export function ReservaModal() {
     });
   };
   const summaryItems = [
-    { label: 'Tratamiento', value: selectedTreatment || 'Pendiente' },
+    { label: 'Tratamiento', value: selectedService?.name || 'Pendiente' },
     { label: 'Sede', value: selectedLocationLabel || 'Pendiente' },
     { label: 'Fecha', value: formatDate(selectedDate) || 'Pendiente' },
     { label: 'Horario', value: selectedTime || 'Pendiente' },
@@ -183,7 +236,7 @@ export function ReservaModal() {
       !selectedLocation ||
       !selectedDate ||
       !selectedTime ||
-      !selectedTreatment ||
+      !selectedServiceId ||
       !patientName ||
       !patientPhone ||
       !patientEmail
@@ -191,40 +244,46 @@ export function ReservaModal() {
       showAlert('Completa todos los datos para confirmar la reserva.');
       return;
     }
+    if (!selectedService) {
+      showAlert('Selecciona un tratamiento valido para continuar.');
+      return;
+    }
     if (!apiBaseUrl) {
       showAlert('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+      return;
+    }
+    if (servicesError) {
+      showAlert(servicesError);
       return;
     }
 
     setIsSubmitting(true);
     try {
+      const notesParts: string[] = [];
+      if (selectedLocationLabel) {
+        notesParts.push(`Sede: ${selectedLocationLabel}`);
+      }
+      if (summaryNote) {
+        notesParts.push(`Motivo: ${summaryNote}`);
+      }
       const payload = {
-        treatment: selectedTreatment,
-        location: selectedLocation,
-        date: selectedDate,
-        time: selectedTime,
+        serviceId: selectedService.id,
+        appointmentDate: selectedDate,
+        appointmentTime: selectedTime,
         patientName,
         patientPhone,
         patientEmail,
-        patientNote: summaryNote || undefined,
+        patientNotes: notesParts.length > 0 ? notesParts.join(' | ') : undefined,
       };
 
-      const sendRequest = async (body?: Record<string, unknown>) => {
-        const hasBody = body && Object.keys(body).length > 0;
-        return fetch(appointmentsUrl, {
-          method: 'POST',
-          headers: {
-            ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
-            Authorization: `Bearer ${token}`,
-          },
-          ...(hasBody ? { body: JSON.stringify(body) } : {}),
-        });
-      };
-
-      let response = await sendRequest(payload);
-      if (response.status === 400) {
-        response = await sendRequest({});
-      }
+      const response = await fetch(appointmentsUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -343,8 +402,8 @@ export function ReservaModal() {
               <TextField
                 fullWidth
                 select
-                value={selectedTreatment}
-                onChange={(event) => setSelectedTreatment(event.target.value)}
+                value={selectedServiceId}
+                onChange={(event) => setSelectedServiceId(event.target.value)}
                 SelectProps={{
                   IconComponent: KeyboardArrowDownIcon,
                   displayEmpty: true,
@@ -355,12 +414,23 @@ export function ReservaModal() {
                 <MenuItem disabled value="">
                   Seleccioná un tratamiento
                 </MenuItem>
-                {TREATMENTS.map((item) => (
-                  <MenuItem key={item} value={item}>
-                    {item}
+                {services.length > 0 ? (
+                  services.map((service) => (
+                    <MenuItem key={service.id} value={service.id}>
+                      {service.name}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled value="no-services">
+                    No hay servicios disponibles
                   </MenuItem>
-                ))}
+                )}
               </TextField>
+              {servicesError && (
+                <Typography sx={{ mt: 1, fontSize: '0.82rem', color: '#B00020' }}>
+                  {servicesError}
+                </Typography>
+              )}
             </Box>
             <Box>
               <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
