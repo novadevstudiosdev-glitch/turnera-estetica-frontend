@@ -19,7 +19,13 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-type AppointmentStatus = 'Pendiente' | 'Confirmado' | 'Reprogramado' | 'Cancelado';
+type AppointmentStatus =
+  | 'Pendiente'
+  | 'Confirmado'
+  | 'Reprogramado'
+  | 'Cancelado'
+  | 'Completado'
+  | 'No asistio';
 
 type Appointment = {
   id: string;
@@ -28,39 +34,20 @@ type Appointment = {
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   status: AppointmentStatus;
+  serviceId?: string;
+  patientName?: string;
+  patientEmail?: string;
+  patientPhone?: string;
+  patientNotes?: string;
 };
 
 type ApiAppointment = Record<string, unknown>;
 
-const initialAppointments: Appointment[] = [
-  {
-    id: 'AP-1001',
-    service: 'Mesoterapia Facial',
-    location: 'Rosario',
-    date: '2026-03-10',
-    time: '15:30',
-    status: 'Confirmado',
-  },
-  {
-    id: 'AP-1002',
-    service: 'Limpieza profunda',
-    location: 'Correa',
-    date: '2026-02-25',
-    time: '11:00',
-    status: 'Pendiente',
-  },
-  {
-    id: 'AP-1003',
-    service: 'Botox',
-    location: 'Rosario',
-    date: '2026-02-18',
-    time: '09:00',
-    status: 'Pendiente',
-  },
-];
+const initialAppointments: Appointment[] = [];
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
-const appointmentsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/appointments`;
+const appointmentsBaseUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/appointments`;
+const appointmentsMyUrl = `${appointmentsBaseUrl}/my-appointments`;
 
 const statusColor = (status: AppointmentStatus) => {
   switch (status) {
@@ -71,6 +58,10 @@ const statusColor = (status: AppointmentStatus) => {
     case 'Reprogramado':
       return 'info';
     case 'Cancelado':
+      return 'default';
+    case 'Completado':
+      return 'success';
+    case 'No asistio':
       return 'default';
     default:
       return 'default';
@@ -83,7 +74,7 @@ const toDateTime = (date: string, time: string) => {
 };
 
 const canModify = (appointment: Appointment) => {
-  if (appointment.status === 'Cancelado') return false;
+  if (['Cancelado', 'Completado', 'No asistio'].includes(appointment.status)) return false;
   const dateTime = toDateTime(appointment.date, appointment.time);
   if (!dateTime) return false;
   const diffHours = (dateTime.getTime() - Date.now()) / 36e5;
@@ -92,27 +83,40 @@ const canModify = (appointment: Appointment) => {
 
 const normalizeStatus = (value: unknown): AppointmentStatus => {
   const normalized = String(value ?? '').toLowerCase();
+  if (['pending', 'pendiente'].includes(normalized)) return 'Pendiente';
   if (['confirmado', 'confirmed'].includes(normalized)) return 'Confirmado';
   if (['reprogramado', 'rescheduled'].includes(normalized)) return 'Reprogramado';
   if (['cancelado', 'canceled', 'cancelled'].includes(normalized)) return 'Cancelado';
+  if (['completed', 'completado'].includes(normalized)) return 'Completado';
+  if (
+    ['no_show', 'no-show', 'no show', 'noasistio', 'no asistio', 'no asistió'].includes(normalized)
+  ) {
+    return 'No asistio';
+  }
   return 'Pendiente';
 };
 
 const resolveDateTime = (raw: ApiAppointment) => {
   const rawDate =
-    (raw.date as string | undefined) ??
     (raw.appointmentDate as string | undefined) ??
+    (raw.date as string | undefined) ??
     (raw.start as string | undefined) ??
     (raw.datetime as string | undefined) ??
     (raw.dateTime as string | undefined);
 
-  const rawTime = (raw.time as string | undefined) ?? (raw.startTime as string | undefined);
+  const rawTime =
+    (raw.appointmentTime as string | undefined) ??
+    (raw.time as string | undefined) ??
+    (raw.startTime as string | undefined);
 
   if (rawDate) {
     const parsed = new Date(rawDate);
     if (!Number.isNaN(parsed.getTime())) {
       const iso = parsed.toISOString();
-      return { date: iso.slice(0, 10), time: iso.slice(11, 16) };
+      return {
+        date: iso.slice(0, 10),
+        time: rawTime ? rawTime.slice(0, 5) : iso.slice(11, 16),
+      };
     }
     if (rawTime) {
       return { date: rawDate.slice(0, 10), time: rawTime.slice(0, 5) };
@@ -133,13 +137,18 @@ const normalizeAppointment = (raw: ApiAppointment, index: number): Appointment =
       `AP-${index + 1}`
   );
   const serviceValue =
+    (raw.service as { name?: string } | undefined)?.name ??
     (raw.service as string | undefined) ??
     (raw.serviceName as string | undefined) ??
     (raw.title as string | undefined) ??
-    (raw.service as { name?: string; title?: string } | undefined)?.name ??
-    (raw.service as { name?: string; title?: string } | undefined)?.title ??
     'Servicio';
+  const serviceId =
+    (raw.serviceId as string | undefined) ??
+    (raw.service as { id?: string } | undefined)?.id;
+  const patientNotes = (raw.patientNotes as string | undefined) ?? (raw.notes as string | undefined);
+  const locationMatch = patientNotes?.match(/Sede:\s*([^|]+)/i);
   const locationValue =
+    locationMatch?.[1]?.trim() ??
     (raw.location as string | undefined) ??
     (raw.branch as string | undefined) ??
     (raw.city as string | undefined) ??
@@ -153,6 +162,17 @@ const normalizeAppointment = (raw: ApiAppointment, index: number): Appointment =
     date: date || new Date().toISOString().slice(0, 10),
     time: time || '09:00',
     status: normalizeStatus(raw.status),
+    serviceId,
+    patientName:
+      (raw.patientName as string | undefined) ??
+      (raw.user as { fullName?: string } | undefined)?.fullName,
+    patientEmail:
+      (raw.patientEmail as string | undefined) ??
+      (raw.user as { email?: string } | undefined)?.email,
+    patientPhone:
+      (raw.patientPhone as string | undefined) ??
+      (raw.user as { phone?: string } | undefined)?.phone,
+    patientNotes,
   };
 };
 
@@ -163,6 +183,7 @@ export default function ClientDashboardPage() {
   const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -196,9 +217,16 @@ export default function ClientDashboardPage() {
       try {
         const token =
           typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
-        const response = await fetch(appointmentsUrl, {
+        if (!token) {
+          if (mounted) {
+            setAppointments([]);
+            setError('Necesitas iniciar sesion para ver tus turnos.');
+          }
+          return;
+        }
+        const response = await fetch(appointmentsMyUrl, {
           headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            Authorization: `Bearer ${token}`,
           },
           signal: controller.signal,
         });
@@ -212,28 +240,31 @@ export default function ClientDashboardPage() {
         } catch {
           parsed = rawText;
         }
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const normalized = parsed.map((item, index) =>
-            normalizeAppointment(item as ApiAppointment, index)
-          );
-          if (mounted) setAppointments(normalized);
-        } else {
-          if (mounted) {
-            setError('No se encontraron turnos en el servidor. Mostrando ejemplo.');
-            setAppointments(initialAppointments);
+        const list = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray((parsed as { data?: unknown }).data)
+            ? ((parsed as { data?: unknown }).data as unknown[])
+            : [];
+        const normalized = list.map((item, index) =>
+          normalizeAppointment(item as ApiAppointment, index)
+        );
+        if (mounted) {
+          setAppointments(normalized);
+          if (normalized.length === 0) {
+            setError('No se encontraron turnos para tu cuenta.');
           }
         }
       } catch (err) {
         if (mounted) {
           setError('No se pudieron cargar los turnos desde el servidor.');
-          setAppointments(initialAppointments);
+          setAppointments([]);
         }
       } finally {
         if (mounted) setLoading(false);
       }
     };
 
-    if (appointmentsUrl) {
+    if (appointmentsMyUrl) {
       loadAppointments();
     } else {
       setLoading(false);
@@ -256,11 +287,17 @@ export default function ClientDashboardPage() {
     try {
       const token =
         typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
-      const response = await fetch(`${appointmentsUrl}/${id}`, {
-        method: 'DELETE',
+      if (!token) {
+        setError('Necesitas iniciar sesion para cancelar un turno.');
+        return;
+      }
+      const response = await fetch(`${appointmentsBaseUrl}/${id}/cancel`, {
+        method: 'POST',
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({}),
       });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -271,6 +308,20 @@ export default function ClientDashboardPage() {
     } catch {
       setError('No se pudo cancelar el turno. Intenta nuevamente.');
     }
+  };
+
+  const handleOpenCancel = (id: string) => {
+    setCancelTargetId(id);
+  };
+
+  const handleCloseCancel = () => {
+    setCancelTargetId(null);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelTargetId) return;
+    await handleCancel(cancelTargetId);
+    setCancelTargetId(null);
   };
 
   const handleOpenReschedule = (appointment: Appointment) => {
@@ -287,32 +338,67 @@ export default function ClientDashboardPage() {
     try {
       const token =
         typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
-      const response = await fetch(`${appointmentsUrl}/${rescheduleTarget.id}`, {
-        method: 'PATCH',
+      if (!token) {
+        setError('Necesitas iniciar sesion para reprogramar un turno.');
+        return;
+      }
+      if (!rescheduleTarget.serviceId) {
+        setError('No se pudo identificar el servicio del turno.');
+        return;
+      }
+      if (!rescheduleTarget.patientName || !rescheduleTarget.patientEmail || !rescheduleTarget.patientPhone) {
+        setError('Faltan datos del paciente para reprogramar.');
+        return;
+      }
+
+      const createResponse = await fetch(appointmentsBaseUrl, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          date: newDate,
-          time: newTime,
-          status: 'Reprogramado',
+          serviceId: rescheduleTarget.serviceId,
+          appointmentDate: newDate,
+          appointmentTime: newTime,
+          patientName: rescheduleTarget.patientName,
+          patientEmail: rescheduleTarget.patientEmail,
+          patientPhone: rescheduleTarget.patientPhone,
+          patientNotes: rescheduleTarget.patientNotes,
         }),
       });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (!createResponse.ok) {
+        throw new Error(`HTTP ${createResponse.status}`);
       }
+      const createdRaw = (await createResponse.json()) as ApiAppointment;
+
+      const cancelResponse = await fetch(`${appointmentsBaseUrl}/${rescheduleTarget.id}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ cancellationReason: 'Reprogramado por el paciente' }),
+      });
+
+      if (!cancelResponse.ok) {
+        const createdId = String((createdRaw as { id?: string }).id ?? '');
+        if (createdId) {
+          await fetch(`${appointmentsBaseUrl}/${createdId}/cancel`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ cancellationReason: 'Reprogramacion fallida' }),
+          });
+        }
+        throw new Error('No se pudo cancelar el turno anterior.');
+      }
+
+      const normalized = normalizeAppointment(createdRaw, 0);
       setAppointments((prev) =>
-        prev.map((appt) =>
-          appt.id === rescheduleTarget.id
-            ? {
-                ...appt,
-                date: newDate,
-                time: newTime,
-                status: 'Reprogramado',
-              }
-            : appt
-        )
+        [normalized, ...prev.filter((appt) => appt.id !== rescheduleTarget.id)]
       );
       setRescheduleOpen(false);
     } catch {
@@ -403,7 +489,7 @@ export default function ClientDashboardPage() {
                     <Button
                       variant="text"
                       disabled={!canEdit}
-                      onClick={() => handleCancel(appt.id)}
+                      onClick={() => handleOpenCancel(appt.id)}
                       sx={{ color: '#B00020' }}
                     >
                       Cancelar
@@ -438,6 +524,29 @@ export default function ClientDashboardPage() {
           <Button onClick={() => setRescheduleOpen(false)}>Cancelar</Button>
           <Button variant="contained" onClick={handleConfirmReschedule}>
             Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(cancelTargetId)} onClose={handleCloseCancel} fullWidth maxWidth="xs">
+        <DialogTitle>Eliminar turno</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: '#6B6B6B' }}>
+            ¿Está seguro que quiere eliminar el turno?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={handleCloseCancel}>Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={handleConfirmCancel}
+            sx={{
+              backgroundColor: '#EEBBC3',
+              color: '#2C2C2C',
+              '&:hover': { backgroundColor: '#FFB8C6' },
+            }}
+          >
+            Eliminar
           </Button>
         </DialogActions>
       </Dialog>
