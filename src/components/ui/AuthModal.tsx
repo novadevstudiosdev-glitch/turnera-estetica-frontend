@@ -276,7 +276,6 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCallback,
         auto_select: false,
-        cancel_on_tap_outside: true,
       });
       googleInitializedRef.current = true;
       console.log('✅ Google Sign-In inicializado');
