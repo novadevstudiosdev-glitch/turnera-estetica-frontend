@@ -1,0 +1,123 @@
+﻿<!doctype html>
+<html>
+  <head>
+    <title>Test Google Login</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        text-align: center;
+      }
+      .info {
+        background: #f0f0f0;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+        text-align: left;
+      }
+      pre {
+        background: #272822;
+        color: #f8f8f2;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔐 Test Google OAuth</h1>
+
+    <div
+      id="g_id_onload"
+      data-client_id="62504252459-rt9gte92lt0qvli08no3sn72ev8o85c8.apps.googleusercontent.com"
+      data-callback="handleCredentialResponse"
+    ></div>
+
+    <div
+      class="g_id_signin"
+      data-type="standard"
+      data-size="large"
+      data-theme="outline"
+      data-text="sign_in_with"
+      data-shape="rectangular"
+      data-logo_alignment="left"
+    ></div>
+
+    <div class="info">
+      <h3>📋 Estado:</h3>
+      <p id="status">Esperando login con Google...</p>
+    </div>
+
+    <div class="info" id="tokenDiv" style="display: none">
+      <h3>🎫 Google ID Token:</h3>
+      <pre id="googleToken"></pre>
+      <button onclick="copyToken()">📋 Copiar Token</button>
+    </div>
+
+    <div class="info" id="responseDiv" style="display: none">
+      <h3>✅ Respuesta del Backend:</h3>
+      <pre id="response"></pre>
+    </div>
+
+    <script>
+      function handleCredentialResponse(response) {
+        const googleToken = response.credential;
+
+        // Mostrar el token
+        document.getElementById('status').textContent = '✅ Login con Google exitoso!';
+        document.getElementById('googleToken').textContent = googleToken;
+        document.getElementById('tokenDiv').style.display = 'block';
+
+        // Llamar al backend
+        authenticateWithBackend(googleToken);
+      }
+
+      async function authenticateWithBackend(googleToken) {
+        try {
+          document.getElementById('status').textContent = '⏳ Autenticando con el backend...';
+
+          const response = await fetch('http://localhost:3000/api/auth/google', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              googleToken: googleToken,
+              recaptchaToken: 'fake-for-testing', // En desarrollo
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            document.getElementById('status').textContent = '✅ Autenticación exitosa!';
+            document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            document.getElementById('responseDiv').style.display = 'block';
+
+            // Guardar token en localStorage (opcional)
+            localStorage.setItem('accessToken', data.accessToken);
+
+            alert('✅ Login exitoso! Token guardado en localStorage');
+          } else {
+            document.getElementById('status').textContent = '❌ Error: ' + data.message;
+            document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            document.getElementById('responseDiv').style.display = 'block';
+          }
+        } catch (error) {
+          document.getElementById('status').textContent = '❌ Error: ' + error.message;
+          console.error('Error:', error);
+        }
+      }
+
+      function copyToken() {
+        const token = document.getElementById('googleToken').textContent;
+        navigator.clipboard.writeText(token);
+        alert('Token copiado al portapapeles!');
+      }
+    </script>
+  </body>
+</html>
