@@ -19,7 +19,8 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type AuthModalProps = {
   open: boolean;
@@ -85,6 +86,8 @@ const GoogleLogo = () => (
 );
 
 export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [registerName, setRegisterName] = useState('');
@@ -97,6 +100,14 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginNotice, setLoginNotice] = useState<string | null>(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyNotice, setVerifyNotice] = useState<string | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotNotice, setForgotNotice] = useState<string | null>(null);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [registerSuccessOpen, setRegisterSuccessOpen] = useState(false);
@@ -104,7 +115,38 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
   // Referencias para Google OAuth
   const googleInitializedRef = useRef(false);
 
-  const resetValidation = () => setSubmitted(false);
+  const nextPath = useMemo(() => {
+    const raw = searchParams?.get('next') ?? '';
+    if (!raw) return '';
+    if (!raw.startsWith('/') || raw.startsWith('//')) return '';
+    return raw;
+  }, [searchParams]);
+
+  const redirectAfterLogin = () => {
+    if (!nextPath) return;
+    router.replace(nextPath);
+  };
+
+  const resetValidation = () => {
+    setSubmitted(false);
+    setLoginError(null);
+    setLoginNotice(null);
+    setNeedsVerification(false);
+    setVerifyNotice(null);
+    setForgotOpen(false);
+    setForgotNotice(null);
+  };
+
+  useEffect(() => {
+    if (!open) {
+      setLoginNotice(null);
+      setNeedsVerification(false);
+      setVerifyNotice(null);
+      setForgotOpen(false);
+      setForgotEmail('');
+      setForgotNotice(null);
+    }
+  }, [open]);
 
   const loginErrors = useMemo(() => {
     if (!submitted) return { email: false, password: false };
@@ -128,6 +170,9 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
     setSubmitted(true);
     if (!loginErrors.email && !loginErrors.password) {
       setLoginError(null);
+      setLoginNotice(null);
+      setNeedsVerification(false);
+      setVerifyNotice(null);
       setLoginLoading(true);
 
       try {
@@ -180,7 +225,14 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
           window.dispatchEvent(new Event('auth-changed'));
         }
 
+        if (!data.user.emailVerified) {
+          setNeedsVerification(true);
+          setLoginNotice('Tu cuenta aún no está verificada. Podemos reenviar el correo.');
+          return;
+        }
+
         onClose();
+        redirectAfterLogin();
       } catch (error) {
         setLoginError(error instanceof Error ? error.message : 'Error al iniciar sesión.');
       } finally {
@@ -235,6 +287,87 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
       } finally {
         setRegisterLoading(false);
       }
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setVerifyNotice(null);
+    setVerifyLoading(true);
+    try {
+      if (typeof window === 'undefined') return;
+      const token = localStorage.getItem('turnera_access_token');
+      if (!token) {
+        setVerifyNotice('Inicia sesión para enviar el correo de verificación.');
+        return;
+      }
+      const baseUrl = API_BASE_URL.replace(/\/$/, '');
+      const resendUrl = `${baseUrl}/api/auth/resend-verification`;
+      const response = await fetch(resendUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        const errorData = (await response.json().catch(() => null)) as {
+          message?: string | string[];
+        } | null;
+        const message = Array.isArray(errorData?.message)
+          ? errorData?.message.join(' ')
+          : errorData?.message;
+        throw new Error(message ?? 'No se pudo enviar el correo de verificación.');
+      }
+      setVerifyNotice('Te enviamos un correo para verificar tu cuenta.');
+    } catch (error) {
+      setVerifyNotice(error instanceof Error ? error.message : 'No se pudo enviar el correo.');
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setForgotNotice(null);
+    const targetEmail = (forgotEmail || loginEmail).trim();
+    if (!targetEmail || !isValidEmail(targetEmail)) {
+      setForgotNotice('Ingresá un email válido para continuar.');
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      const recaptchaToken = await getRecaptchaToken('forgot_password');
+      const baseUrl = API_BASE_URL.replace(/\/$/, '');
+      const forgotUrl = `${baseUrl}/api/auth/forgot-password`;
+      const response = await fetch(forgotUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: targetEmail,
+          recaptchaToken,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json().catch(() => null)) as {
+          message?: string | string[];
+        } | null;
+        const message = Array.isArray(errorData?.message)
+          ? errorData?.message.join(' ')
+          : errorData?.message;
+        throw new Error(message ?? 'No se pudo enviar el email de recuperacion.');
+      }
+
+      setForgotNotice(
+        'Si el email existe, vas a recibir instrucciones para recuperar la contraseña.'
+      );
+    } catch (error) {
+      setForgotNotice(
+        error instanceof Error ? error.message : 'No se pudo enviar el email de recuperacion.'
+      );
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -345,6 +478,7 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
       console.log('✅ Login con Google exitoso');
       setGoogleLoading(false);
       onClose();
+      redirectAfterLogin();
     } catch (error) {
       console.error('❌ Error en Google auth:', error);
       setGoogleError(error instanceof Error ? error.message : 'Error al autenticar con Google.');
@@ -577,7 +711,7 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
                   onClose={() => setRegisterSuccessOpen(false)}
                   sx={{ mb: 1 }}
                 >
-                  Registro exitoso. Inicia sesión para continuar.
+                  Registro exitoso. Te enviamos un correo de verificación. Revisá tu bandeja o spam.
                 </Alert>
               </Collapse>
               <TextField
@@ -623,6 +757,93 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
               {loginError ? (
                 <Typography sx={{ color: '#B00020', fontSize: '0.9rem' }}>{loginError}</Typography>
               ) : null}
+              {loginNotice ? (
+                <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>{loginNotice}</Typography>
+              ) : null}
+
+              {needsVerification && (
+                <Box sx={{ display: 'grid', gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    onClick={handleResendVerification}
+                    disabled={verifyLoading}
+                    sx={{
+                      borderRadius: '999px',
+                      textTransform: 'none',
+                      borderColor: '#E9E4E2',
+                      color: '#6B6B6B',
+                      '&:hover': {
+                        borderColor: '#EEBBC3',
+                        backgroundColor: '#FDF4F6',
+                      },
+                    }}
+                  >
+                    {verifyLoading ? 'Enviando...' : 'Enviar correo de verificación'}
+                  </Button>
+                  {verifyNotice ? (
+                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.85rem' }}>
+                      {verifyNotice}
+                    </Typography>
+                  ) : null}
+                </Box>
+              )}
+
+              <Box sx={{ display: 'grid', gap: 1 }}>
+                <Button
+                  variant="text"
+                  onClick={() =>
+                    setForgotOpen((prev) => {
+                      const next = !prev;
+                      if (next && !forgotEmail) {
+                        setForgotEmail(loginEmail);
+                      }
+                      return next;
+                    })
+                  }
+                  sx={{
+                    textTransform: 'none',
+                    color: '#8B6B6B',
+                    justifyContent: 'flex-start',
+                    px: 0,
+                  }}
+                >
+                  ¿Olvidaste tu contraseña?
+                </Button>
+                <Collapse in={forgotOpen}>
+                  <Box sx={{ display: 'grid', gap: 1.2 }}>
+                    <TextField
+                      fullWidth
+                      label="Email para recuperar"
+                      variant="outlined"
+                      value={forgotEmail}
+                      onChange={(event) => setForgotEmail(event.target.value)}
+                      sx={textFieldSx}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={handleForgotPassword}
+                      disabled={forgotLoading}
+                      sx={{
+                        borderRadius: '999px',
+                        textTransform: 'none',
+                        borderColor: '#E9E4E2',
+                        color: '#6B6B6B',
+                        '&:hover': {
+                          borderColor: '#EEBBC3',
+                          backgroundColor: '#FDF4F6',
+                        },
+                      }}
+                    >
+                      {forgotLoading ? 'Enviando...' : 'Enviar instrucciones'}
+                    </Button>
+                    {forgotNotice ? (
+                      <Typography sx={{ color: '#6B6B6B', fontSize: '0.85rem' }}>
+                        {forgotNotice}
+                      </Typography>
+                    ) : null}
+                  </Box>
+                </Collapse>
+              </Box>
             </Box>
           )}
 
@@ -713,7 +934,7 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
           onClose={() => setRegisterSuccessOpen(false)}
           sx={{ width: '100%' }}
         >
-          Registro exitoso
+          Registro exitoso. Te enviamos un correo de verificación. Revisá tu bandeja o spam.
         </Alert>
       </Snackbar>
     </>

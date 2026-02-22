@@ -5,8 +5,10 @@ import {
   Box,
   Button,
   Chip,
+  DialogActions,
   Dialog,
   DialogContent,
+  DialogTitle,
   Grow,
   IconButton,
   MenuItem,
@@ -20,7 +22,6 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   LOCATIONS,
   LocationKey,
@@ -36,7 +37,6 @@ type ServiceOption = {
 };
 
 export function ReservaModal() {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationKey | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
@@ -49,12 +49,15 @@ export function ReservaModal() {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [servicesError, setServicesError] = useState<string | null>(null);
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
   const appointmentsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/appointments`;
   const servicesUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/services`;
+  const paymentUrl = (process.env.NEXT_PUBLIC_PAYMENT_URL ?? '').trim();
+  const hasPaymentUrl = paymentUrl.length > 0;
 
   useEffect(() => {
     const handler = () => setOpen(true);
@@ -118,7 +121,10 @@ export function ReservaModal() {
     };
   }, [apiBaseUrl, servicesUrl]);
 
-  const handleClose = () => setOpen(false);
+  const handleClose = () => {
+    setOpen(false);
+    setPaymentDialogOpen(false);
+  };
   const handleLocationChange = (location: LocationKey) => {
     setSelectedLocation(location);
     setSelectedDate('');
@@ -225,12 +231,12 @@ export function ReservaModal() {
     setAlertOpen(true);
   };
 
-  const handleConfirm = async () => {
-    if (typeof window === 'undefined') return;
+  const validateReservation = () => {
+    if (typeof window === 'undefined') return false;
     const token = localStorage.getItem('turnera_access_token');
     if (!token) {
       showAlert('Para confirmar la reserva necesitas iniciar sesion.');
-      return;
+      return false;
     }
     if (
       !selectedLocation ||
@@ -242,23 +248,35 @@ export function ReservaModal() {
       !patientEmail
     ) {
       showAlert('Completa todos los datos para confirmar la reserva.');
-      return;
+      return false;
     }
     if (!selectedService) {
       showAlert('Selecciona un tratamiento valido para continuar.');
-      return;
+      return false;
     }
     if (!apiBaseUrl) {
       showAlert('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
-      return;
+      return false;
     }
     if (servicesError) {
       showAlert(servicesError);
-      return;
+      return false;
     }
+    if (!hasPaymentUrl) {
+      showAlert('Falta configurar la pasarela de pago.');
+      return false;
+    }
+    return true;
+  };
 
+  const createAppointment = async () => {
     setIsSubmitting(true);
     try {
+      const token = localStorage.getItem('turnera_access_token');
+      if (!token) {
+        showAlert('Para confirmar la reserva necesitas iniciar sesion.');
+        return false;
+      }
       const notesParts: string[] = [];
       if (selectedLocationLabel) {
         notesParts.push(`Sede: ${selectedLocationLabel}`);
@@ -289,12 +307,27 @@ export function ReservaModal() {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      setOpen(false);
-      router.push('/dashboard');
+      return true;
     } catch {
       showAlert('No se pudo confirmar la reserva. Intenta nuevamente.');
+      return false;
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirm = () => {
+    if (!validateReservation()) return;
+    setPaymentDialogOpen(true);
+  };
+
+  const handleProceedToPayment = async () => {
+    const ok = await createAppointment();
+    if (!ok) return;
+    setPaymentDialogOpen(false);
+    setOpen(false);
+    if (typeof window !== 'undefined') {
+      window.location.href = paymentUrl;
     }
   };
 
@@ -322,13 +355,13 @@ export function ReservaModal() {
       }}
     >
       <DialogContent sx={{ p: { xs: 3, md: 5 }, position: 'relative' }}>
-        <Box
-          component="form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void handleConfirm();
-          }}
-        >
+          <Box
+            component="form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleConfirm();
+            }}
+          >
           <IconButton
             aria-label="Cerrar"
             onClick={handleClose}
@@ -598,6 +631,10 @@ export function ReservaModal() {
             </Typography>
           </Box>
 
+          <Typography sx={{ mb: 2, fontSize: '0.9rem', color: '#8B6B6B', textAlign: 'center' }}>
+            La consulta es paga. Al confirmar seras redirigido al pago.
+          </Typography>
+
           <Button
             fullWidth
             variant="contained"
@@ -668,6 +705,36 @@ export function ReservaModal() {
           {alertMessage}
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={paymentDialogOpen}
+        onClose={() => setPaymentDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Consulta paga</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: '#6B6B6B', lineHeight: 1.7 }}>
+            La consulta tiene costo. Al continuar vas a ser redirigido a la pasarela de pago para
+            completar la reserva.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setPaymentDialogOpen(false)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={handleProceedToPayment}
+            disabled={isSubmitting}
+            sx={{
+              backgroundColor: '#EEBBC3',
+              color: '#2C2C2C',
+              '&:hover': { backgroundColor: '#FFB8C6' },
+            }}
+          >
+            Ir a pagar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }

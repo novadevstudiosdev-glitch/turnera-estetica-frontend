@@ -30,7 +30,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { AuthModal } from '../ui/AuthModal';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { keyframes } from '@mui/system';
 import { products } from '@/lib/data';
 
@@ -115,6 +115,7 @@ export function Navbar() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [accountAnchorEl, setAccountAnchorEl] = useState<null | HTMLElement>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const displayName = userName
     ? userName.includes('@')
       ? userName.split('@')[0]
@@ -131,6 +132,26 @@ export function Navbar() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const authParam = searchParams?.get('auth') ?? searchParams?.get('login');
+    const registerParam = searchParams?.get('register');
+    const tabParam = searchParams?.get('tab');
+    const shouldOpen =
+      authParam === 'login' ||
+      authParam === '1' ||
+      authParam === 'true' ||
+      authParam === 'register' ||
+      registerParam === '1' ||
+      registerParam === 'true' ||
+      tabParam === 'register';
+    if (!shouldOpen) return;
+    const token = localStorage.getItem('turnera_access_token');
+    if (token) return;
+    setAuthOpen(true);
+    setTab(authParam === 'register' || registerParam || tabParam === 'register' ? 1 : 0);
+  }, [searchParams]);
 
   useEffect(() => {
     const readUser = () => {
