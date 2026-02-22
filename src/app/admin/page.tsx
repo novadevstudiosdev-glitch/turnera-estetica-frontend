@@ -366,7 +366,7 @@ function AdminDashboardContent() {
       .map((appt) => ({ appt, dateTime: toDateTime(appt) }))
       .filter(
         (item): item is { appt: AdminAppointment; dateTime: Date } =>
-          Boolean(item.dateTime) &&
+          item.dateTime !== null &&
           item.dateTime >= now &&
           item.appt.status !== 'Cancelado'
       )

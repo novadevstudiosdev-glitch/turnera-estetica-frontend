@@ -284,6 +284,10 @@ export function ReservaModal() {
       if (summaryNote) {
         notesParts.push(`Motivo: ${summaryNote}`);
       }
+      if (!selectedService) {
+        showAlert('Selecciona un tratamiento valido para continuar.');
+        return false;
+      }
       const payload = {
         serviceId: selectedService.id,
         appointmentDate: selectedDate,
