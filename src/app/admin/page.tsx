@@ -1,43 +1,13 @@
 'use client';
 
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  MenuItem,
-  Skeleton,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Card, CardContent, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Skeleton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
-type AdminStatus =
-  | 'Pendiente'
-  | 'Confirmado'
-  | 'Reprogramado'
-  | 'Cancelado'
-  | 'Completado'
-  | 'No asistio';
+type AdminStatus = 'Pendiente' | 'Confirmado' | 'Reprogramado' | 'Cancelado' | 'Completado' | 'No asistio';
 
 type AdminAppointment = {
   id: string;
@@ -83,9 +53,7 @@ const normalizeStatus = (value: unknown): AdminStatus => {
   if (['reprogramado', 'rescheduled'].includes(normalized)) return 'Reprogramado';
   if (['cancelado', 'canceled', 'cancelled'].includes(normalized)) return 'Cancelado';
   if (['completed', 'completado'].includes(normalized)) return 'Completado';
-  if (
-    ['no_show', 'no-show', 'no show', 'noasistio', 'no asistio', 'no asistió'].includes(normalized)
-  ) {
+  if (['no_show', 'no-show', 'no show', 'noasistio', 'no asistio', 'no asistió'].includes(normalized)) {
     return 'No asistio';
   }
   return 'Pendiente';
@@ -110,17 +78,9 @@ const toApiStatus = (status: AdminStatus) => {
 };
 
 const resolveDateTime = (raw: ApiAppointment) => {
-  const rawDate =
-    (raw.appointmentDate as string | undefined) ??
-    (raw.date as string | undefined) ??
-    (raw.start as string | undefined) ??
-    (raw.datetime as string | undefined) ??
-    (raw.dateTime as string | undefined);
+  const rawDate = (raw.appointmentDate as string | undefined) ?? (raw.date as string | undefined) ?? (raw.start as string | undefined) ?? (raw.datetime as string | undefined) ?? (raw.dateTime as string | undefined);
 
-  const rawTime =
-    (raw.appointmentTime as string | undefined) ??
-    (raw.time as string | undefined) ??
-    (raw.startTime as string | undefined);
+  const rawTime = (raw.appointmentTime as string | undefined) ?? (raw.time as string | undefined) ?? (raw.startTime as string | undefined);
 
   if (rawDate) {
     const parsed = new Date(rawDate);
@@ -143,34 +103,12 @@ const resolveDateTime = (raw: ApiAppointment) => {
 };
 
 const normalizeAppointment = (raw: ApiAppointment, index: number): AdminAppointment => {
-  const id = String(
-    (raw.id as string | number | undefined) ??
-      (raw._id as string | number | undefined) ??
-      (raw.appointmentId as string | number | undefined) ??
-      `AP-${index + 1}`
-  );
-  const serviceValue =
-    (raw.service as { name?: string } | undefined)?.name ??
-    (raw.service as string | undefined) ??
-    (raw.serviceName as string | undefined) ??
-    (raw.title as string | undefined) ??
-    'Servicio';
+  const id = String((raw.id as string | number | undefined) ?? (raw._id as string | number | undefined) ?? (raw.appointmentId as string | number | undefined) ?? `AP-${index + 1}`);
+  const serviceValue = (raw.service as { name?: string } | undefined)?.name ?? (raw.service as string | undefined) ?? (raw.serviceName as string | undefined) ?? (raw.title as string | undefined) ?? 'Servicio';
   const notesValue = (raw.patientNotes as string | undefined) ?? (raw.notes as string | undefined) ?? '';
   const locationMatch = notesValue.match(/Sede:\s*([^|]+)/i);
-  const locationValue =
-    locationMatch?.[1]?.trim() ??
-    (raw.location as string | undefined) ??
-    (raw.branch as string | undefined) ??
-    (raw.city as string | undefined) ??
-    (raw.location as { name?: string } | undefined)?.name ??
-    'Sucursal';
-  const clientValue =
-    (raw.patientName as string | undefined) ??
-    (raw.clientName as string | undefined) ??
-    (raw.customerName as string | undefined) ??
-    (raw.user as { fullName?: string; name?: string } | undefined)?.fullName ??
-    (raw.user as { fullName?: string; name?: string } | undefined)?.name ??
-    'Cliente';
+  const locationValue = locationMatch?.[1]?.trim() ?? (raw.location as string | undefined) ?? (raw.branch as string | undefined) ?? (raw.city as string | undefined) ?? (raw.location as { name?: string } | undefined)?.name ?? 'Sucursal';
+  const clientValue = (raw.patientName as string | undefined) ?? (raw.clientName as string | undefined) ?? (raw.customerName as string | undefined) ?? (raw.user as { fullName?: string; name?: string } | undefined)?.fullName ?? (raw.user as { fullName?: string; name?: string } | undefined)?.name ?? 'Cliente';
   const { date, time } = resolveDateTime(raw);
   return {
     id,
@@ -180,11 +118,7 @@ const normalizeAppointment = (raw: ApiAppointment, index: number): AdminAppointm
     date: date || new Date().toISOString().slice(0, 10),
     time: time || '09:00',
     status: normalizeStatus(raw.status),
-    durationMinutes:
-      (raw.durationMinutes as number | undefined) ??
-      (raw.duration as number | undefined) ??
-      (raw.durationMin as number | undefined) ??
-      (raw.service as { durationMinutes?: number } | undefined)?.durationMinutes,
+    durationMinutes: (raw.durationMinutes as number | undefined) ?? (raw.duration as number | undefined) ?? (raw.durationMin as number | undefined) ?? (raw.service as { durationMinutes?: number } | undefined)?.durationMinutes,
   };
 };
 
@@ -234,10 +168,7 @@ function AdminDashboardContent() {
     return start;
   }, [monthOffset]);
 
-  const monthLabel = useMemo(
-    () => monthStart.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }),
-    [monthStart]
-  );
+  const monthLabel = useMemo(() => monthStart.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }), [monthStart]);
 
   const monthGridStart = useMemo(() => {
     const start = new Date(monthStart);
@@ -257,9 +188,7 @@ function AdminDashboardContent() {
   }, [monthGridStart]);
 
   useEffect(() => {
-    const inSameMonth =
-      selectedDate.getFullYear() === monthStart.getFullYear() &&
-      selectedDate.getMonth() === monthStart.getMonth();
+    const inSameMonth = selectedDate.getFullYear() === monthStart.getFullYear() && selectedDate.getMonth() === monthStart.getMonth();
     if (!inSameMonth) {
       setSelectedDate(monthStart);
     }
@@ -289,14 +218,11 @@ function AdminDashboardContent() {
     return hours * 60 + mins;
   };
 
-  const formatDayLabel = (date: Date) =>
-    date.toLocaleDateString('es-AR', { weekday: 'short' });
+  const formatDayLabel = (date: Date) => date.toLocaleDateString('es-AR', { weekday: 'short' });
 
-  const isSameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  const isSameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
-  const isSameMonth = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+  const isSameMonth = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 
   const getAppointmentForSlot = (date: Date, time: string) => {
     const dateKey = date.toISOString().slice(0, 10);
@@ -326,12 +252,7 @@ function AdminDashboardContent() {
     let list = appointments;
 
     if (normalizedSearch) {
-      list = list.filter((appt) =>
-        [appt.clientName, appt.service, appt.location]
-          .join(' ')
-          .toLowerCase()
-          .includes(normalizedSearch)
-      );
+      list = list.filter((appt) => [appt.clientName, appt.service, appt.location].join(' ').toLowerCase().includes(normalizedSearch));
     }
 
     if (statusFilter !== 'Todos') {
@@ -355,21 +276,13 @@ function AdminDashboardContent() {
     return sorted;
   }, [appointments, locationFilter, searchTerm, sortBy, statusFilter]);
 
-  const todayAppointments = useMemo(
-    () => appointments.filter((appt) => appt.date === todayKey),
-    [appointments, todayKey]
-  );
+  const todayAppointments = useMemo(() => appointments.filter((appt) => appt.date === todayKey), [appointments, todayKey]);
 
   const upcomingAppointments = useMemo(() => {
     const now = new Date();
     return appointments
       .map((appt) => ({ appt, dateTime: toDateTime(appt) }))
-      .filter(
-        (item): item is { appt: AdminAppointment; dateTime: Date } =>
-          item.dateTime !== null &&
-          item.dateTime >= now &&
-          item.appt.status !== 'Cancelado'
-      )
+      .filter((item): item is { appt: AdminAppointment; dateTime: Date } => item.dateTime !== null && item.dateTime >= now && item.appt.status !== 'Cancelado')
       .sort((a, b) => a.dateTime.getTime() - b.dateTime.getTime())
       .slice(0, 4)
       .map((item) => item.appt);
@@ -406,8 +319,7 @@ function AdminDashboardContent() {
       setLoading(true);
       setError(null);
       try {
-        const token =
-          typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
+        const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
         if (!token) {
           if (mounted) {
             setAppointments([]);
@@ -441,14 +353,8 @@ function AdminDashboardContent() {
         } catch {
           parsed = rawText;
         }
-        const list = Array.isArray(parsed)
-          ? parsed
-          : Array.isArray((parsed as { data?: unknown }).data)
-            ? ((parsed as { data?: unknown }).data as unknown[])
-            : [];
-        const normalized = list.map((item, index) =>
-          normalizeAppointment(item as ApiAppointment, index)
-        );
+        const list = Array.isArray(parsed) ? parsed : Array.isArray((parsed as { data?: unknown }).data) ? ((parsed as { data?: unknown }).data as unknown[]) : [];
+        const normalized = list.map((item, index) => normalizeAppointment(item as ApiAppointment, index));
         if (mounted) {
           setAppointments(normalized);
           if (normalized.length === 0) {
@@ -491,8 +397,7 @@ function AdminDashboardContent() {
   const handleSaveEdit = async () => {
     if (!editing) return;
     try {
-      const token =
-        typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
       if (!token) {
         setError('Necesitas iniciar sesion como admin para actualizar un turno.');
         return;
@@ -514,9 +419,7 @@ function AdminDashboardContent() {
       }
       const updatedRaw = (await response.json()) as ApiAppointment;
       const normalized = normalizeAppointment(updatedRaw, 0);
-      setAppointments((prev) =>
-        prev.map((appt) => (appt.id === editing.id ? normalized : appt))
-      );
+      setAppointments((prev) => prev.map((appt) => (appt.id === editing.id ? normalized : appt)));
       setEditing(null);
     } catch {
       setError('No se pudo actualizar el turno. Intenta nuevamente.');
@@ -525,8 +428,7 @@ function AdminDashboardContent() {
 
   const handleCancelAppointment = async (id: string, reason?: string) => {
     try {
-      const token =
-        typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
       if (!token) {
         setError('Necesitas iniciar sesion como admin para cancelar un turno.');
         return;
@@ -545,9 +447,7 @@ function AdminDashboardContent() {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      setAppointments((prev) =>
-        prev.map((appt) => (appt.id === id ? { ...appt, status: 'Cancelado' } : appt))
-      );
+      setAppointments((prev) => prev.map((appt) => (appt.id === id ? { ...appt, status: 'Cancelado' } : appt)));
     } catch {
       setError('No se pudo cancelar el turno. Intenta nuevamente.');
     }
@@ -583,9 +483,7 @@ function AdminDashboardContent() {
               mb: 3,
             }}
           >
-            <Typography sx={{ fontWeight: 700, color: '#B02E2E' }}>
-              Solo administradores pueden ver este panel.
-            </Typography>
+            <Typography sx={{ fontWeight: 700, color: '#B02E2E' }}>Solo administradores pueden ver este panel.</Typography>
           </Box>
         )}
         <Box
@@ -602,9 +500,7 @@ function AdminDashboardContent() {
             <Typography variant="h4" sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>
               Panel de Administracion
             </Typography>
-            <Typography sx={{ color: '#6B6B6B' }}>
-              Gestiona turnos, estados y disponibilidad con una vista clara.
-            </Typography>
+            <Typography sx={{ color: '#6B6B6B' }}>Gestiona turnos, estados y disponibilidad con una vista clara.</Typography>
           </Box>
           <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap' }}>
             <Button
@@ -677,7 +573,7 @@ function AdminDashboardContent() {
             mb: 4,
           }}
         >
-          {(loading
+          {loading
             ? Array.from({ length: 4 }).map((_, index) => (
                 <Card
                   key={`kpi-skeleton-${index}`}
@@ -717,18 +613,14 @@ function AdminDashboardContent() {
                   }}
                 >
                   <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
-                    <Typography sx={{ color: '#7A7A7A', fontSize: '0.86rem', mb: 1 }}>
-                      {card.label}
-                    </Typography>
+                    <Typography sx={{ color: '#7A7A7A', fontSize: '0.86rem', mb: 1 }}>{card.label}</Typography>
                     <Typography variant="h4" sx={{ fontWeight: 700, color: '#2C2C2C' }}>
                       {card.value}
                     </Typography>
-                    <Typography sx={{ color: '#9C6B6B', fontSize: '0.8rem', mt: 1 }}>
-                      {card.helper}
-                    </Typography>
+                    <Typography sx={{ color: '#9C6B6B', fontSize: '0.8rem', mt: 1 }}>{card.helper}</Typography>
                   </CardContent>
                 </Card>
-              )))}
+              ))}
         </Box>
 
         <Stack spacing={4}>
@@ -749,12 +641,8 @@ function AdminDashboardContent() {
               <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
                 <Stack spacing={2.5}>
                   <Box>
-                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>
-                      Acciones rapidas
-                    </Typography>
-                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>
-                      Atajos frecuentes para gestionar el dia.
-                    </Typography>
+                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>Acciones rapidas</Typography>
+                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>Atajos frecuentes para gestionar el dia.</Typography>
                   </Box>
                   <Box
                     sx={{
@@ -812,12 +700,8 @@ function AdminDashboardContent() {
               <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
                 <Stack spacing={2.5}>
                   <Box>
-                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>
-                      Resumen del dia
-                    </Typography>
-                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>
-                      Vista rapida de actividad y proximos turnos.
-                    </Typography>
+                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>Resumen del dia</Typography>
+                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>Vista rapida de actividad y proximos turnos.</Typography>
                   </Box>
                   <Box
                     sx={{
@@ -834,12 +718,8 @@ function AdminDashboardContent() {
                         p: 1.5,
                       }}
                     >
-                      <Typography sx={{ fontSize: '0.82rem', color: '#8B6B6B' }}>
-                        Turnos hoy
-                      </Typography>
-                      <Typography sx={{ fontWeight: 700, color: '#2C2C2C', fontSize: '1.4rem' }}>
-                        {todayAppointments.length}
-                      </Typography>
+                      <Typography sx={{ fontSize: '0.82rem', color: '#8B6B6B' }}>Turnos hoy</Typography>
+                      <Typography sx={{ fontWeight: 700, color: '#2C2C2C', fontSize: '1.4rem' }}>{todayAppointments.length}</Typography>
                     </Box>
                     <Box
                       sx={{
@@ -849,18 +729,12 @@ function AdminDashboardContent() {
                         p: 1.5,
                       }}
                     >
-                      <Typography sx={{ fontSize: '0.82rem', color: '#8B6B6B' }}>
-                        Pendientes
-                      </Typography>
-                      <Typography sx={{ fontWeight: 700, color: '#2C2C2C', fontSize: '1.4rem' }}>
-                        {stats.pending}
-                      </Typography>
+                      <Typography sx={{ fontSize: '0.82rem', color: '#8B6B6B' }}>Pendientes</Typography>
+                      <Typography sx={{ fontWeight: 700, color: '#2C2C2C', fontSize: '1.4rem' }}>{stats.pending}</Typography>
                     </Box>
                   </Box>
                   <Box>
-                    <Typography sx={{ fontWeight: 600, color: '#2C2C2C', mb: 1 }}>
-                      Proximos turnos
-                    </Typography>
+                    <Typography sx={{ fontWeight: 600, color: '#2C2C2C', mb: 1 }}>Proximos turnos</Typography>
                     {loading ? (
                       <Stack spacing={1}>
                         {Array.from({ length: 3 }).map((_, index) => (
@@ -883,9 +757,7 @@ function AdminDashboardContent() {
                             }}
                           >
                             <Box>
-                              <Typography sx={{ fontWeight: 600, color: '#2C2C2C' }}>
-                                {appt.clientName}
-                              </Typography>
+                              <Typography sx={{ fontWeight: 600, color: '#2C2C2C' }}>{appt.clientName}</Typography>
                               <Typography sx={{ fontSize: '0.82rem', color: '#6B6B6B' }}>
                                 {appt.service} - {appt.time}
                               </Typography>
@@ -903,9 +775,7 @@ function AdminDashboardContent() {
                           textAlign: 'center',
                         }}
                       >
-                        <Typography sx={{ color: '#8B6B6B', fontSize: '0.9rem' }}>
-                          No hay turnos proximos cargados.
-                        </Typography>
+                        <Typography sx={{ color: '#8B6B6B', fontSize: '0.9rem' }}>No hay turnos proximos cargados.</Typography>
                       </Box>
                     )}
                   </Box>
@@ -924,73 +794,28 @@ function AdminDashboardContent() {
             <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
               <Stack spacing={2.5}>
                 <Box>
-                  <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>
-                    Listado de turnos
-                  </Typography>
-                  <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>
-                    Filtra y gestiona los turnos desde una vista ordenada.
-                  </Typography>
+                  <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>Listado de turnos</Typography>
+                  <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>Filtra y gestiona los turnos desde una vista ordenada.</Typography>
                 </Box>
 
-                <Stack
-                  direction={{ xs: 'column', md: 'row' }}
-                  spacing={2}
-                  sx={{ alignItems: { xs: 'stretch', md: 'center' } }}
-                >
-                  <TextField
-                    label="Buscar"
-                    placeholder="Cliente, servicio o sede"
-                    size="small"
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    sx={{ flex: 1, backgroundColor: '#FFFFFF' }}
-                  />
-                  <TextField
-                    select
-                    label="Estado"
-                    size="small"
-                    value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value as AdminStatus | 'Todos')}
-                    sx={{ minWidth: 160, backgroundColor: '#FFFFFF' }}
-                  >
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { xs: 'stretch', md: 'center' } }}>
+                  <TextField label="Buscar" placeholder="Cliente, servicio o sede" size="small" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} sx={{ flex: 1, backgroundColor: '#FFFFFF' }} />
+                  <TextField select label="Estado" size="small" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as AdminStatus | 'Todos')} sx={{ minWidth: 160, backgroundColor: '#FFFFFF' }}>
                     <MenuItem value="Todos">Todos</MenuItem>
-                    {[
-                      'Pendiente',
-                      'Confirmado',
-                      'Reprogramado',
-                      'Cancelado',
-                      'Completado',
-                      'No asistio',
-                    ].map((status) => (
+                    {['Pendiente', 'Confirmado', 'Reprogramado', 'Cancelado', 'Completado', 'No asistio'].map((status) => (
                       <MenuItem key={status} value={status}>
                         {status}
                       </MenuItem>
                     ))}
                   </TextField>
-                  <TextField
-                    select
-                    label="Sede"
-                    size="small"
-                    value={locationFilter}
-                    onChange={(event) => setLocationFilter(event.target.value)}
-                    sx={{ minWidth: 160, backgroundColor: '#FFFFFF' }}
-                  >
+                  <TextField select label="Sede" size="small" value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} sx={{ minWidth: 160, backgroundColor: '#FFFFFF' }}>
                     {locationOptions.map((location) => (
                       <MenuItem key={location} value={location}>
                         {location}
                       </MenuItem>
                     ))}
                   </TextField>
-                  <TextField
-                    select
-                    label="Ordenar por"
-                    size="small"
-                    value={sortBy}
-                    onChange={(event) =>
-                      setSortBy(event.target.value as 'date-asc' | 'date-desc' | 'name-asc')
-                    }
-                    sx={{ minWidth: 180, backgroundColor: '#FFFFFF' }}
-                  >
+                  <TextField select label="Ordenar por" size="small" value={sortBy} onChange={(event) => setSortBy(event.target.value as 'date-asc' | 'date-desc' | 'name-asc')} sx={{ minWidth: 180, backgroundColor: '#FFFFFF' }}>
                     <MenuItem value="date-asc">Fecha (proximos)</MenuItem>
                     <MenuItem value="date-desc">Fecha (recientes)</MenuItem>
                     <MenuItem value="name-asc">Cliente (A-Z)</MenuItem>
@@ -1012,9 +837,7 @@ function AdminDashboardContent() {
                       textAlign: 'center',
                     }}
                   >
-                    <Typography sx={{ color: '#6B6B6B', mb: 2 }}>
-                      No hay turnos para los filtros seleccionados.
-                    </Typography>
+                    <Typography sx={{ color: '#6B6B6B', mb: 2 }}>No hay turnos para los filtros seleccionados.</Typography>
                     <Button
                       variant="outlined"
                       onClick={() => {
@@ -1051,16 +874,11 @@ function AdminDashboardContent() {
                     <Table size="small">
                       <TableHead>
                         <TableRow sx={{ backgroundColor: '#FFF5F7' }}>
-                          {['Cliente', 'Servicio', 'Fecha', 'Hora', 'Sede', 'Estado', 'Acciones'].map(
-                            (label) => (
-                              <TableCell
-                                key={label}
-                                sx={{ fontWeight: 700, color: '#8B6B6B', fontSize: '0.82rem' }}
-                              >
-                                {label}
-                              </TableCell>
-                            )
-                          )}
+                          {['Cliente', 'Servicio', 'Fecha', 'Hora', 'Sede', 'Estado', 'Acciones'].map((label) => (
+                            <TableCell key={label} sx={{ fontWeight: 700, color: '#8B6B6B', fontSize: '0.82rem' }}>
+                              {label}
+                            </TableCell>
+                          ))}
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -1077,37 +895,20 @@ function AdminDashboardContent() {
                                 '&:last-of-type td': { borderBottom: 'none' },
                               }}
                             >
-                              <TableCell sx={{ fontWeight: 600, color: '#2C2C2C' }}>
-                                {appt.clientName}
-                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: '#2C2C2C' }}>{appt.clientName}</TableCell>
                               <TableCell sx={{ color: '#6B6B6B' }}>{appt.service}</TableCell>
                               <TableCell sx={{ color: '#6B6B6B' }}>{dateLabel}</TableCell>
                               <TableCell sx={{ color: '#6B6B6B' }}>{appt.time}</TableCell>
                               <TableCell sx={{ color: '#6B6B6B' }}>{appt.location}</TableCell>
                               <TableCell>
-                                <Chip
-                                  label={appt.status}
-                                  size="small"
-                                  color={statusColor(appt.status)}
-                                />
+                                <Chip label={appt.status} size="small" color={statusColor(appt.status)} />
                               </TableCell>
                               <TableCell>
                                 <Stack direction="row" spacing={1}>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleOpenEdit(appt)}
-                                    sx={{ color: '#8B6B6B' }}
-                                    aria-label="Editar turno"
-                                  >
+                                  <IconButton size="small" onClick={() => handleOpenEdit(appt)} sx={{ color: '#8B6B6B' }} aria-label="Editar turno">
                                     <EditOutlinedIcon fontSize="small" />
                                   </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleOpenCancel(appt.id)}
-                                    sx={{ color: '#B00020' }}
-                                    aria-label="Cancelar turno"
-                                    disabled={appt.status === 'Cancelado'}
-                                  >
+                                  <IconButton size="small" onClick={() => handleOpenCancel(appt.id)} sx={{ color: '#B00020' }} aria-label="Cancelar turno" disabled={appt.status === 'Cancelado'}>
                                     <DeleteOutlineIcon fontSize="small" />
                                   </IconButton>
                                 </Stack>
@@ -1131,15 +932,9 @@ function AdminDashboardContent() {
           >
             <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
               <Stack spacing={2.5}>
-                <Stack
-                  direction={{ xs: 'column', md: 'row' }}
-                  spacing={2}
-                  sx={{ alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between' }}
-                >
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between' }}>
                   <Box>
-                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>
-                      Agenda mensual
-                    </Typography>
+                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>Agenda mensual</Typography>
                     <Typography sx={{ color: '#6B6B6B' }}>{monthLabel}</Typography>
                   </Box>
                   <Stack direction="row" spacing={1}>
@@ -1222,22 +1017,14 @@ function AdminDashboardContent() {
                                 },
                               }}
                             >
-                              <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>
-                                {day.getDate()}
-                              </Typography>
+                              <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>{day.getDate()}</Typography>
                               {appointmentsForDay.length > 0 ? (
                                 <Stack spacing={0.5}>
-                                  <Typography sx={{ fontSize: '0.78rem', color: '#6B6B6B' }}>
-                                    {appointmentsForDay.length} turnos
-                                  </Typography>
-                                  <Typography sx={{ fontSize: '0.75rem', color: '#8B6B6B' }}>
-                                    Ocupados: {occupiedSlots}
-                                  </Typography>
+                                  <Typography sx={{ fontSize: '0.78rem', color: '#6B6B6B' }}>{appointmentsForDay.length} turnos</Typography>
+                                  <Typography sx={{ fontSize: '0.75rem', color: '#8B6B6B' }}>Ocupados: {occupiedSlots}</Typography>
                                 </Stack>
                               ) : (
-                                <Typography sx={{ fontSize: '0.75rem', color: '#B8A4A4' }}>
-                                  Libre
-                                </Typography>
+                                <Typography sx={{ fontSize: '0.75rem', color: '#B8A4A4' }}>Libre</Typography>
                               )}
                             </Box>
                           );
@@ -1260,9 +1047,7 @@ function AdminDashboardContent() {
                           month: 'long',
                         })}
                       </Typography>
-                      <Typography sx={{ color: '#6B6B6B', mb: 2 }}>
-                        Horarios disponibles y ocupados
-                      </Typography>
+                      <Typography sx={{ color: '#6B6B6B', mb: 2 }}>Horarios disponibles y ocupados</Typography>
 
                       <Stack spacing={1.2}>
                         {timeSlots.map((time) => {
@@ -1290,17 +1075,10 @@ function AdminDashboardContent() {
                                   <Typography sx={{ fontSize: '0.85rem', color: '#6B6B6B' }}>
                                     {appointment.service} | {appointment.location}
                                   </Typography>
-                                  <Chip
-                                    label={appointment.status}
-                                    size="small"
-                                    color={statusColor(appointment.status)}
-                                    sx={{ alignSelf: 'flex-start' }}
-                                  />
+                                  <Chip label={appointment.status} size="small" color={statusColor(appointment.status)} sx={{ alignSelf: 'flex-start' }} />
                                 </Stack>
                               ) : (
-                                <Typography sx={{ fontSize: '0.82rem', color: '#B8A4A4' }}>
-                                  Libre
-                                </Typography>
+                                <Typography sx={{ fontSize: '0.82rem', color: '#B8A4A4' }}>Libre</Typography>
                               )}
                             </Box>
                           );
@@ -1318,27 +1096,9 @@ function AdminDashboardContent() {
       <Dialog open={Boolean(editing)} onClose={() => setEditing(null)} fullWidth maxWidth="sm">
         <DialogTitle>Editar turno</DialogTitle>
         <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
-          <TextField
-            label="Servicio"
-            value={editValues.service}
-            onChange={(event) => setEditValues((prev) => ({ ...prev, service: event.target.value }))}
-            fullWidth
-            disabled
-          />
-          <TextField
-            label="Fecha"
-            type="date"
-            value={editValues.date}
-            onChange={(event) => setEditValues((prev) => ({ ...prev, date: event.target.value }))}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label="Hora"
-            type="time"
-            value={editValues.time}
-            onChange={(event) => setEditValues((prev) => ({ ...prev, time: event.target.value }))}
-            InputLabelProps={{ shrink: true }}
-          />
+          <TextField label="Servicio" value={editValues.service} onChange={(event) => setEditValues((prev) => ({ ...prev, service: event.target.value }))} fullWidth disabled />
+          <TextField label="Fecha" type="date" value={editValues.date} onChange={(event) => setEditValues((prev) => ({ ...prev, date: event.target.value }))} InputLabelProps={{ shrink: true }} />
+          <TextField label="Hora" type="time" value={editValues.time} onChange={(event) => setEditValues((prev) => ({ ...prev, time: event.target.value }))} InputLabelProps={{ shrink: true }} />
           <TextField
             select
             label="Estado"
@@ -1350,8 +1110,7 @@ function AdminDashboardContent() {
               }))
             }
           >
-            {['Pendiente', 'Confirmado', 'Reprogramado', 'Cancelado', 'Completado', 'No asistio'].map(
-              (status) => (
+            {['Pendiente', 'Confirmado', 'Reprogramado', 'Cancelado', 'Completado', 'No asistio'].map((status) => (
               <MenuItem key={status} value={status}>
                 {status}
               </MenuItem>
@@ -1360,11 +1119,7 @@ function AdminDashboardContent() {
         </DialogContent>
         <DialogActions sx={{ p: 3, gap: 1 }}>
           {editing && (
-            <Button
-              variant="text"
-              sx={{ color: '#B00020' }}
-              onClick={() => handleOpenCancel(editing.id)}
-            >
+            <Button variant="text" sx={{ color: '#B00020' }} onClick={() => handleOpenCancel(editing.id)}>
               Cancelar turno
             </Button>
           )}
