@@ -3,6 +3,7 @@
 import { Box, Button, Card, CardContent, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Skeleton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { RequireAuth } from '@/components/auth/RequireAuth';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
@@ -122,6 +123,14 @@ const normalizeAppointment = (raw: ApiAppointment, index: number): AdminAppointm
 };
 
 export default function AdminDashboardPage() {
+  return (
+    <RequireAuth requiredRole="admin">
+      <AdminDashboardContent />
+    </RequireAuth>
+  );
+}
+
+function AdminDashboardContent() {
   const router = useRouter();
   const [appointments, setAppointments] = useState(initialAdminAppointments);
   const [editing, setEditing] = useState<AdminAppointment | null>(null);
@@ -132,6 +141,7 @@ export default function AdminDashboardPage() {
     service: '',
   });
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -324,6 +334,16 @@ export default function AdminDashboardPage() {
           signal: controller.signal,
         });
         if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('turnera_access_token');
+              localStorage.removeItem('turnera_user');
+              localStorage.removeItem('turnera_google_picture');
+              window.dispatchEvent(new Event('auth-changed'));
+            }
+            router.replace('/?auth=login&next=/admin');
+            return;
+          }
           throw new Error(`HTTP ${response.status}`);
         }
         const rawText = await response.text();
@@ -406,20 +426,23 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleCancelAppointment = async (id: string) => {
+  const handleCancelAppointment = async (id: string, reason?: string) => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
       if (!token) {
         setError('Necesitas iniciar sesion como admin para cancelar un turno.');
         return;
       }
+      const payload = reason?.trim()
+        ? { cancellationReason: reason.trim() }
+        : { cancellationReason: 'Cancelado por administracion' };
       const response = await fetch(`${appointmentsUrl}/${id}/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ cancellationReason: 'Cancelado por administracion' }),
+        body: JSON.stringify(payload),
       });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -432,16 +455,19 @@ export default function AdminDashboardPage() {
 
   const handleOpenCancel = (id: string) => {
     setCancelTargetId(id);
+    setCancelReason('');
   };
 
   const handleCloseCancel = () => {
     setCancelTargetId(null);
+    setCancelReason('');
   };
 
   const handleConfirmCancel = async () => {
     if (!cancelTargetId) return;
-    await handleCancelAppointment(cancelTargetId);
+    await handleCancelAppointment(cancelTargetId, cancelReason);
     setCancelTargetId(null);
+    setCancelReason('');
   };
 
   return (
@@ -1108,7 +1134,18 @@ export default function AdminDashboardPage() {
       <Dialog open={Boolean(cancelTargetId)} onClose={handleCloseCancel} fullWidth maxWidth="xs">
         <DialogTitle>Eliminar turno</DialogTitle>
         <DialogContent>
-          <Typography sx={{ color: '#6B6B6B' }}>¿Está seguro que quiere eliminar el turno?</Typography>
+          <Typography sx={{ color: '#6B6B6B' }}>
+            ¿Está seguro que quiere eliminar el turno?
+          </Typography>
+          <TextField
+            label="Motivo de cancelación (opcional)"
+            value={cancelReason}
+            onChange={(event) => setCancelReason(event.target.value)}
+            fullWidth
+            multiline
+            minRows={3}
+            sx={{ mt: 2 }}
+          />
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={handleCloseCancel}>Cancelar</Button>
@@ -1128,3 +1165,4 @@ export default function AdminDashboardPage() {
     </Box>
   );
 }
+

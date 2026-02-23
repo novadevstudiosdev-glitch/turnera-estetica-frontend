@@ -11,26 +11,53 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  InputAdornment,
+  MenuItem,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import SearchIcon from '@mui/icons-material/Search';
 import { SectionTitle } from '../ui/SectionTitle';
 import { products, type Product } from '@/lib/data';
 
 export function ProductsCarouselSection() {
   const [openProductsModal, setOpenProductsModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'name-asc' | 'name-desc'>('name-asc');
   const displayedProducts = [...products, ...products];
-  const productsByCategory = useMemo(() => {
-    return products.reduce<Record<string, typeof products>>((acc, product) => {
-      if (!acc[product.category]) {
-        acc[product.category] = [];
-      }
-      acc[product.category].push(product);
-      return acc;
-    }, {});
+  const categories = useMemo(() => {
+    const unique = Array.from(new Set(products.map((product) => product.category)));
+    return ['Todos', ...unique];
   }, []);
+
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    let list = [...products];
+
+    if (selectedCategory !== 'Todos') {
+      list = list.filter((product) => product.category === selectedCategory);
+    }
+
+    if (normalizedSearch) {
+      list = list.filter(
+        (product) =>
+          product.name.toLowerCase().includes(normalizedSearch) ||
+          product.description.toLowerCase().includes(normalizedSearch)
+      );
+    }
+
+    list.sort((a, b) =>
+      sortBy === 'name-desc'
+        ? b.name.localeCompare(a.name, 'es-AR')
+        : a.name.localeCompare(b.name, 'es-AR')
+    );
+
+    return list;
+  }, [searchTerm, selectedCategory, sortBy]);
 
   const handleViewAllProducts = () => {
     setOpenProductsModal(true);
@@ -173,7 +200,12 @@ export function ProductsCarouselSection() {
         open={openProductsModal}
         onClose={() => setOpenProductsModal(false)}
         fullWidth
-        maxWidth="md"
+        maxWidth="lg"
+        PaperProps={{
+          sx: {
+            borderRadius: '18px',
+          },
+        }}
       >
         <DialogTitle sx={{ pr: 6 }}>
           Todos los productos por categoria
@@ -186,31 +218,152 @@ export function ProductsCarouselSection() {
           </IconButton>
         </DialogTitle>
         <DialogContent dividers>
-          <Stack spacing={3}>
-            {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
-              <Box key={category}>
-                <Typography sx={{ fontWeight: 700, color: '#8F5161', mb: 1.5 }}>
-                  {category}
-                </Typography>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '240px 1fr' },
+              gap: { xs: 3, md: 4 },
+            }}
+          >
+            <Box>
+              <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 1.6 }}>
+                Categorias
+              </Typography>
+              <Stack spacing={1.2}>
+                {categories.map((category) => {
+                  const active = category === selectedCategory;
+                  return (
+                    <Button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      variant={active ? 'contained' : 'outlined'}
+                      sx={{
+                        justifyContent: 'center',
+                        borderRadius: '999px',
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        backgroundColor: active ? '#EEBBC3' : '#FFFFFF',
+                        color: '#2C2C2C',
+                        borderColor: active ? '#E7B1B9' : '#E6DEDA',
+                        '&:hover': {
+                          backgroundColor: active ? '#FFB8C6' : '#FFF6F7',
+                          borderColor: '#E7B1B9',
+                        },
+                      }}
+                    >
+                      {category}
+                    </Button>
+                  );
+                })}
+              </Stack>
+            </Box>
+
+            <Box sx={{ display: 'grid', gap: 2.5 }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: '1.3fr 0.5fr 0.5fr' },
+                  gap: 2,
+                  alignItems: 'center',
+                }}
+              >
+                <TextField
+                  placeholder="Buscar"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  size="small"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: '#B78E95' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '12px',
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                    },
+                  }}
+                />
+
+                <TextField
+                  select
+                  label="Categoria"
+                  size="small"
+                  value={selectedCategory}
+                  onChange={(event) => setSelectedCategory(event.target.value)}
+                  sx={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '12px',
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                    },
+                  }}
+                >
+                  {categories.map((category) => (
+                    <MenuItem key={`category-${category}`} value={category}>
+                      {category}
+                    </MenuItem>
+                  ))}
+                </TextField>
+
+                <TextField
+                  select
+                  label="Ordenar por"
+                  size="small"
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value as 'name-asc' | 'name-desc')}
+                  sx={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '12px',
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                    },
+                  }}
+                >
+                  <MenuItem value="name-asc">Nombre (A-Z)</MenuItem>
+                  <MenuItem value="name-desc">Nombre (Z-A)</MenuItem>
+                </TextField>
+              </Box>
+
+              {filteredProducts.length === 0 ? (
+                <Box
+                  sx={{
+                    borderRadius: '16px',
+                    border: '1px dashed #E6E0DD',
+                    p: 3,
+                    textAlign: 'center',
+                  }}
+                >
+                  <Typography sx={{ color: '#6B6B6B' }}>
+                    No se encontraron productos con esos filtros.
+                  </Typography>
+                </Box>
+              ) : (
                 <Box
                   sx={{
                     display: 'grid',
                     gridTemplateColumns: {
                       xs: '1fr',
                       sm: 'repeat(2, minmax(0, 1fr))',
-                      md: 'repeat(3, minmax(0, 1fr))',
+                      lg: 'repeat(3, minmax(0, 1fr))',
                     },
-                    gap: 1.5,
+                    gap: 2,
                   }}
                 >
-                  {categoryProducts.map((product) => (
+                  {filteredProducts.map((product) => (
                     <Box
                       key={product.id}
                       sx={{
                         border: '1px solid #ECE7E3',
-                        borderRadius: '12px',
-                        p: 1.5,
+                        borderRadius: '16px',
+                        p: 2,
                         backgroundColor: '#FFFFFF',
+                        display: 'grid',
+                        gap: 1.2,
+                        boxShadow: '0 8px 18px rgba(0,0,0,0.05)',
                       }}
                     >
                       <Box
@@ -219,42 +372,59 @@ export function ProductsCarouselSection() {
                         alt={product.name}
                         sx={{
                           width: '100%',
-                          height: 120,
+                          height: 140,
                           objectFit: 'cover',
-                          borderRadius: '8px',
-                          mb: 1,
+                          borderRadius: '12px',
                         }}
                       />
-                      <Typography sx={{ fontWeight: 600, color: '#1A1A1A' }}>
+                      <Typography sx={{ fontWeight: 700, color: '#2C2C2C' }}>
                         {product.name}
                       </Typography>
-                      <Typography sx={{ color: '#666666', fontSize: '0.88rem', mt: 0.4 }}>
-                        {product.description}
-                      </Typography>
-                      <Button
-                        variant="contained"
-                        onClick={() => setSelectedProduct(product)}
+                      <Typography
                         sx={{
-                          mt: 1.2,
-                          borderRadius: '999px',
-                          px: 2,
-                          py: 0.7,
-                          fontSize: '0.82rem',
-                          backgroundColor: '#EEBBC3',
-                          color: '#2C2C2C',
-                          '&:hover': {
-                            backgroundColor: '#FFB8C6',
-                          },
+                          color: '#666666',
+                          fontSize: '0.88rem',
+                          lineHeight: 1.6,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
                         }}
                       >
-                        Ver detalle
-                      </Button>
+                        {product.description}
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                        <Chip
+                          label={product.category}
+                          size="small"
+                          sx={{ backgroundColor: '#F1E4E8', color: '#8F5161' }}
+                        />
+                        <Button
+                          variant="outlined"
+                          onClick={() => setSelectedProduct(product)}
+                          sx={{
+                            borderRadius: '999px',
+                            px: 2,
+                            py: 0.4,
+                            textTransform: 'none',
+                            borderColor: '#E2D4D2',
+                            color: '#6B5A5A',
+                            fontSize: '0.8rem',
+                            '&:hover': {
+                              borderColor: '#D4A5A5',
+                              backgroundColor: '#FFF6F7',
+                            },
+                          }}
+                        >
+                          Ver detalle
+                        </Button>
+                      </Stack>
                     </Box>
                   ))}
                 </Box>
-              </Box>
-            ))}
-          </Stack>
+              )}
+            </Box>
+          </Box>
         </DialogContent>
       </Dialog>
 
