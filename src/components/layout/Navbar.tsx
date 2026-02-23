@@ -104,7 +104,9 @@ const heartFloat = keyframes`
 
 export function Navbar() {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
+  const [isMounted, setIsMounted] = useState(false);
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true });
+  const isMobileView = isMounted ? isMobile : false;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
@@ -125,6 +127,10 @@ export function Navbar() {
     ? userAvatar.replace(/=s\d+-c$/, '=s200-c')
     : null;
   const accountMenuOpen = Boolean(accountAnchorEl);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 8);
@@ -382,7 +388,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          {!isMobile && (
+          {!isMobileView && (
             <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 1.5 }}>
               <Button
                 onClick={() => setProductsModalOpen(true)}
@@ -587,7 +593,7 @@ export function Navbar() {
             )}
 
             {/* Mobile Menu Button */}
-            {isMobile && (
+            {isMobileView && (
               <Button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 sx={{
@@ -603,7 +609,7 @@ export function Navbar() {
         </Toolbar>
 
         {/* Mobile Navigation */}
-        {isMobile && mobileMenuOpen && (
+        {isMobileView && mobileMenuOpen && (
           <Box
             sx={{
               display: 'flex',

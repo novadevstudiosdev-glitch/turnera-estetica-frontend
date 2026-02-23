@@ -115,16 +115,8 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
   // Referencias para Google OAuth
   const googleInitializedRef = useRef(false);
 
-  const nextPath = useMemo(() => {
-    const raw = searchParams?.get('next') ?? '';
-    if (!raw) return '';
-    if (!raw.startsWith('/') || raw.startsWith('//')) return '';
-    return raw;
-  }, [searchParams]);
-
   const redirectAfterLogin = () => {
-    if (!nextPath) return;
-    router.replace(nextPath);
+    router.replace('/');
   };
 
   const resetValidation = () => {
