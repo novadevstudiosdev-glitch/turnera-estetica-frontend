@@ -5,6 +5,7 @@ import './globals.css';
 import { Providers } from './providers';
 import { Navbar } from '@/components/layout/Navbar';
 import { ReservaModal } from '@/components/ui/ReservaModal';
+import { WhatsAppFloatingButton } from '@/components/ui/WhatsAppFloatingButton';
 import { Suspense } from 'react';
 
 const geistSans = Geist({
@@ -68,6 +69,7 @@ export default function RootLayout({
             <Navbar />
           </Suspense>
           <ReservaModal />
+          <WhatsAppFloatingButton />
           {children}
         </Providers>
       </body>

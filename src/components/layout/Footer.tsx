@@ -171,36 +171,21 @@ export function Footer() {
           <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
             &copy; {currentYear} Consultorio Medico Estetico. Todos los derechos reservados.
           </Typography>
-          <Box sx={{ display: 'flex', gap: 3 }}>
-            <MuiLink
-              href="#"
-              sx={{
-                color: '#7A7A7A',
-                textDecoration: 'none',
-                fontSize: '0.9rem',
-                '&:hover': {
-                  color: '#3A3A3A',
-                },
-              }}
-            >
-
-              
-              Politica de Privacidad
-            </MuiLink>
-            <MuiLink
-              href="#"
-              sx={{
-                color: '#7A7A7A',
-                textDecoration: 'none',
-                fontSize: '0.9rem',
-                '&:hover': {
-                  color: '#3A3A3A',
-                },
-              }}
-            >
-              Terminos de Uso
-            </MuiLink>
-          </Box>
+          <MuiLink
+            href="https://www.novadevstudios.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              color: '#7A7A7A',
+              textDecoration: 'none',
+              fontSize: '0.9rem',
+              '&:hover': {
+                color: '#3A3A3A',
+              },
+            }}
+          >
+            Made by Novadev Studios
+          </MuiLink>
         </Box>
       </Container>
     </Box>

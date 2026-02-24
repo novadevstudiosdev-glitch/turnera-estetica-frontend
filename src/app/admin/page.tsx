@@ -758,9 +758,9 @@ function AdminDashboardContent() {
                           >
                             <Box>
                               <Typography sx={{ fontWeight: 600, color: '#2C2C2C' }}>{appt.clientName}</Typography>
-                              <Typography sx={{ fontSize: '0.82rem', color: '#6B6B6B' }}>
-                                {appt.service} - {appt.time}
-                              </Typography>
+                                <Typography sx={{ fontSize: '0.82rem', color: '#6B6B6B' }}>
+                                  {appt.time}
+                                </Typography>
                             </Box>
                             <Chip label={appt.status} size="small" color={statusColor(appt.status)} />
                           </Box>
@@ -799,7 +799,7 @@ function AdminDashboardContent() {
                 </Box>
 
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { xs: 'stretch', md: 'center' } }}>
-                  <TextField label="Buscar" placeholder="Cliente, servicio o sede" size="small" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} sx={{ flex: 1, backgroundColor: '#FFFFFF' }} />
+                    <TextField label="Buscar" placeholder="Cliente o sede" size="small" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} sx={{ flex: 1, backgroundColor: '#FFFFFF' }} />
                   <TextField select label="Estado" size="small" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as AdminStatus | 'Todos')} sx={{ minWidth: 160, backgroundColor: '#FFFFFF' }}>
                     <MenuItem value="Todos">Todos</MenuItem>
                     {['Pendiente', 'Confirmado', 'Reprogramado', 'Cancelado', 'Completado', 'No asistio'].map((status) => (
@@ -874,7 +874,7 @@ function AdminDashboardContent() {
                     <Table size="small">
                       <TableHead>
                         <TableRow sx={{ backgroundColor: '#FFF5F7' }}>
-                          {['Cliente', 'Servicio', 'Fecha', 'Hora', 'Sede', 'Estado', 'Acciones'].map((label) => (
+                          {['Cliente', 'Fecha', 'Hora', 'Sede', 'Estado', 'Acciones'].map((label) => (
                             <TableCell key={label} sx={{ fontWeight: 700, color: '#8B6B6B', fontSize: '0.82rem' }}>
                               {label}
                             </TableCell>
@@ -896,7 +896,6 @@ function AdminDashboardContent() {
                               }}
                             >
                               <TableCell sx={{ fontWeight: 600, color: '#2C2C2C' }}>{appt.clientName}</TableCell>
-                              <TableCell sx={{ color: '#6B6B6B' }}>{appt.service}</TableCell>
                               <TableCell sx={{ color: '#6B6B6B' }}>{dateLabel}</TableCell>
                               <TableCell sx={{ color: '#6B6B6B' }}>{appt.time}</TableCell>
                               <TableCell sx={{ color: '#6B6B6B' }}>{appt.location}</TableCell>
@@ -1072,9 +1071,9 @@ function AdminDashboardContent() {
                               {appointment ? (
                                 <Stack spacing={0.5}>
                                   <Typography sx={{ fontWeight: 700 }}>{appointment.clientName}</Typography>
-                                  <Typography sx={{ fontSize: '0.85rem', color: '#6B6B6B' }}>
-                                    {appointment.service} | {appointment.location}
-                                  </Typography>
+                                    <Typography sx={{ fontSize: '0.85rem', color: '#6B6B6B' }}>
+                                      {appointment.location}
+                                    </Typography>
                                   <Chip label={appointment.status} size="small" color={statusColor(appointment.status)} sx={{ alignSelf: 'flex-start' }} />
                                 </Stack>
                               ) : (
@@ -1095,9 +1094,8 @@ function AdminDashboardContent() {
 
       <Dialog open={Boolean(editing)} onClose={() => setEditing(null)} fullWidth maxWidth="sm">
         <DialogTitle>Editar turno</DialogTitle>
-        <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
-          <TextField label="Servicio" value={editValues.service} onChange={(event) => setEditValues((prev) => ({ ...prev, service: event.target.value }))} fullWidth disabled />
-          <TextField label="Fecha" type="date" value={editValues.date} onChange={(event) => setEditValues((prev) => ({ ...prev, date: event.target.value }))} InputLabelProps={{ shrink: true }} />
+          <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
+            <TextField label="Fecha" type="date" value={editValues.date} onChange={(event) => setEditValues((prev) => ({ ...prev, date: event.target.value }))} InputLabelProps={{ shrink: true }} />
           <TextField label="Hora" type="time" value={editValues.time} onChange={(event) => setEditValues((prev) => ({ ...prev, time: event.target.value }))} InputLabelProps={{ shrink: true }} />
           <TextField
             select

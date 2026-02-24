@@ -114,7 +114,7 @@ export function ContactSection() {
       icon: WhatsAppIcon,
       title: 'WhatsApp',
       value: contactInfo.whatsapp,
-      href: `https://wa.me/${contactInfo.whatsapp.replace(/\s/g, '')}`,
+      href: `https://wa.me/${contactInfo.whatsapp.replace(/[^\d]/g, '')}`,
     },
     {
       icon: EmailIcon,
