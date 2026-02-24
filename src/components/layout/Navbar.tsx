@@ -34,11 +34,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { keyframes } from '@mui/system';
 import { products } from '@/lib/data';
 
-const NAVIGATION_LINKS = [
-  { label: 'Inicio', href: '#hero' },
-  { label: 'Servicios', href: '#servicios' },
-  { label: 'Testimonios', href: '#testimonios' },
-  { label: 'Ubicación', href: '#ubicacion' },
+const NAV_ITEMS = [
+  { key: 'inicio', label: 'Inicio', href: '#hero' },
+  { key: 'servicios', label: 'Servicios', href: '#servicios' },
+  { key: 'productos', label: 'Productos', action: 'products' as const },
+  { key: 'testimonios', label: 'Testimonios', href: '#testimonios' },
+  { key: 'ubicación', label: 'Ubicación', href: '#ubicacion' },
 ];
 
 const accountBreathing = keyframes`
@@ -123,9 +124,7 @@ export function Navbar() {
       ? userName.split('@')[0]
       : userName.split(' ')[0]
     : null;
-  const normalizedAvatar = userAvatar
-    ? userAvatar.replace(/=s\d+-c$/, '=s200-c')
-    : null;
+  const normalizedAvatar = userAvatar ? userAvatar.replace(/=s\d+-c$/, '=s200-c') : null;
   const accountMenuOpen = Boolean(accountAnchorEl);
 
   useEffect(() => {
@@ -181,12 +180,7 @@ export function Navbar() {
           image?: string;
           role?: string;
         };
-        const nameCandidates = [
-          parsed?.fullName,
-          parsed?.name,
-          parsed?.firstName,
-          parsed?.email,
-        ]
+        const nameCandidates = [parsed?.fullName, parsed?.name, parsed?.firstName, parsed?.email]
           .map((value) => (value ?? '').trim())
           .filter((value) => value.length > 0);
         setUserName(nameCandidates[0] ?? null);
@@ -337,76 +331,84 @@ export function Navbar() {
             padding: 0,
           }}
         >
-          {/* Logo */}
-          <Link href="/">
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 2,
-                cursor: 'pointer',
-                transition: 'transform 0.3s ease',
-                height: 80,
-                '&:hover': {
-                  transform: 'scale(1.02)',
-                },
-              }}
-            >
-              <Typography
-                sx={{
-                  fontFamily: '"Cormorant Garamond", serif',
-                  fontWeight: 600,
-                  letterSpacing: '3px',
-                  fontSize: { xs: '1.5rem', md: '1.75rem' },
-                  color: '#D4A5A5',
-                }}
-              >
-                JG
-              </Typography>
+          {/* Logo + Inicio */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Link href="/">
               <Box
-                aria-hidden="true"
                 sx={{
-                  width: '1px',
-                  height: 30,
-                  backgroundColor: '#E0E0E0',
-                }}
-              />
-              <Typography
-                sx={{
-                  fontFamily: '"Cormorant Garamond", serif',
-                  fontStyle: 'italic',
-                  fontWeight: 300,
-                  letterSpacing: '0.08em',
-                  color: '#666666',
-                  fontSize: '0.82rem',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 2,
+                  cursor: 'pointer',
+                  transition: 'transform 0.3s ease',
+                  height: 80,
+                  '&:hover': {
+                    transform: 'scale(1.02)',
+                  },
                 }}
               >
-                Dra. Jaquelina Grassetti
-              </Typography>
-            </Box>
-          </Link>
-
-          {/* Desktop Navigation */}
-          {!isMobileView && (
-            <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 1.5 }}>
+                <Typography
+                  sx={{
+                    fontFamily: '"Cormorant Garamond", serif',
+                    fontWeight: 600,
+                    letterSpacing: '3px',
+                    fontSize: { xs: '1.5rem', md: '1.75rem' },
+                    color: '#D4A5A5',
+                  }}
+                >
+                  JG
+                </Typography>
+                <Box
+                  aria-hidden="true"
+                  sx={{
+                    width: '1px',
+                    height: 30,
+                    backgroundColor: '#E0E0E0',
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontFamily: '"Cormorant Garamond", serif',
+                    fontStyle: 'italic',
+                    fontWeight: 300,
+                    letterSpacing: '0.08em',
+                    color: '#666666',
+                    fontSize: '0.82rem',
+                  }}
+                >
+                  Dra. Jaquelina Grassetti
+                </Typography>
+              </Box>
+            </Link>
+            {!isMobileView && (
               <Button
-                onClick={() => setProductsModalOpen(true)}
+                onClick={() => handleNavClick('#hero')}
                 disableRipple
                 disableFocusRipple
                 sx={navItemStyle}
               >
-                Productos
+                Inicio
               </Button>
-              {NAVIGATION_LINKS.map((link) => (
+            )}
+          </Box>
+
+          {/* Desktop Navigation */}
+          {!isMobileView && (
+            <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 1.5 }}>
+              {NAV_ITEMS.filter((item) => item.key !== 'inicio').map((item) => (
                 <Button
-                  key={link.href}
-                  onClick={() => handleNavClick(link.href)}
+                  key={item.key}
+                  onClick={
+                    item.action === 'products'
+                      ? () => setProductsModalOpen(true)
+                      : () => handleNavClick(item.href ?? '#hero')
+                  }
                   disableRipple
                   disableFocusRipple
                   sx={navItemStyle}
                 >
-                  {link.label}
+                  {item.label}
                 </Button>
               ))}
             </Box>
@@ -621,11 +623,18 @@ export function Navbar() {
               backgroundColor: '#FFFFFF',
             }}
           >
-            {NAVIGATION_LINKS.map((link) => (
+            {NAV_ITEMS.map((item) => (
               <Button
-                key={link.href}
+                key={item.key}
                 fullWidth
-                onClick={() => handleNavClick(link.href)}
+                onClick={() => {
+                  if (item.action === 'products') {
+                    setProductsModalOpen(true);
+                    setMobileMenuOpen(false);
+                    return;
+                  }
+                  handleNavClick(item.href ?? '#hero');
+                }}
                 disableRipple
                 disableFocusRipple
                 sx={{
@@ -636,27 +645,9 @@ export function Navbar() {
                   px: 0,
                 }}
               >
-                {link.label}
+                {item.label}
               </Button>
             ))}
-            <Button
-              fullWidth
-              onClick={() => {
-                setProductsModalOpen(true);
-                setMobileMenuOpen(false);
-              }}
-              disableRipple
-              disableFocusRipple
-              sx={{
-                ...navItemStyle,
-                justifyContent: 'flex-start',
-                width: '100%',
-                fontSize: '1rem',
-                px: 0,
-              }}
-            >
-              Productos
-            </Button>
             <Button
               fullWidth
               onClick={displayName ? handleGoProfile : () => handleOpenAuth(0)}
@@ -785,7 +776,12 @@ export function Navbar() {
           </Stack>
         </DialogContent>
       </Dialog>
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} tab={tab} onTabChange={setTab} />
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        tab={tab}
+        onTabChange={setTab}
+      />
     </AppBar>
   );
 }

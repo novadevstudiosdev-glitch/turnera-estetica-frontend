@@ -86,3 +86,18 @@ main > section#hero {
   background-color: #eebbc3;
   color: #2c2c2c;
 }
+
+/* Move reCAPTCHA badge away from floating actions */
+.grecaptcha-badge {
+  left: 16px !important;
+  right: auto !important;
+  bottom: 16px !important;
+  z-index: 1200;
+}
+
+@media (max-width: 600px) {
+  .grecaptcha-badge {
+    left: 12px !important;
+    bottom: 12px !important;
+  }
+}

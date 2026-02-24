@@ -239,7 +239,7 @@ export const products: Product[] = [
 
 export const contactInfo = {
   phone: '+54 341 751-1529',
-  whatsapp: '+54 9 261 XXXXXXX',
+  whatsapp: '+54 341 751-1529',
   email: 'info@mok-consultorio.com',
   address: 'JunÃ­n 191 â€¢ Alto BurÃ³ â€¢ Rosario. Argentina',
   hours: {
