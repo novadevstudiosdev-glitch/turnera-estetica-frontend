@@ -11,30 +11,53 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  InputAdornment,
+  MenuItem,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import SearchIcon from '@mui/icons-material/Search';
 import { SectionTitle } from '../ui/SectionTitle';
 import { products, type Product } from '@/lib/data';
 
 export function ProductsCarouselSection() {
   const [openProductsModal, setOpenProductsModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'name-asc' | 'name-desc'>('name-asc');
   const displayedProducts = [...products, ...products];
-  const productsByCategory = useMemo(() => {
-    return products.reduce<Record<string, typeof products>>((acc, product) => {
-      if (!acc[product.category]) {
-        acc[product.category] = [];
-      }
-      acc[product.category].push(product);
-      return acc;
-    }, {});
+  const categories = useMemo(() => {
+    const unique = Array.from(new Set(products.map((product) => product.category)));
+    return ['Todos', ...unique];
   }, []);
 
-  const handleViewAllProducts = () => {
-    setOpenProductsModal(true);
-  };
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    let list = [...products];
+
+    if (selectedCategory !== 'Todos') {
+      list = list.filter((product) => product.category === selectedCategory);
+    }
+
+    if (normalizedSearch) {
+      list = list.filter(
+        (product) =>
+          product.name.toLowerCase().includes(normalizedSearch) ||
+          product.description.toLowerCase().includes(normalizedSearch),
+      );
+    }
+
+    list.sort((a, b) =>
+      sortBy === 'name-desc'
+        ? b.name.localeCompare(a.name, 'es-AR')
+        : a.name.localeCompare(b.name, 'es-AR'),
+    );
+
+    return list;
+  }, [searchTerm, selectedCategory, sortBy]);
 
   return (
     <Box
@@ -56,45 +79,40 @@ export function ProductsCarouselSection() {
             display: 'flex',
             overflow: 'hidden',
             position: 'relative',
+            mt: 2,
           }}
         >
           <Box
             sx={{
               display: 'flex',
               gap: 2.5,
-              animation: 'productsScroll 36s linear infinite',
+              animation: 'productsScroll 28s linear infinite',
               '@keyframes productsScroll': {
-                '0%': {
-                  transform: 'translateX(0)',
-                },
-                '100%': {
-                  transform: 'translateX(-50%)',
-                },
+                '0%': { transform: 'translateX(0)' },
+                '100%': { transform: 'translateX(-50%)' },
               },
-              '&:hover': {
-                animationPlayState: 'paused',
-              },
+              '&:hover': { animationPlayState: 'paused' },
             }}
           >
             {displayedProducts.map((product, index) => (
               <Box
                 key={`${product.id}-${index}`}
-              sx={{
-                flex: '0 0 auto',
-                width: { xs: 260, sm: 280, md: 300 },
-                minHeight: 340,
-                borderRadius: '16px',
-                border: '1px solid #ECE7E3',
-                backgroundColor: '#FFFFFF',
-                display: 'flex',
-                flexDirection: 'column',
-                p: { xs: 2.5, md: 3 },
-                transition: 'all 0.25s ease',
-                '&:hover': {
-                  boxShadow: '0 14px 28px rgba(26, 26, 26, 0.08)',
-                  transform: 'translateY(-4px)',
-                },
-              }}
+                sx={{
+                  flex: '0 0 auto',
+                  width: { xs: 240, sm: 260, md: 280 },
+                  minHeight: 300,
+                  borderRadius: '16px',
+                  border: '1px solid #ECE7E3',
+                  backgroundColor: '#FFFFFF',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  p: { xs: 2.5, md: 3 },
+                  transition: 'all 0.25s ease',
+                  '&:hover': {
+                    boxShadow: '0 14px 28px rgba(26, 26, 26, 0.08)',
+                    transform: 'translateY(-4px)',
+                  },
+                }}
               >
                 <Box
                   component="img"
@@ -102,13 +120,18 @@ export function ProductsCarouselSection() {
                   alt={product.name}
                   sx={{
                     width: '100%',
-                    height: 140,
-                    objectFit: 'cover',
+                    height: 200,
+                    objectFit: 'contain',
                     borderRadius: '10px',
+                    backgroundColor: '#F5F0F0',
+                    p: 0,
                     mb: 1.2,
                   }}
                 />
-                <Typography variant="h6" sx={{ fontWeight: 700, color: '#1A1A1A', mb: 1, minHeight: 64 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 700, color: '#1A1A1A', mb: 1, minHeight: 64 }}
+                >
                   {product.name}
                 </Typography>
                 <Typography
@@ -137,43 +160,18 @@ export function ProductsCarouselSection() {
             ))}
           </Box>
         </Box>
-
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          alignItems="center"
-          justifyContent="center"
-          sx={{ mt: 3, gap: 2 }}
-        >
-          <Typography sx={{ fontSize: '0.92rem', color: '#666666', textAlign: 'center' }}>
-            Desliza o espera: el carrusel se mueve automaticamente
-          </Typography>
-
-          <Button
-            variant="contained"
-            onClick={handleViewAllProducts}
-            sx={{
-              borderRadius: '999px',
-              px: 3,
-              py: 1,
-              backgroundColor: '#EEBBC3',
-              color: '#2C2C2C',
-              textTransform: 'none',
-              fontWeight: 600,
-              '&:hover': {
-                backgroundColor: '#FFB8C6',
-              },
-            }}
-          >
-            Ver todos los productos
-          </Button>
-        </Stack>
       </Container>
 
       <Dialog
         open={openProductsModal}
         onClose={() => setOpenProductsModal(false)}
         fullWidth
-        maxWidth="md"
+        maxWidth="lg"
+        PaperProps={{
+          sx: {
+            borderRadius: '18px',
+          },
+        }}
       >
         <DialogTitle sx={{ pr: 6 }}>
           Todos los productos por categoria
@@ -186,31 +184,152 @@ export function ProductsCarouselSection() {
           </IconButton>
         </DialogTitle>
         <DialogContent dividers>
-          <Stack spacing={3}>
-            {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
-              <Box key={category}>
-                <Typography sx={{ fontWeight: 700, color: '#8F5161', mb: 1.5 }}>
-                  {category}
-                </Typography>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '240px 1fr' },
+              gap: { xs: 3, md: 4 },
+            }}
+          >
+            <Box>
+              <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 1.6 }}>
+                Categorias
+              </Typography>
+              <Stack spacing={1.2}>
+                {categories.map((category) => {
+                  const active = category === selectedCategory;
+                  return (
+                    <Button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      variant={active ? 'contained' : 'outlined'}
+                      sx={{
+                        justifyContent: 'center',
+                        borderRadius: '999px',
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        backgroundColor: active ? '#EEBBC3' : '#FFFFFF',
+                        color: '#2C2C2C',
+                        borderColor: active ? '#E7B1B9' : '#E6DEDA',
+                        '&:hover': {
+                          backgroundColor: active ? '#FFB8C6' : '#FFF6F7',
+                          borderColor: '#E7B1B9',
+                        },
+                      }}
+                    >
+                      {category}
+                    </Button>
+                  );
+                })}
+              </Stack>
+            </Box>
+
+            <Box sx={{ display: 'grid', gap: 2.5 }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: '1.3fr 0.5fr 0.5fr' },
+                  gap: 2,
+                  alignItems: 'center',
+                }}
+              >
+                <TextField
+                  placeholder="Buscar"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  size="small"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: '#B78E95' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '12px',
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                    },
+                  }}
+                />
+
+                <TextField
+                  select
+                  label="Categoria"
+                  size="small"
+                  value={selectedCategory}
+                  onChange={(event) => setSelectedCategory(event.target.value)}
+                  sx={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '12px',
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                    },
+                  }}
+                >
+                  {categories.map((category) => (
+                    <MenuItem key={`category-${category}`} value={category}>
+                      {category}
+                    </MenuItem>
+                  ))}
+                </TextField>
+
+                <TextField
+                  select
+                  label="Ordenar por"
+                  size="small"
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value as 'name-asc' | 'name-desc')}
+                  sx={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '12px',
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                    },
+                  }}
+                >
+                  <MenuItem value="name-asc">Nombre (A-Z)</MenuItem>
+                  <MenuItem value="name-desc">Nombre (Z-A)</MenuItem>
+                </TextField>
+              </Box>
+
+              {filteredProducts.length === 0 ? (
+                <Box
+                  sx={{
+                    borderRadius: '16px',
+                    border: '1px dashed #E6E0DD',
+                    p: 3,
+                    textAlign: 'center',
+                  }}
+                >
+                  <Typography sx={{ color: '#6B6B6B' }}>
+                    No se encontraron productos con esos filtros.
+                  </Typography>
+                </Box>
+              ) : (
                 <Box
                   sx={{
                     display: 'grid',
                     gridTemplateColumns: {
                       xs: '1fr',
                       sm: 'repeat(2, minmax(0, 1fr))',
-                      md: 'repeat(3, minmax(0, 1fr))',
+                      lg: 'repeat(3, minmax(0, 1fr))',
                     },
-                    gap: 1.5,
+                    gap: 2,
                   }}
                 >
-                  {categoryProducts.map((product) => (
+                  {filteredProducts.map((product) => (
                     <Box
                       key={product.id}
                       sx={{
                         border: '1px solid #ECE7E3',
-                        borderRadius: '12px',
-                        p: 1.5,
+                        borderRadius: '16px',
+                        p: 2,
                         backgroundColor: '#FFFFFF',
+                        display: 'grid',
+                        gap: 1.2,
+                        boxShadow: '0 8px 18px rgba(0,0,0,0.05)',
                       }}
                     >
                       <Box
@@ -219,42 +338,66 @@ export function ProductsCarouselSection() {
                         alt={product.name}
                         sx={{
                           width: '100%',
-                          height: 120,
-                          objectFit: 'cover',
-                          borderRadius: '8px',
-                          mb: 1,
+                          height: 200,
+                          objectFit: 'contain',
+                          borderRadius: '12px',
+                          backgroundColor: '#F5F0F0',
+                          p: 0,
                         }}
                       />
-                      <Typography sx={{ fontWeight: 600, color: '#1A1A1A' }}>
+                      <Typography sx={{ fontWeight: 700, color: '#2C2C2C' }}>
                         {product.name}
                       </Typography>
-                      <Typography sx={{ color: '#666666', fontSize: '0.88rem', mt: 0.4 }}>
-                        {product.description}
-                      </Typography>
-                      <Button
-                        variant="contained"
-                        onClick={() => setSelectedProduct(product)}
+                      <Typography
                         sx={{
-                          mt: 1.2,
-                          borderRadius: '999px',
-                          px: 2,
-                          py: 0.7,
-                          fontSize: '0.82rem',
-                          backgroundColor: '#EEBBC3',
-                          color: '#2C2C2C',
-                          '&:hover': {
-                            backgroundColor: '#FFB8C6',
-                          },
+                          color: '#666666',
+                          fontSize: '0.88rem',
+                          lineHeight: 1.6,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
                         }}
                       >
-                        Ver detalle
-                      </Button>
+                        {product.description}
+                      </Typography>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        justifyContent="space-between"
+                      >
+                        <Chip
+                          label={product.category}
+                          size="small"
+                          sx={{ backgroundColor: '#F1E4E8', color: '#8F5161' }}
+                        />
+                        <Button
+                          variant="outlined"
+                          onClick={() => setSelectedProduct(product)}
+                          sx={{
+                            borderRadius: '999px',
+                            px: 2,
+                            py: 0.4,
+                            textTransform: 'none',
+                            borderColor: '#E2D4D2',
+                            color: '#6B5A5A',
+                            fontSize: '0.8rem',
+                            '&:hover': {
+                              borderColor: '#D4A5A5',
+                              backgroundColor: '#FFF6F7',
+                            },
+                          }}
+                        >
+                          Ver detalle
+                        </Button>
+                      </Stack>
                     </Box>
                   ))}
                 </Box>
-              </Box>
-            ))}
-          </Stack>
+              )}
+            </Box>
+          </Box>
         </DialogContent>
       </Dialog>
 
@@ -283,9 +426,11 @@ export function ProductsCarouselSection() {
                 alt={selectedProduct.name}
                 sx={{
                   width: '100%',
-                  height: 220,
-                  objectFit: 'cover',
+                  height: 280,
+                  objectFit: 'contain',
                   borderRadius: '12px',
+                  backgroundColor: '#F5F0F0',
+                  p: 0,
                   mb: 1.5,
                 }}
               />
@@ -308,9 +453,7 @@ export function ProductsCarouselSection() {
                 {selectedProduct.description}
               </Typography>
               <Divider sx={{ my: 2 }} />
-              <Typography sx={{ color: '#1A1A1A', fontWeight: 700, mb: 1 }}>
-                Beneficios
-              </Typography>
+              <Typography sx={{ color: '#1A1A1A', fontWeight: 700, mb: 1 }}>Beneficios</Typography>
               <Stack spacing={0.7}>
                 {selectedProduct.benefits.map((benefit) => (
                   <Typography key={benefit} sx={{ color: '#666666', fontSize: '0.92rem' }}>

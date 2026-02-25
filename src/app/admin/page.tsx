@@ -3,6 +3,7 @@
 import { Box, Button, Card, CardContent, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Skeleton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { RequireAuth } from '@/components/auth/RequireAuth';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
@@ -122,6 +123,14 @@ const normalizeAppointment = (raw: ApiAppointment, index: number): AdminAppointm
 };
 
 export default function AdminDashboardPage() {
+  return (
+    <RequireAuth requiredRole="admin">
+      <AdminDashboardContent />
+    </RequireAuth>
+  );
+}
+
+function AdminDashboardContent() {
   const router = useRouter();
   const [appointments, setAppointments] = useState(initialAdminAppointments);
   const [editing, setEditing] = useState<AdminAppointment | null>(null);
@@ -132,6 +141,7 @@ export default function AdminDashboardPage() {
     service: '',
   });
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -324,6 +334,16 @@ export default function AdminDashboardPage() {
           signal: controller.signal,
         });
         if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('turnera_access_token');
+              localStorage.removeItem('turnera_user');
+              localStorage.removeItem('turnera_google_picture');
+              window.dispatchEvent(new Event('auth-changed'));
+            }
+            router.replace('/?auth=login&next=/admin');
+            return;
+          }
           throw new Error(`HTTP ${response.status}`);
         }
         const rawText = await response.text();
@@ -406,20 +426,23 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleCancelAppointment = async (id: string) => {
+  const handleCancelAppointment = async (id: string, reason?: string) => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
       if (!token) {
         setError('Necesitas iniciar sesion como admin para cancelar un turno.');
         return;
       }
+      const payload = reason?.trim()
+        ? { cancellationReason: reason.trim() }
+        : { cancellationReason: 'Cancelado por administracion' };
       const response = await fetch(`${appointmentsUrl}/${id}/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ cancellationReason: 'Cancelado por administracion' }),
+        body: JSON.stringify(payload),
       });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -432,16 +455,19 @@ export default function AdminDashboardPage() {
 
   const handleOpenCancel = (id: string) => {
     setCancelTargetId(id);
+    setCancelReason('');
   };
 
   const handleCloseCancel = () => {
     setCancelTargetId(null);
+    setCancelReason('');
   };
 
   const handleConfirmCancel = async () => {
     if (!cancelTargetId) return;
-    await handleCancelAppointment(cancelTargetId);
+    await handleCancelAppointment(cancelTargetId, cancelReason);
     setCancelTargetId(null);
+    setCancelReason('');
   };
 
   return (
@@ -732,9 +758,9 @@ export default function AdminDashboardPage() {
                           >
                             <Box>
                               <Typography sx={{ fontWeight: 600, color: '#2C2C2C' }}>{appt.clientName}</Typography>
-                              <Typography sx={{ fontSize: '0.82rem', color: '#6B6B6B' }}>
-                                {appt.service} - {appt.time}
-                              </Typography>
+                                <Typography sx={{ fontSize: '0.82rem', color: '#6B6B6B' }}>
+                                  {appt.time}
+                                </Typography>
                             </Box>
                             <Chip label={appt.status} size="small" color={statusColor(appt.status)} />
                           </Box>
@@ -773,7 +799,7 @@ export default function AdminDashboardPage() {
                 </Box>
 
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { xs: 'stretch', md: 'center' } }}>
-                  <TextField label="Buscar" placeholder="Cliente, servicio o sede" size="small" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} sx={{ flex: 1, backgroundColor: '#FFFFFF' }} />
+                    <TextField label="Buscar" placeholder="Cliente o sede" size="small" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} sx={{ flex: 1, backgroundColor: '#FFFFFF' }} />
                   <TextField select label="Estado" size="small" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as AdminStatus | 'Todos')} sx={{ minWidth: 160, backgroundColor: '#FFFFFF' }}>
                     <MenuItem value="Todos">Todos</MenuItem>
                     {['Pendiente', 'Confirmado', 'Reprogramado', 'Cancelado', 'Completado', 'No asistio'].map((status) => (
@@ -848,7 +874,7 @@ export default function AdminDashboardPage() {
                     <Table size="small">
                       <TableHead>
                         <TableRow sx={{ backgroundColor: '#FFF5F7' }}>
-                          {['Cliente', 'Servicio', 'Fecha', 'Hora', 'Sede', 'Estado', 'Acciones'].map((label) => (
+                          {['Cliente', 'Fecha', 'Hora', 'Sede', 'Estado', 'Acciones'].map((label) => (
                             <TableCell key={label} sx={{ fontWeight: 700, color: '#8B6B6B', fontSize: '0.82rem' }}>
                               {label}
                             </TableCell>
@@ -870,7 +896,6 @@ export default function AdminDashboardPage() {
                               }}
                             >
                               <TableCell sx={{ fontWeight: 600, color: '#2C2C2C' }}>{appt.clientName}</TableCell>
-                              <TableCell sx={{ color: '#6B6B6B' }}>{appt.service}</TableCell>
                               <TableCell sx={{ color: '#6B6B6B' }}>{dateLabel}</TableCell>
                               <TableCell sx={{ color: '#6B6B6B' }}>{appt.time}</TableCell>
                               <TableCell sx={{ color: '#6B6B6B' }}>{appt.location}</TableCell>
@@ -1046,9 +1071,9 @@ export default function AdminDashboardPage() {
                               {appointment ? (
                                 <Stack spacing={0.5}>
                                   <Typography sx={{ fontWeight: 700 }}>{appointment.clientName}</Typography>
-                                  <Typography sx={{ fontSize: '0.85rem', color: '#6B6B6B' }}>
-                                    {appointment.service} | {appointment.location}
-                                  </Typography>
+                                    <Typography sx={{ fontSize: '0.85rem', color: '#6B6B6B' }}>
+                                      {appointment.location}
+                                    </Typography>
                                   <Chip label={appointment.status} size="small" color={statusColor(appointment.status)} sx={{ alignSelf: 'flex-start' }} />
                                 </Stack>
                               ) : (
@@ -1069,9 +1094,8 @@ export default function AdminDashboardPage() {
 
       <Dialog open={Boolean(editing)} onClose={() => setEditing(null)} fullWidth maxWidth="sm">
         <DialogTitle>Editar turno</DialogTitle>
-        <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
-          <TextField label="Servicio" value={editValues.service} onChange={(event) => setEditValues((prev) => ({ ...prev, service: event.target.value }))} fullWidth disabled />
-          <TextField label="Fecha" type="date" value={editValues.date} onChange={(event) => setEditValues((prev) => ({ ...prev, date: event.target.value }))} InputLabelProps={{ shrink: true }} />
+          <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
+            <TextField label="Fecha" type="date" value={editValues.date} onChange={(event) => setEditValues((prev) => ({ ...prev, date: event.target.value }))} InputLabelProps={{ shrink: true }} />
           <TextField label="Hora" type="time" value={editValues.time} onChange={(event) => setEditValues((prev) => ({ ...prev, time: event.target.value }))} InputLabelProps={{ shrink: true }} />
           <TextField
             select
@@ -1108,7 +1132,18 @@ export default function AdminDashboardPage() {
       <Dialog open={Boolean(cancelTargetId)} onClose={handleCloseCancel} fullWidth maxWidth="xs">
         <DialogTitle>Eliminar turno</DialogTitle>
         <DialogContent>
-          <Typography sx={{ color: '#6B6B6B' }}>¿Está seguro que quiere eliminar el turno?</Typography>
+          <Typography sx={{ color: '#6B6B6B' }}>
+            ¿Está seguro que quiere eliminar el turno?
+          </Typography>
+          <TextField
+            label="Motivo de cancelación (opcional)"
+            value={cancelReason}
+            onChange={(event) => setCancelReason(event.target.value)}
+            fullWidth
+            multiline
+            minRows={3}
+            sx={{ mt: 2 }}
+          />
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={handleCloseCancel}>Cancelar</Button>
@@ -1128,3 +1163,4 @@ export default function AdminDashboardPage() {
     </Box>
   );
 }
+

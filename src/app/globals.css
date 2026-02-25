@@ -86,3 +86,8 @@ main > section#hero {
   background-color: #eebbc3;
   color: #2c2c2c;
 }
+
+/* reCAPTCHA v3: hide badge (legal notice is shown in footer) */
+.grecaptcha-badge {
+  visibility: hidden;
+}
