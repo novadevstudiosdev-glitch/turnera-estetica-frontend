@@ -1,6 +1,5 @@
 'use client';
 
-import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import { Box, Container, Divider, Link as MuiLink, Typography } from '@mui/material';
 
@@ -15,7 +14,6 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
-    { icon: FacebookIcon, href: '#', label: 'Facebook' },
     { icon: InstagramIcon, href: 'https://www.instagram.com/dra.jaquelinagrassetti', label: 'Instagram' },
   ];
 
@@ -157,35 +155,95 @@ export function Footer() {
           </Box>
         </Box>
 
-        <Divider sx={{ backgroundColor: '#E9E4E2', my: 4 }} />
-
         <Box
           sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 2,
+            borderTop: '1px solid #EFE3E3',
+            mt: 4,
+            pt: 2,
           }}
         >
-          <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
-            &copy; {currentYear} Consultorio Medico Estetico. Todos los derechos reservados.
-          </Typography>
-          <MuiLink
-            href="https://www.novadevstudios.com/"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Box
             sx={{
-              color: '#7A7A7A',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-              '&:hover': {
-                color: '#3A3A3A',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 2,
+              flexWrap: 'wrap',
+              '@media (max-width: 600px)': {
+                flexDirection: 'column',
+                textAlign: 'center',
               },
             }}
           >
-            Made by Novadev Studios
-          </MuiLink>
+            <Typography sx={{ color: '#8C8C8C', fontSize: '0.85rem' }}>
+              &copy; 2026 Consultorio M&eacute;dico Est&eacute;tico. Todos los derechos reservados.
+            </Typography>
+
+            <MuiLink
+              href="https://www.novadevstudios.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                color: '#8C8C8C',
+                fontSize: '0.85rem',
+                textDecoration: 'none',
+                '&:hover': { color: '#D4A5A5', textDecoration: 'underline' },
+              }}
+            >
+              Made by Novadev Studios
+            </MuiLink>
+          </Box>
+
+          <Box
+            sx={{
+              mt: 1,
+              maxWidth: 900,
+              mx: 'auto',
+              textAlign: 'center',
+              pb: 1,
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                color: '#8C8C8C',
+                fontSize: '0.74rem',
+                lineHeight: 1.35,
+              }}
+            >
+              Este sitio est&aacute; protegido por reCAPTCHA y se aplican la{' '}
+              <Box
+                component="a"
+                href="https://policies.google.com/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  color: 'inherit',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  '&:hover': { color: '#D4A5A5', textDecoration: 'underline' },
+                }}
+              >
+                Pol&iacute;tica de Privacidad
+              </Box>{' '}
+              y los{' '}
+              <Box
+                component="a"
+                href="https://policies.google.com/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  color: 'inherit',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  '&:hover': { color: '#D4A5A5', textDecoration: 'underline' },
+                }}
+              >
+                T&eacute;rminos de Servicio
+              </Box>{' '}
+              de Google.
+            </Typography>
+          </Box>
         </Box>
       </Container>
     </Box>

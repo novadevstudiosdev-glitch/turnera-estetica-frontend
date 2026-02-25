@@ -19,7 +19,7 @@ export function WhatsAppFloatingButton() {
         sx={{
           position: 'fixed',
           right: { xs: 16, md: 24 },
-          bottom: { xs: 84, md: 96 },
+          bottom: { xs: 64, md: 76 },
           zIndex: 1400,
           backgroundColor: '#25D366',
           color: '#FFFFFF',
