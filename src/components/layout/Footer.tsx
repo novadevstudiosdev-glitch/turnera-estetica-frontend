@@ -1,13 +1,15 @@
 'use client';
 
 import InstagramIcon from '@mui/icons-material/Instagram';
-import { Box, Container, Divider, Link as MuiLink, Typography } from '@mui/material';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import { Box, Container, Link as MuiLink, Typography } from '@mui/material';
 
 const quickLinks = [
   { label: 'Inicio', href: '#' },
-  { label: 'Servicios', href: '#servicios' },
+  { label: 'Tratamiento', href: '#servicios' },
   { label: 'Ubicacion', href: '#ubicacion' },
-  { label: 'Contacto', href: '#contacto' },
+  { label: 'Tienda Online', href: '#catalogo' },
+  { label: 'Testimonios', href: '#testimonios' },
 ];
 
 export function Footer() {
@@ -15,6 +17,7 @@ export function Footer() {
 
   const socialLinks = [
     { icon: InstagramIcon, href: 'https://www.instagram.com/dra.jaquelinagrassetti', label: 'Instagram' },
+    { icon: WhatsAppIcon, href: 'https://wa.me/543417511529', label: 'WhatsApp' },
   ];
 
   return (
@@ -37,52 +40,59 @@ export function Footer() {
             mb: 6,
           }}
         >
-          <Box>
-            <Typography
-              variant="h6"
+          <Box sx={{ textAlign: 'center' }}>
+            <Box
               sx={{
-                fontSize: '1.5rem',
-                fontWeight: 600,
-                color: '#3A3A3A',
                 mb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1.5,
+                flexWrap: 'wrap',
               }}
             >
-              JG
-            </Typography>
+              <Typography
+                sx={{
+                  fontFamily: '"Cormorant Garamond", serif',
+                  fontWeight: 600,
+                  letterSpacing: '3px',
+                  fontSize: { xs: '1.5rem', md: '1.75rem' },
+                  color: '#D4A5A5',
+                }}
+              >
+                JG
+              </Typography>
+              <Box
+                aria-hidden="true"
+                sx={{
+                  width: '1px',
+                  height: 24,
+                  backgroundColor: '#E0E0E0',
+                }}
+              />
+              <Typography
+                sx={{
+                  fontFamily: '"Cormorant Garamond", serif',
+                  fontStyle: 'italic',
+                  fontWeight: 300,
+                  letterSpacing: '0.08em',
+                  color: '#666666',
+                  fontSize: '0.82rem',
+                }}
+              >
+                Dra. Jaquelina Grassetti
+              </Typography>
+            </Box>
             <Typography variant="body2" sx={{ color: '#7A7A7A', mb: 3 }}>
               Consultorio Medico Estetico de excelencia. Tratamientos profesionales con resultados garantizados.
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              {socialLinks.map((social) => {
-                const Icon = social.icon;
-                return (
-                  <MuiLink
-                    key={social.label}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      color: '#D4A5A5',
-                      transition: 'color 0.2s ease',
-                      '&:hover': {
-                        color: '#C9A0A0',
-                      },
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Icon sx={{ fontSize: '1.5rem' }} />
-                  </MuiLink>
-                );
-              })}
-            </Box>
           </Box>
 
-          <Box>
+          <Box sx={{ textAlign: 'center' }}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
               Enlaces Rapidos
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, alignItems: 'center' }}>
               {quickLinks.map((link) => (
                 <MuiLink
                   key={link.label}
@@ -102,57 +112,78 @@ export function Footer() {
             </Box>
           </Box>
 
-          <Box>
+          <Box sx={{ textAlign: 'center' }}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
               Contacto
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, alignItems: 'center' }}>
               <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
                 Telefono: +54 341 751-1529
               </Typography>
-              <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
-                Instagram:{' '}
-                <MuiLink
-                  href="https://www.instagram.com/dra.jaquelinagrassetti"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{ color: '#7A7A7A', textDecoration: 'none' }}
-                >
-                  @dra.jaquelinagrassetti
-                </MuiLink>
+              <Typography variant="body2" sx={{ color: '#3A3A3A', fontWeight: 600, mt: 1 }}>
+                Redes Sociales
               </Typography>
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                {socialLinks.map((social) => {
+                  const Icon = social.icon;
+                  return (
+                    <MuiLink
+                      key={`contact-${social.label}`}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{
+                        color: '#D4A5A5',
+                        transition: 'color 0.2s ease',
+                        '&:hover': {
+                          color: '#C9A0A0',
+                        },
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Icon sx={{ fontSize: '1.5rem' }} />
+                    </MuiLink>
+                  );
+                })}
+              </Box>
             </Box>
           </Box>
 
-          <Box>
+          <Box sx={{ textAlign: 'center' }}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
-              Horarios
+              Acceso de Usuario
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Box>
-                <Typography variant="body2" sx={{ color: '#3A3A3A', fontWeight: 600 }}>
-                  Rosario
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#3A3A3A' }}>
-                  Lunes: 14:00 - 19:30
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
-                  Jueves: 08:00 - 15:00
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
-                  Viernes: 08:00 - 14:00
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2" sx={{ color: '#3A3A3A', fontWeight: 600 }}>
-                  Correa
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#7A7A7A' }}>
-                  Martes: 07:00 - 16:00
-                </Typography>
-              </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, alignItems: 'center' }}>
+              <MuiLink
+                href="/?auth=register"
+                sx={{
+                  color: '#7A7A7A',
+                  textDecoration: 'none',
+                  transition: 'color 0.3s ease',
+                  '&:hover': {
+                    color: '#3A3A3A',
+                  },
+                }}
+              >
+                Registro
+              </MuiLink>
+              <MuiLink
+                href="/?auth=login"
+                sx={{
+                  color: '#7A7A7A',
+                  textDecoration: 'none',
+                  transition: 'color 0.3s ease',
+                  '&:hover': {
+                    color: '#3A3A3A',
+                  },
+                }}
+              >
+                Ingreso
+              </MuiLink>
             </Box>
           </Box>
+
         </Box>
 
         <Box

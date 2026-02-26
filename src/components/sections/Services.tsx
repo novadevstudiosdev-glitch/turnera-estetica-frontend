@@ -356,7 +356,7 @@ export function ServicesSection() {
     >
       <Container maxWidth="lg">
         <SectionTitle
-          title="Nuestros Servicios"
+          title="Tratamientos"
           subtitle="Descubre nuestro amplio catalogo de tratamientos esteticos especializados"
         />
 
