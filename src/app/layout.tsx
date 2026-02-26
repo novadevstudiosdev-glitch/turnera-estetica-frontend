@@ -6,6 +6,7 @@ import { Providers } from './providers';
 import { Navbar } from '@/components/layout/Navbar';
 import { ReservaModal } from '@/components/ui/ReservaModal';
 import { WhatsAppFloatingButton } from '@/components/ui/WhatsAppFloatingButton';
+import { FloatingFeedbackButtonDraggable } from '@/components/FloatingFeedbackButtonDraggable';
 import { Suspense } from 'react';
 
 const geistSans = Geist({
@@ -19,15 +20,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'MOK - Consultorio MÃ©dico EstÃ©tico',
-  description:
-    'Consultorio especializado en estÃ©tica y belleza. Tratamientos profesionales con tecnologÃ­a de punta.',
+  title: 'JQ - Dra. Jaquelina Grassetti',
+  description: 'Medicina estética',
   icons: {
     icon: '/favicon.ico',
   },
 };
-
-
 
 export const viewport = {
   width: 'device-width',
@@ -70,11 +68,10 @@ export default function RootLayout({
           </Suspense>
           <ReservaModal />
           <WhatsAppFloatingButton />
+          <FloatingFeedbackButtonDraggable />
           {children}
         </Providers>
       </body>
     </html>
   );
 }
-
-

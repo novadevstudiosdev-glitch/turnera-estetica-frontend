@@ -135,26 +135,26 @@ export const services: Service[] = [
 export const testimonials: Testimonial[] = [
   {
     id: 1,
-    name: 'MarÃ­a GarcÃ­a',
+    name: 'Marí­a Garcí­a',
     role: 'Cliente desde 2023',
     comment:
-      'Excelente atenciÃ³n y resultados increÃ­bles. El equipo de MOK es muy profesional y dedicado. Â¡Recomiendo ampliamente!',
+      'Excelente atención y resultados increí­bles. El equipo de JG es muy profesional y dedicado. ¡Recomiendo ampliamente!',
     rating: 5,
   },
   {
     id: 2,
-    name: 'Carlos RodrÃ­guez',
+    name: 'Carlos Rodrí­guez',
     role: 'Cliente desde 2024',
     comment:
-      'CambiÃ³ mi vida. Los tratamientos son de primera calidad y los resultados superaron mis expectativas. Â¡Muy satisfecho!',
+      'Cambió mi vida. Los tratamientos son de primera calidad y los resultados superaron mis expectativas. ¡Muy satisfecho!',
     rating: 5,
   },
   {
     id: 3,
-    name: 'Laura FernÃ¡ndez',
+    name: 'Laura Fernández',
     role: 'Cliente habitual',
     comment:
-      'El mejor consultorio de la zona. Personal amable, instalaciones modernas y resultados impecables. Â¡10/10!',
+      'El mejor consultorio de la zona. Personal amable, instalaciones modernas y resultados impecables. ¡10/10!',
     rating: 5,
   },
 ];
@@ -162,22 +162,58 @@ export const testimonials: Testimonial[] = [
 export const brands: Brand[] = [
   {
     id: 1,
-    name: 'Allergan',
+    name: 'Xeomin',
     logo: '/brands/allergan.svg',
   },
   {
     id: 2,
-    name: 'Juvederm',
+    name: 'Dysport',
     logo: '/brands/juvederm.svg',
   },
   {
     id: 3,
-    name: 'Restylane',
+    name: 'Botox',
     logo: '/brands/restylane.svg',
   },
   {
     id: 4,
-    name: 'Dermatologique',
+    name: 'Restylane',
+    logo: '/brands/dermatologique.svg',
+  },
+
+  {
+    id: 5,
+    name: 'Belotero',
+    logo: '/brands/dermatologique.svg',
+  },
+
+  {
+    id: 6,
+    name: 'Ellanse ',
+    logo: '/brands/dermatologique.svg',
+  },
+
+  {
+    id: 7,
+    name: 'Radiesse  ',
+    logo: '/brands/dermatologique.svg',
+  },
+
+  {
+    id: 8,
+    name: 'Cellbooster  ',
+    logo: '/brands/dermatologique.svg',
+  },
+
+  {
+    id: 9,
+    name: 'Exosomas V-Tech ',
+    logo: '/brands/dermatologique.svg',
+  },
+
+  {
+    id: 10,
+    name: 'Enzimas PBSerum',
     logo: '/brands/dermatologique.svg',
   },
 ];
@@ -185,7 +221,7 @@ export const brands: Brand[] = [
 export const products: Product[] = [
   {
     id: 1,
-    name: 'Colageno Fine Smooth',
+    name: 'Colageno Fine',
     category: 'Colagenos',
     description:
       'Colageno hidrolizado con centella asiatica, ginkgo biloba y vinagre de sidra. Ayuda a celulitis y drenaje.',
@@ -202,7 +238,7 @@ export const products: Product[] = [
   },
   {
     id: 2,
-    name: 'Colageno Fine Power',
+    name: 'Colageno Fine ',
     category: 'Colagenos',
     description:
       'Antioxidante con 5 frutas, colageno y resveratrol. Apoya articulaciones y energia.',
@@ -238,10 +274,8 @@ export const products: Product[] = [
 ];
 
 export const contactInfo = {
-  phone: '+54 341 751-1529',
   whatsapp: '+54 341 751-1529',
-  email: 'info@mok-consultorio.com',
-  address: 'JunÃ­n 191 â€¢ Alto BurÃ³ â€¢ Rosario. Argentina',
+  address: 'Junín 191 - Alto Buró - Rosario. Argentina',
   hours: {
     rosario: {
       label: 'Rosario',
@@ -257,5 +291,3 @@ export const contactInfo = {
     },
   },
 };
-
-
