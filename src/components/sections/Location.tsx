@@ -109,7 +109,7 @@ export function LocationSection() {
                   </Box>
                 </Box>
 
-                {/* Teléfono */}
+                {/* Celular */}
                 <Box sx={{ mb: 4 }}>
                   <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-start' }}>
                     <PhoneIcon
@@ -127,10 +127,10 @@ export function LocationSection() {
                           mb: 0.5,
                         }}
                       >
-                        Teléfono
+                        Celular
                       </Typography>
                       <Button
-                        href={`tel:${contactInfo.phone}`}
+                        href={`tel:${contactInfo.whatsapp}`}
                         sx={{
                           color: '#3A3A3A',
                           textTransform: 'none',
@@ -142,53 +142,9 @@ export function LocationSection() {
                           },
                         }}
                       >
-                        {contactInfo.phone}
+                        {contactInfo.whatsapp}
                       </Button>
                     </Box>
-                  </Box>
-                </Box>
-
-                {/* Horarios */}
-                <Box sx={{ mb: 4 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      color: '#3A3A3A',
-                      mb: 1.5,
-                    }}
-                  >
-                    Horarios
-                  </Typography>
-                  <Box sx={{ pl: 4, display: 'grid', gap: 1.5 }}>
-                    {Object.values(contactInfo.hours).map((location) => (
-                      <Box key={location.label}>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            display: 'block',
-                            color: '#3A3A3A',
-                            fontWeight: 600,
-                            mb: 0.6,
-                          }}
-                        >
-                          {location.label}
-                        </Typography>
-                        {location.schedule.map((item) => (
-                          <Typography
-                            key={`${location.label}-${item.day}`}
-                            variant="caption"
-                            sx={{
-                              display: 'block',
-                              color: '#7A7A7A',
-                              mb: 0.4,
-                            }}
-                          >
-                            <strong>{item.day}:</strong> {item.time}
-                          </Typography>
-                        ))}
-                      </Box>
-                    ))}
                   </Box>
                 </Box>
 

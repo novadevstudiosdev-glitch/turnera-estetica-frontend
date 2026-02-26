@@ -70,7 +70,7 @@ export function ProductsCarouselSection() {
     >
       <Container maxWidth="lg">
         <SectionTitle
-          title="Productos Destacados"
+          title="TIENDA ONLINE"
           subtitle="Conoce una seleccion de dermocosmetica profesional recomendada para tu rutina diaria"
         />
 

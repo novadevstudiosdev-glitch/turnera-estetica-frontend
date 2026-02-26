@@ -30,14 +30,14 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { AuthModal } from '../ui/AuthModal';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { keyframes } from '@mui/system';
 import { products } from '@/lib/data';
 
 const NAV_ITEMS = [
   { key: 'inicio', label: 'Inicio', href: '#hero' },
-  { key: 'servicios', label: 'Servicios', href: '#servicios' },
-  { key: 'productos', label: 'Productos', action: 'products' as const },
+  { key: 'servicios', label: 'Tratamientos', href: '#servicios' },
+  { key: 'productos', label: 'Tienda online', action: 'products' as const },
   { key: 'testimonios', label: 'Testimonios', href: '#testimonios' },
   { key: 'ubicación', label: 'Ubicación', href: '#ubicacion' },
 ];
@@ -118,6 +118,7 @@ export function Navbar() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [accountAnchorEl, setAccountAnchorEl] = useState<null | HTMLElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const displayName = userName
     ? userName.includes('@')
@@ -213,6 +214,10 @@ export function Navbar() {
 
   const handleNavClick = (href: string) => {
     setMobileMenuOpen(false);
+    if (pathname !== '/') {
+      router.push(`/${href}`);
+      return;
+    }
     const element = document.querySelector(href);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -282,6 +287,7 @@ export function Navbar() {
     minWidth: 'auto',
     px: 2.25,
     py: 1,
+    whiteSpace: 'nowrap',
     transition: 'color 0.25s ease',
     '&:hover': {
       color: '#EEBBC3',
