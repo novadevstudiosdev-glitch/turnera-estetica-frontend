@@ -32,7 +32,7 @@ export interface Product {
   icon: string;
   image: string;
 }
-
+// ....
 export const services: Service[] = [
   {
     id: 1,
