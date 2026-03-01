@@ -151,6 +151,25 @@ function AdminDashboardContent() {
   const [statusFilter, setStatusFilter] = useState<'Todos' | AdminStatus>('Todos');
   const [locationFilter, setLocationFilter] = useState('Todas');
   const [sortBy, setSortBy] = useState<'date-asc' | 'date-desc' | 'name-asc'>('date-asc');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createValues, setCreateValues] = useState({
+    clientName: '',
+    service: '',
+    date: '',
+    time: '',
+    location: 'Rosario',
+    status: 'Confirmado' as AdminStatus,
+    durationMinutes: '30',
+  });
+  const [blockedRanges, setBlockedRanges] = useState<
+    { start: string; end: string; reason?: string }[]
+  >([]);
+  const [rangeBlockOpen, setRangeBlockOpen] = useState(false);
+  const [rangeStartDate, setRangeStartDate] = useState('');
+  const [rangeEndDate, setRangeEndDate] = useState('');
+  const [rangeReason, setRangeReason] = useState('');
+  const [rangeNotice, setRangeNotice] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     return {
@@ -207,6 +226,17 @@ function AdminDashboardContent() {
     return slots;
   }, []);
 
+  const rangePreview = useMemo(() => {
+    if (!rangeStartDate || !rangeEndDate) return null;
+    const start = parseIsoDate(rangeStartDate);
+    const end = parseIsoDate(rangeEndDate);
+    if (!start || !end) return null;
+    if (end < start) {
+      return { start: end, end: start };
+    }
+    return { start, end };
+  }, [rangeStartDate, rangeEndDate]);
+
   const toDateTime = (appointment: AdminAppointment) => {
     const parsed = new Date(`${appointment.date}T${appointment.time}:00`);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
@@ -223,6 +253,59 @@ function AdminDashboardContent() {
   const isSameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
   const isSameMonth = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+
+  const toIsoDate = (date: Date) => date.toISOString().slice(0, 10);
+
+  function parseIsoDate(value: string) {
+    const parsed = new Date(`${value}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const getWeekRange = (date: Date) => {
+    const start = new Date(date);
+    const day = start.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    start.setDate(start.getDate() + diff);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  };
+
+  const isDateBlocked = (date: Date) => {
+    return blockedRanges.some((range) => {
+      const start = parseIsoDate(range.start);
+      const end = parseIsoDate(range.end);
+      if (!start || !end) return false;
+      return date >= start && date <= end;
+    });
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw =
+        localStorage.getItem('turnera_blocked_ranges') ??
+        localStorage.getItem('turnera_blocked_weeks');
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { start: string; end: string; reason?: string }[];
+      if (Array.isArray(parsed)) {
+        setBlockedRanges(parsed);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('turnera_blocked_ranges', JSON.stringify(blockedRanges));
+    } catch {
+      // ignore
+    }
+  }, [blockedRanges]);
 
   const getAppointmentForSlot = (date: Date, time: string) => {
     const dateKey = date.toISOString().slice(0, 10);
@@ -470,6 +553,122 @@ function AdminDashboardContent() {
     setCancelReason('');
   };
 
+  const handleOpenCreate = () => {
+    const dateIso = toIsoDate(selectedDate);
+    const firstFreeTime =
+      timeSlots.find((time) => !getAppointmentForSlot(selectedDate, time)) ?? '09:00';
+    setCreateValues({
+      clientName: '',
+      service: '',
+      date: dateIso,
+      time: firstFreeTime,
+      location: 'Rosario',
+      status: 'Confirmado',
+      durationMinutes: '30',
+    });
+    setCreateError(null);
+    setCreateOpen(true);
+  };
+
+  const handleOpenCreateFromSlot = (date: Date, time: string) => {
+    const dateIso = toIsoDate(date);
+    setCreateValues({
+      clientName: '',
+      service: '',
+      date: dateIso,
+      time,
+      location: 'Rosario',
+      status: 'Confirmado',
+      durationMinutes: '30',
+    });
+    setCreateError(null);
+    setCreateOpen(true);
+  };
+
+  const handleConfirmCreate = () => {
+    setCreateError(null);
+    const trimmedName = createValues.clientName.trim();
+    const trimmedService = createValues.service.trim();
+    if (!trimmedName || !trimmedService || !createValues.date || !createValues.time) {
+      setCreateError('Completa todos los campos obligatorios.');
+      return;
+    }
+    const parsedDate = parseIsoDate(createValues.date);
+    if (!parsedDate) {
+      setCreateError('Fecha inválida.');
+      return;
+    }
+    if (isDateBlocked(parsedDate)) {
+      setCreateError('La fecha seleccionada está bloqueada.');
+      return;
+    }
+    const occupied = getAppointmentForSlot(parsedDate, createValues.time);
+    if (occupied) {
+      setCreateError('Ese horario ya está ocupado.');
+      return;
+    }
+    const duration = Number(createValues.durationMinutes);
+    const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 30;
+    const newAppointment: AdminAppointment = {
+      id: `local-${Date.now()}`,
+      clientName: trimmedName,
+      service: trimmedService,
+      date: createValues.date,
+      time: createValues.time,
+      durationMinutes: safeDuration,
+      location: createValues.location || 'Rosario',
+      status: createValues.status,
+    };
+    setAppointments((prev) => [...prev, newAppointment]);
+    setCreateOpen(false);
+  };
+
+  const handleOpenRangeBlock = () => {
+    setRangeNotice(null);
+    setRangeReason('');
+    const todayIso = toIsoDate(selectedDate);
+    setRangeStartDate(todayIso);
+    setRangeEndDate(todayIso);
+    setRangeBlockOpen(true);
+  };
+
+  const handleConfirmRangeBlock = () => {
+    if (!rangeStartDate || !rangeEndDate) {
+      setRangeNotice('Selecciona el rango de fechas.');
+      return;
+    }
+    const startDate = parseIsoDate(rangeStartDate);
+    const endDate = parseIsoDate(rangeEndDate);
+    if (!startDate || !endDate) {
+      setRangeNotice('Fecha inválida.');
+      return;
+    }
+    const normalizedStart = endDate < startDate ? endDate : startDate;
+    const normalizedEnd = endDate < startDate ? startDate : endDate;
+    const startIso = toIsoDate(normalizedStart);
+    const endIso = toIsoDate(normalizedEnd);
+    const exists = blockedRanges.some(
+      (range) => range.start === startIso && range.end === endIso
+    );
+    if (exists) {
+      setRangeNotice('Ese rango ya está bloqueado.');
+      setRangeBlockOpen(false);
+      return;
+    }
+    setBlockedRanges((prev) => [
+      ...prev,
+      { start: startIso, end: endIso, reason: rangeReason.trim() || undefined },
+    ]);
+    setRangeBlockOpen(false);
+    setRangeNotice(
+      `Rango bloqueado del ${normalizedStart.toLocaleDateString('es-AR')} al ${normalizedEnd.toLocaleDateString('es-AR')}.`
+    );
+  };
+
+  const handleUnblockRange = (start: string, end: string) => {
+    setBlockedRanges((prev) => prev.filter((range) => !(range.start === start && range.end === end)));
+  };
+
   return (
     <Box sx={{ backgroundColor: '#FDF7F7', minHeight: '100vh', py: { xs: 6, md: 10 } }}>
       <Container maxWidth="lg" sx={{ px: { xs: 2, md: 3 } }}>
@@ -503,6 +702,24 @@ function AdminDashboardContent() {
             <Typography sx={{ color: '#6B6B6B' }}>Gestiona turnos, estados y disponibilidad con una vista clara.</Typography>
           </Box>
           <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
+              onClick={handleOpenCreate}
+              sx={{
+                borderRadius: '999px',
+                px: 3,
+                py: 1,
+                backgroundColor: '#EEBBC3',
+                color: '#2C2C2C',
+                textTransform: 'none',
+                fontWeight: 600,
+                '&:hover': {
+                  backgroundColor: '#FFB8C6',
+                },
+              }}
+            >
+              Nuevo turno
+            </Button>
             <Button
               variant="contained"
               onClick={() => {
@@ -558,6 +775,20 @@ function AdminDashboardContent() {
             }}
           >
             <Typography sx={{ color: '#B00020' }}>{error}</Typography>
+          </Box>
+        )}
+
+        {rangeNotice && (
+          <Box
+            sx={{
+              borderRadius: '16px',
+              border: '1px solid #EAD6DA',
+              backgroundColor: '#FFF5F7',
+              p: 2.5,
+              mb: 3,
+            }}
+          >
+            <Typography sx={{ color: '#7A5A5A' }}>{rangeNotice}</Typography>
           </Box>
         )}
 
@@ -685,6 +916,79 @@ function AdminDashboardContent() {
                         {item.label}
                       </Button>
                     ))}
+                  </Box>
+
+                  <Box
+                    sx={{
+                      borderRadius: '14px',
+                      border: '1px solid #F5E6E8',
+                      backgroundColor: '#FFFDFD',
+                      p: 2,
+                    }}
+                  >
+                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>
+                      Bloqueo de fechas
+                    </Typography>
+                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.88rem', mb: 1.5 }}>
+                      Cancela la disponibilidad por rangos (dias, semanas o meses).
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={handleOpenRangeBlock}
+                      sx={{
+                        borderRadius: '999px',
+                        px: 2.6,
+                        py: 1,
+                        backgroundColor: '#EEBBC3',
+                        color: '#2C2C2C',
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        '&:hover': {
+                          backgroundColor: '#FFB8C6',
+                        },
+                      }}
+                    >
+                      Bloquear fechas
+                    </Button>
+
+                    {blockedRanges.length > 0 && (
+                      <Stack spacing={1.2} sx={{ mt: 2 }}>
+                        {blockedRanges.map((range) => (
+                          <Box
+                            key={`${range.start}-${range.end}`}
+                            sx={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 0.5,
+                              borderRadius: '12px',
+                              border: '1px solid #F3E0E4',
+                              backgroundColor: '#FFFFFF',
+                              p: 1.5,
+                            }}
+                          >
+                            <Typography sx={{ fontWeight: 600, color: '#8B6B6B', fontSize: '0.9rem' }}>
+                              {new Date(`${range.start}T00:00:00`).toLocaleDateString('es-AR')} -{' '}
+                              {new Date(`${range.end}T00:00:00`).toLocaleDateString('es-AR')}
+                            </Typography>
+                            {range.reason ? (
+                              <Typography sx={{ color: '#6B6B6B', fontSize: '0.82rem' }}>
+                                Motivo: {range.reason}
+                              </Typography>
+                            ) : null}
+                            <Box>
+                              <Button
+                                size="small"
+                                variant="text"
+                                onClick={() => handleUnblockRange(range.start, range.end)}
+                                sx={{ color: '#B00020', textTransform: 'none', fontWeight: 600, px: 0 }}
+                              >
+                                Reactivar rango
+                              </Button>
+                            </Box>
+                          </Box>
+                        ))}
+                      </Stack>
+                    )}
                   </Box>
                 </Stack>
               </CardContent>
@@ -998,6 +1302,7 @@ function AdminDashboardContent() {
                           const occupiedSlots = timeSlots.filter((slot) => getAppointmentForSlot(day, slot)).length;
                           const isInMonth = isSameMonth(day, monthStart);
                           const isSelected = isSameDay(day, selectedDate);
+                          const isBlocked = isDateBlocked(day);
                           return (
                             <Box
                               key={day.toISOString()}
@@ -1007,17 +1312,28 @@ function AdminDashboardContent() {
                                 p: 1.5,
                                 borderBottom: '1px solid #F5E6E8',
                                 borderLeft: '1px solid #F5E6E8',
-                                backgroundColor: isSelected ? '#F9E7EC' : '#FFFFFF',
+                                backgroundColor: isSelected ? '#F9E7EC' : isBlocked ? '#FFF1F4' : '#FFFFFF',
                                 opacity: isInMonth ? 1 : 0.4,
                                 cursor: 'pointer',
                                 transition: 'background-color 0.2s ease',
                                 '&:hover': {
-                                  backgroundColor: isSelected ? '#F9E7EC' : '#FFF5F7',
+                                  backgroundColor: isSelected ? '#F9E7EC' : isBlocked ? '#FFE9EE' : '#FFF5F7',
                                 },
                               }}
                             >
                               <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>{day.getDate()}</Typography>
-                              {appointmentsForDay.length > 0 ? (
+                              {isBlocked ? (
+                                <Stack spacing={0.4}>
+                                  <Typography sx={{ fontSize: '0.78rem', color: '#9C6B6B', fontWeight: 600 }}>
+                                    Bloqueada
+                                  </Typography>
+                                  {appointmentsForDay.length > 0 ? (
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#8B6B6B' }}>
+                                      {appointmentsForDay.length} turnos
+                                    </Typography>
+                                  ) : null}
+                                </Stack>
+                              ) : appointmentsForDay.length > 0 ? (
                                 <Stack spacing={0.5}>
                                   <Typography sx={{ fontSize: '0.78rem', color: '#6B6B6B' }}>{appointmentsForDay.length} turnos</Typography>
                                   <Typography sx={{ fontSize: '0.75rem', color: '#8B6B6B' }}>Ocupados: {occupiedSlots}</Typography>
@@ -1048,13 +1364,41 @@ function AdminDashboardContent() {
                       </Typography>
                       <Typography sx={{ color: '#6B6B6B', mb: 2 }}>Horarios disponibles y ocupados</Typography>
 
+                      {isDateBlocked(selectedDate) && (
+                        <Box
+                          sx={{
+                            borderRadius: '12px',
+                            border: '1px solid #F0DEDE',
+                            backgroundColor: '#FFF5F7',
+                            p: 1.5,
+                            mb: 2,
+                          }}
+                        >
+                          <Typography sx={{ fontWeight: 600, color: '#8B6B6B' }}>
+                            Semana bloqueada
+                          </Typography>
+                          <Typography sx={{ color: '#6B6B6B', fontSize: '0.85rem' }}>
+                            No se permiten nuevos turnos en esta semana.
+                          </Typography>
+                        </Box>
+                      )}
+
                       <Stack spacing={1.2}>
                         {timeSlots.map((time) => {
                           const appointment = getAppointmentForSlot(selectedDate, time);
+                          const isBlockedSlot = isDateBlocked(selectedDate) && !appointment;
                           return (
                             <Box
                               key={time}
-                              onClick={() => appointment && handleOpenEdit(appointment)}
+                              onClick={() => {
+                                if (appointment) {
+                                  handleOpenEdit(appointment);
+                                  return;
+                                }
+                                if (!isBlockedSlot) {
+                                  handleOpenCreateFromSlot(selectedDate, time);
+                                }
+                              }}
                               sx={{
                                 display: 'grid',
                                 gridTemplateColumns: '90px 1fr',
@@ -1062,9 +1406,9 @@ function AdminDashboardContent() {
                                 alignItems: 'center',
                                 p: 1.2,
                                 borderRadius: '12px',
-                                backgroundColor: appointment ? '#F6E9ED' : '#FFFDFD',
+                                backgroundColor: appointment ? '#F6E9ED' : isBlockedSlot ? '#F7F1F2' : '#FFFDFD',
                                 border: '1px solid #F5E6E8',
-                                cursor: appointment ? 'pointer' : 'default',
+                                cursor: appointment ? 'pointer' : isBlockedSlot ? 'not-allowed' : 'pointer',
                               }}
                             >
                               <Typography sx={{ fontWeight: 600, color: '#8B6B6B' }}>{time}</Typography>
@@ -1077,7 +1421,9 @@ function AdminDashboardContent() {
                                   <Chip label={appointment.status} size="small" color={statusColor(appointment.status)} sx={{ alignSelf: 'flex-start' }} />
                                 </Stack>
                               ) : (
-                                <Typography sx={{ fontSize: '0.82rem', color: '#B8A4A4' }}>Libre</Typography>
+                                <Typography sx={{ fontSize: '0.82rem', color: '#B8A4A4' }}>
+                                  {isBlockedSlot ? 'Bloqueado' : 'Libre (agendar)'}
+                                </Typography>
                               )}
                             </Box>
                           );
@@ -1091,6 +1437,167 @@ function AdminDashboardContent() {
           </Card>
         </Stack>
       </Container>
+
+      <Dialog open={rangeBlockOpen} onClose={() => setRangeBlockOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Bloquear fechas</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
+          <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>
+            Selecciona un rango para cancelar turnos (una semana, un mes o dias sueltos).
+          </Typography>
+          <TextField
+            label="Desde"
+            type="date"
+            value={rangeStartDate}
+            onChange={(event) => setRangeStartDate(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            label="Hasta"
+            type="date"
+            value={rangeEndDate}
+            onChange={(event) => setRangeEndDate(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            label="Motivo (opcional)"
+            value={rangeReason}
+            onChange={(event) => setRangeReason(event.target.value)}
+            multiline
+            rows={2}
+          />
+          {rangePreview && (
+            <Box
+              sx={{
+                borderRadius: '12px',
+                border: '1px solid #F0DEDE',
+                backgroundColor: '#FFF5F7',
+                p: 1.5,
+              }}
+            >
+              <Typography sx={{ fontWeight: 600, color: '#8B6B6B', fontSize: '0.9rem' }}>
+                Rango: {rangePreview.start.toLocaleDateString('es-AR')} -{' '}
+                {rangePreview.end.toLocaleDateString('es-AR')}
+              </Typography>
+            </Box>
+          )}
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                const { start, end } = getWeekRange(selectedDate);
+                setRangeStartDate(toIsoDate(start));
+                setRangeEndDate(toIsoDate(end));
+              }}
+              sx={{ textTransform: 'none' }}
+            >
+              Semana actual
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                const base = new Date();
+                const start = new Date(base.getFullYear(), base.getMonth(), 1);
+                const end = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+                setRangeStartDate(toIsoDate(start));
+                setRangeEndDate(toIsoDate(end));
+              }}
+              sx={{ textTransform: 'none' }}
+            >
+              Mes actual
+            </Button>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 1 }}>
+          <Button onClick={() => setRangeBlockOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleConfirmRangeBlock}>
+            Bloquear
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Agendar turno</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
+          <TextField
+            label="Nombre del paciente"
+            value={createValues.clientName}
+            onChange={(event) =>
+              setCreateValues((prev) => ({ ...prev, clientName: event.target.value }))
+            }
+          />
+          <TextField
+            label="Servicio"
+            value={createValues.service}
+            onChange={(event) =>
+              setCreateValues((prev) => ({ ...prev, service: event.target.value }))
+            }
+          />
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+            <TextField
+              label="Fecha"
+              type="date"
+              value={createValues.date}
+              onChange={(event) =>
+                setCreateValues((prev) => ({ ...prev, date: event.target.value }))
+              }
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Hora"
+              type="time"
+              value={createValues.time}
+              onChange={(event) =>
+                setCreateValues((prev) => ({ ...prev, time: event.target.value }))
+              }
+              InputLabelProps={{ shrink: true }}
+            />
+          </Box>
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+            <TextField
+              label="Duración (min)"
+              type="number"
+              value={createValues.durationMinutes}
+              onChange={(event) =>
+                setCreateValues((prev) => ({ ...prev, durationMinutes: event.target.value }))
+              }
+              inputProps={{ min: 10, step: 10 }}
+            />
+            <TextField
+              label="Ubicación"
+              value={createValues.location}
+              onChange={(event) =>
+                setCreateValues((prev) => ({ ...prev, location: event.target.value }))
+              }
+            />
+          </Box>
+          <TextField
+            select
+            label="Estado"
+            value={createValues.status}
+            onChange={(event) =>
+              setCreateValues((prev) => ({
+                ...prev,
+                status: event.target.value as AdminStatus,
+              }))
+            }
+          >
+            {['Pendiente', 'Confirmado', 'Reprogramado', 'Cancelado', 'Completado', 'No asistio'].map(
+              (status) => (
+                <MenuItem key={status} value={status}>
+                  {status}
+                </MenuItem>
+              )
+            )}
+          </TextField>
+          {createError && <Typography sx={{ color: '#B00020' }}>{createError}</Typography>}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 1 }}>
+          <Button onClick={() => setCreateOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleConfirmCreate}>
+            Agendar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={Boolean(editing)} onClose={() => setEditing(null)} fullWidth maxWidth="sm">
         <DialogTitle>Editar turno</DialogTitle>
