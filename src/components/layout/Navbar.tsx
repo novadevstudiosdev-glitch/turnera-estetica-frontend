@@ -375,12 +375,13 @@ export function Navbar() {
                 />
                 <Typography
                   sx={{
-                    fontFamily: '"Cormorant Garamond", serif',
+                    fontFamily: '"Bacalisties", cursive',
                     fontStyle: 'italic',
                     fontWeight: 300,
                     letterSpacing: '0.08em',
                     color: '#666666',
-                    fontSize: '0.82rem',
+                    fontSize: '0.9rem',
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   Dra. Jaquelina Grassetti
