@@ -8,7 +8,7 @@ const quickLinks = [
   { label: 'Inicio', href: '#' },
   { label: 'Tratamiento', href: '#servicios' },
   { label: 'Ubicacion', href: '#ubicacion' },
-  { label: 'Tienda Online', href: '#catalogo' },
+  // { label: 'Tienda Online', href: '#catalogo' },
   { label: 'Testimonios', href: '#testimonios' },
 ];
 

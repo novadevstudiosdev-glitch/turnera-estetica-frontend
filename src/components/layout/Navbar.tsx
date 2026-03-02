@@ -4,15 +4,10 @@ import {
   AppBar,
   Avatar,
   Box,
-  Chip,
   Container,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   Toolbar,
   Button,
   IconButton,
-  Stack,
   Tooltip,
   Menu,
   MenuItem,
@@ -32,12 +27,12 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import { AuthModal } from '../ui/AuthModal';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { keyframes } from '@mui/system';
-import { products } from '@/lib/data';
 
 const NAV_ITEMS = [
   { key: 'inicio', label: 'Inicio', href: '#hero' },
   { key: 'servicios', label: 'Tratamientos', href: '#servicios' },
-  { key: 'productos', label: 'Tienda online', action: 'products' as const },
+  // Tienda online desactivada temporalmente.
+  // { key: 'productos', label: 'Tienda online', action: 'products' as const },
   { key: 'testimonios', label: 'Testimonios', href: '#testimonios' },
   { key: 'ubicación', label: 'Ubicación', href: '#ubicacion' },
 ];
@@ -111,7 +106,7 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
-  const [productsModalOpen, setProductsModalOpen] = useState(false);
+  // const [productsModalOpen, setProductsModalOpen] = useState(false);
   const [tab, setTab] = useState(0);
   const [userName, setUserName] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
@@ -266,13 +261,13 @@ export function Navbar() {
     handleCloseAccountMenu();
   };
 
-  const productsByCategory = products.reduce<Record<string, typeof products>>((acc, product) => {
-    if (!acc[product.category]) {
-      acc[product.category] = [];
-    }
-    acc[product.category].push(product);
-    return acc;
-  }, {});
+  // const productsByCategory = products.reduce<Record<string, typeof products>>((acc, product) => {
+  //   if (!acc[product.category]) {
+  //     acc[product.category] = [];
+  //   }
+  //   acc[product.category].push(product);
+  //   return acc;
+  // }, {});
 
   const navItemStyle = {
     color: '#2C2C2C',
@@ -406,11 +401,7 @@ export function Navbar() {
               {NAV_ITEMS.filter((item) => item.key !== 'inicio').map((item) => (
                 <Button
                   key={item.key}
-                  onClick={
-                    item.action === 'products'
-                      ? () => setProductsModalOpen(true)
-                      : () => handleNavClick(item.href ?? '#hero')
-                  }
+                  onClick={() => handleNavClick(item.href ?? '#hero')}
                   disableRipple
                   disableFocusRipple
                   sx={navItemStyle}
@@ -634,14 +625,7 @@ export function Navbar() {
               <Button
                 key={item.key}
                 fullWidth
-                onClick={() => {
-                  if (item.action === 'products') {
-                    setProductsModalOpen(true);
-                    setMobileMenuOpen(false);
-                    return;
-                  }
-                  handleNavClick(item.href ?? '#hero');
-                }}
+                onClick={() => handleNavClick(item.href ?? '#hero')}
                 disableRipple
                 disableFocusRipple
                 sx={{
@@ -707,82 +691,16 @@ export function Navbar() {
           </Box>
         )}
       </Container>
+      {/* Modal de tienda online desactivado temporalmente.
       <Dialog
         open={productsModalOpen}
         onClose={() => setProductsModalOpen(false)}
         fullWidth
         maxWidth="md"
       >
-        <DialogTitle sx={{ pr: 6 }}>
-          Todos los productos por categoria
-          <IconButton
-            onClick={() => setProductsModalOpen(false)}
-            sx={{ position: 'absolute', right: 8, top: 8 }}
-            aria-label="Cerrar productos"
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={2.5}>
-            {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
-              <Box key={category}>
-                <Typography sx={{ fontWeight: 700, color: '#8F5161', mb: 1.2 }}>
-                  {category}
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-                    gap: 1.5,
-                  }}
-                >
-                  {categoryProducts.map((product) => (
-                    <Box
-                      key={product.id}
-                      sx={{
-                        border: '1px solid #ECE7E3',
-                        borderRadius: '12px',
-                        p: 1.5,
-                        backgroundColor: '#FFFFFF',
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={product.image}
-                        alt={product.name}
-                        sx={{
-                          width: '100%',
-                          height: 120,
-                          objectFit: 'cover',
-                          borderRadius: '8px',
-                          mb: 1,
-                        }}
-                      />
-                      <Typography sx={{ fontWeight: 700, color: '#1A1A1A' }}>
-                        {product.icon} {product.name}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.88rem', color: '#666666', mt: 0.5 }}>
-                        {product.description}
-                      </Typography>
-                      <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
-                        <Chip
-                          label={product.presentation}
-                          size="small"
-                          sx={{ backgroundColor: '#EFEDEB', color: '#555555' }}
-                        />
-                      </Stack>
-                      <Typography sx={{ fontWeight: 700, color: '#C48A9A', mt: 1 }}>
-                        {product.price}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            ))}
-          </Stack>
-        </DialogContent>
+        ...
       </Dialog>
+      */}
       <AuthModal
         open={authOpen}
         onClose={() => setAuthOpen(false)}
@@ -792,3 +710,5 @@ export function Navbar() {
     </AppBar>
   );
 }
+
+
