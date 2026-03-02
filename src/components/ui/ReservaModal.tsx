@@ -20,18 +20,18 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import { useEffect, useState } from 'react';
-import {
-  LOCATIONS,
-  LocationKey,
-  getAvailableDaysLabel,
-  getTimeSlots,
-  isDateAvailable,
-} from '@/lib/booking';
+import { LOCATIONS, LocationKey, getAvailableDaysLabel } from '@/lib/booking';
 
 
 type ServiceOption = {
   id: string;
   name: string;
+};
+
+type AvailableSlot = {
+  time: string;
+  available: boolean;
+  reason?: string;
 };
 
 export function ReservaModal() {
@@ -49,10 +49,14 @@ export function ReservaModal() {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [servicesError, setServicesError] = useState<string | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
   const appointmentsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/appointments`;
   const servicesUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/services`;
+  const availableSlotsUrl = `${appointmentsUrl}/available-slots`;
   const paymentUrl = (process.env.NEXT_PUBLIC_PAYMENT_URL ?? '').trim();
   const hasPaymentUrl = paymentUrl.length > 0;
 
@@ -121,6 +125,90 @@ export function ReservaModal() {
     };
   }, [apiBaseUrl, servicesUrl]);
 
+  useEffect(() => {
+    if (!selectedDate || !selectedServiceId) {
+      setAvailableSlots([]);
+      setSlotsError(null);
+      setSlotsLoading(false);
+      return;
+    }
+    if (!apiBaseUrl) {
+      setSlotsError('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+      setAvailableSlots([]);
+      return;
+    }
+
+    let mounted = true;
+    const controller = new AbortController();
+
+    const loadAvailableSlots = async () => {
+      setSlotsLoading(true);
+      setSlotsError(null);
+      try {
+        const query = new URLSearchParams({
+          serviceId: selectedServiceId,
+          date: selectedDate,
+        }).toString();
+        const response = await fetch(`${availableSlotsUrl}?${query}`, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const rawText = await response.text();
+        let parsed: unknown = rawText;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch {
+          parsed = rawText;
+        }
+        const list = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray((parsed as { data?: unknown }).data)
+            ? ((parsed as { data?: unknown }).data as unknown[])
+            : [];
+        const normalized = list
+          .map((item) => {
+            const timeValue = String((item as { time?: string }).time ?? '').trim();
+            const available = Boolean((item as { available?: boolean }).available);
+            const reason = (item as { reason?: string }).reason;
+            if (!timeValue) return null;
+            return {
+              time: timeValue.slice(0, 5),
+              available,
+              reason,
+            } as AvailableSlot;
+          })
+          .filter((slot): slot is AvailableSlot => Boolean(slot));
+        if (mounted) {
+          setAvailableSlots(normalized);
+        }
+      } catch {
+        if (mounted) {
+          setSlotsError('No se pudieron cargar los horarios disponibles.');
+          setAvailableSlots([]);
+        }
+      } finally {
+        if (mounted) {
+          setSlotsLoading(false);
+        }
+      }
+    };
+
+    loadAvailableSlots();
+
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, [apiBaseUrl, availableSlotsUrl, selectedDate, selectedServiceId]);
+
+  useEffect(() => {
+    if (!selectedTime) return;
+    const availableTimes = availableSlots.filter((slot) => slot.available).map((slot) => slot.time);
+    if (!availableTimes.includes(selectedTime)) {
+      setSelectedTime(null);
+    }
+  }, [availableSlots, selectedTime]);
+
   const handleClose = () => {
     setOpen(false);
     setPaymentDialogOpen(false);
@@ -163,14 +251,16 @@ export function ReservaModal() {
   } as const;
 
 
-  const todayValue = new Date().toISOString().split('T')[0];
+  const todayValue = (() => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 10);
+  })();
   const availableDaysLabel = selectedLocation ? getAvailableDaysLabel(selectedLocation) : '';
-  const timeSlots =
-    selectedLocation && selectedDate ? getTimeSlots(selectedLocation, selectedDate) : [];
+  const availableTimeSlots = availableSlots.filter((slot) => slot.available).map((slot) => slot.time);
+  const timeSlots = selectedDate ? availableTimeSlots : [];
   const shouldShowNoSlotsMessage =
-    selectedLocation && selectedDate
-      ? !isDateAvailable(selectedLocation, selectedDate) || timeSlots.length === 0
-      : false;
+    selectedDate ? !slotsLoading && !slotsError && timeSlots.length === 0 : false;
   const selectedLocationLabel = selectedLocation
     ? LOCATIONS.find((item) => item.id === selectedLocation)?.label ?? ''
     : '';
@@ -199,6 +289,18 @@ export function ReservaModal() {
     }
     if (!selectedServiceId) {
       showAlert('No hay tratamientos disponibles para reservar.');
+      return false;
+    }
+    if (slotsLoading) {
+      showAlert('Espera a que se carguen los horarios disponibles.');
+      return false;
+    }
+    if (slotsError) {
+      showAlert(slotsError);
+      return false;
+    }
+    if (selectedTime && !availableTimeSlots.includes(selectedTime)) {
+      showAlert('El horario seleccionado ya no esta disponible.');
       return false;
     }
     if (!apiBaseUrl) {
@@ -439,46 +541,57 @@ export function ReservaModal() {
           <Typography sx={{ color: '#2C2C2C', fontWeight: 500, mb: 2 }}>
             Horarios disponibles
           </Typography>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-              gap: 1.5,
-              mb: 3,
-            }}
-          >
-            {timeSlots.map((slot) => {
-              const isSelected = selectedTime === slot;
-              return (
-                <Button
-                  key={slot}
-                  onClick={() => setSelectedTime(slot)}
-                  variant="outlined"
-                  sx={{
-                    borderRadius: '20px',
-                    px: 2,
-                    py: 1.2,
-                    borderWidth: '2px',
-                    borderColor: '#EEBBC3',
-                    backgroundColor: isSelected ? '#EEBBC3' : '#FFFFFF',
-                    color: isSelected ? '#FFFFFF' : '#2C2C2C',
-                    textTransform: 'none',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      backgroundColor: isSelected ? '#EEBBC3' : '#F5E6E8',
-                      transform: 'translateY(-2px)',
-                      borderColor: '#FFB8C6',
-                    },
-                  }}
-                >
-                  {slot}
-                </Button>
-              );
-            })}
-          </Box>
+          {slotsLoading ? (
+            <Typography sx={{ color: '#9C6B6B', fontSize: '0.9rem', mb: 3 }}>
+              Cargando horarios...
+            </Typography>
+          ) : (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+                gap: 1.5,
+                mb: 3,
+              }}
+            >
+              {timeSlots.map((slot) => {
+                const isSelected = selectedTime === slot;
+                return (
+                  <Button
+                    key={slot}
+                    onClick={() => setSelectedTime(slot)}
+                    variant="outlined"
+                    sx={{
+                      borderRadius: '20px',
+                      px: 2,
+                      py: 1.2,
+                      borderWidth: '2px',
+                      borderColor: '#EEBBC3',
+                      backgroundColor: isSelected ? '#EEBBC3' : '#FFFFFF',
+                      color: isSelected ? '#FFFFFF' : '#2C2C2C',
+                      textTransform: 'none',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        backgroundColor: isSelected ? '#EEBBC3' : '#F5E6E8',
+                        transform: 'translateY(-2px)',
+                        borderColor: '#FFB8C6',
+                      },
+                    }}
+                  >
+                    {slot}
+                  </Button>
+                );
+              })}
+            </Box>
+          )}
           {shouldShowNoSlotsMessage && (
             <Typography sx={{ color: '#9C6B6B', fontSize: '0.9rem', mb: 3 }}>
               No hay turnos disponibles este día
+            </Typography>
+          )}
+          {slotsError && (
+            <Typography sx={{ color: '#B00020', fontSize: '0.9rem', mb: 3 }}>
+              {slotsError}
             </Typography>
           )}
 
@@ -589,6 +702,8 @@ export function ReservaModal() {
     </Dialog>
   );
 }
+
+
 
 
 
