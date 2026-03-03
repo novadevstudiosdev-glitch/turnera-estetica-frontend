@@ -408,11 +408,7 @@ export function Navbar() {
               {NAV_ITEMS.map((item) => (
                 <Button
                   key={item.key}
-                  onClick={
-                    item.action === 'products'
-                      ? () => setProductsModalOpen(true)
-                      : () => handleNavClick(item.href ?? '#hero')
-                  }
+                  onClick={() => handleNavClick(item.href ?? '#hero')}
                   disableRipple
                   disableFocusRipple
                   sx={navItemStyle}
