@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
@@ -20,11 +20,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'JQ - Dra. Jaquelina Grassetti',
+  title: 'Dra. Jaquelina Grassetti',
   description: 'Medicina estética',
-  icons: {
-    icon: '/favicon.ico',
-  },
 };
 
 export const viewport = {
@@ -83,3 +80,6 @@ export default function RootLayout({
     </html>
   );
 }
+
+
+

@@ -102,7 +102,11 @@ export function TurnosSection() {
     },
   };
 
-  const todayValue = new Date().toISOString().split('T')[0];
+  const todayValue = (() => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 10);
+  })();
   const availableDaysLabel = selectedLocation ? getAvailableDaysLabel(selectedLocation) : '';
   const timeSlots =
     selectedLocation && selectedDate ? getTimeSlots(selectedLocation, selectedDate) : [];

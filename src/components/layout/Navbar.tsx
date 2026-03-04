@@ -322,25 +322,34 @@ export function Navbar() {
         transition: 'all 0.3s ease',
       }}
     >
-      <Container maxWidth="lg" sx={{ px: { xs: 3, md: 7.5 } }}>
+      <Container maxWidth="lg" sx={{ px: { xs: 3, md: 10 } }}>
         <Toolbar
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             minHeight: 80,
             padding: 0,
+            position: 'relative',
           }}
         >
           {/* Logo + Inicio */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              width: { xs: 'auto', md: 360 },
+              minWidth: { md: 360 },
+              justifyContent: 'flex-start',
+            }}
+          >
             <Link href="/">
               <Box
                 sx={{
                   display: 'flex',
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: 2,
+                  gap: 1,
                   cursor: 'pointer',
                   transition: 'transform 0.3s ease',
                   height: 80,
@@ -383,22 +392,20 @@ export function Navbar() {
                 </Typography>
               </Box>
             </Link>
-            {!isMobileView && (
-              <Button
-                onClick={() => handleNavClick('#hero')}
-                disableRipple
-                disableFocusRipple
-                sx={navItemStyle}
-              >
-                Inicio
-              </Button>
-            )}
           </Box>
 
           {/* Desktop Navigation */}
           {!isMobileView && (
-            <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 1.5 }}>
-              {NAV_ITEMS.filter((item) => item.key !== 'inicio').map((item) => (
+            <Box
+              sx={{
+                position: 'absolute',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                gap: 1.5,
+              }}
+            >
+              {NAV_ITEMS.map((item) => (
                 <Button
                   key={item.key}
                   onClick={() => handleNavClick(item.href ?? '#hero')}
@@ -412,7 +419,17 @@ export function Navbar() {
             </Box>
           )}
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              width: { xs: 'auto', md: 360 },
+              minWidth: { md: 360 },
+              justifyContent: 'flex-end',
+              marginLeft: 'auto',
+            }}
+          >
             <Button
               variant="contained"
               onClick={handleOpenReserva}
