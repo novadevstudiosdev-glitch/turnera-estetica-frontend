@@ -24,7 +24,7 @@ export function HeroSection() {
             cuidado profesional
           </h1>
           <p style={styles.p}>
-            Tratamientos de medicina estetica disenados para realzar tu belleza de forma sutil,
+            Tratamientos de medicina estetica diseñados para realzar tu belleza de forma sutil,
             segura y armonica.
           </p>
 
