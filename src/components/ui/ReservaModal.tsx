@@ -40,6 +40,31 @@ type AvailableSlot = {
   reason?: string;
 };
 
+type StoredUser = {
+  email?: string;
+  fullName?: string;
+  phone?: string;
+};
+
+const readStoredUser = (): StoredUser | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const rawUser = window.localStorage.getItem('turnera_user');
+
+  if (!rawUser) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawUser) as StoredUser;
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
 export function ReservaModal() {
   dayjs.locale('es');
   const [open, setOpen] = useState(false);
@@ -74,6 +99,25 @@ export function ReservaModal() {
   const paymentsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/payments/create-preference`;
   const servicesUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/services`;
   const availableSlotsUrl = `${appointmentsUrl}/available-slots`;
+
+  useEffect(() => {
+    const syncStoredUser = () => {
+      const storedUser = readStoredUser();
+
+      if (!storedUser) {
+        return;
+      }
+
+      setPatientName((prev) => prev || storedUser.fullName?.trim() || '');
+      setPatientEmail((prev) => prev || storedUser.email?.trim() || '');
+      setPatientPhone((prev) => prev || storedUser.phone?.trim() || '');
+    };
+
+    syncStoredUser();
+    window.addEventListener('auth-changed', syncStoredUser);
+
+    return () => window.removeEventListener('auth-changed', syncStoredUser);
+  }, []);
 
   useEffect(() => {
     const handler = () => setOpen(true);
@@ -423,6 +467,92 @@ export function ReservaModal() {
     setAlertOpen(true);
   };
 
+  const parseResponsePayload = async (response: Response) => {
+    const rawText = await response.text();
+
+    if (!rawText) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(rawText) as unknown;
+    } catch {
+      return rawText;
+    }
+  };
+
+  const getErrorMessage = (payload: unknown, fallback: string) => {
+    if (typeof payload === 'string' && payload.trim()) {
+      return payload;
+    }
+
+    if (payload && typeof payload === 'object') {
+      const message = (payload as { message?: unknown }).message;
+
+      if (typeof message === 'string' && message.trim()) {
+        return message;
+      }
+
+      if (Array.isArray(message) && message.length > 0) {
+        return message.join(' | ');
+      }
+
+      const error = (payload as { error?: unknown }).error;
+      if (typeof error === 'string' && error.trim()) {
+        return error;
+      }
+    }
+
+    return fallback;
+  };
+
+  const reloadSlotsForSelectedDate = async () => {
+    if (!selectedDate || !selectedServiceId || !selectedLocation || !apiBaseUrl) {
+      return;
+    }
+
+    try {
+      const query = new URLSearchParams({
+        serviceId: selectedServiceId,
+        date: selectedDate,
+      }).toString();
+      const response = await fetch(`${availableSlotsUrl}?${query}`);
+
+      if (!response.ok) {
+        return;
+      }
+
+      const payload = await parseResponsePayload(response);
+      const list = Array.isArray(payload)
+        ? payload
+        : Array.isArray((payload as { data?: unknown })?.data)
+          ? (((payload as { data?: unknown }).data as unknown[]) ?? [])
+          : [];
+
+      const normalized = list
+        .map((item) => {
+          const timeValue = String((item as { time?: string }).time ?? '').trim();
+          const available = Boolean((item as { available?: boolean }).available);
+          const reason = (item as { reason?: string }).reason;
+          if (!timeValue) return null;
+          return {
+            time: timeValue.slice(0, 5),
+            available,
+            reason,
+          } as AvailableSlot;
+        })
+        .filter((slot): slot is AvailableSlot => Boolean(slot));
+
+      setAvailableSlots(normalized);
+      setAvailabilityByDate((prev) => ({
+        ...prev,
+        [selectedDate]: normalized.some((slot) => slot.available),
+      }));
+    } catch {
+      // Ignore: this is a best-effort refresh after a rejected reservation.
+    }
+  };
+
   useEffect(() => {
     if (!selectedLocation || !selectedDate) {
       setDateError(null);
@@ -644,22 +774,31 @@ export function ReservaModal() {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      const parsed = await parseResponsePayload(response);
 
-      const rawText = await response.text();
-      let parsed: unknown = rawText;
-      try {
-        parsed = JSON.parse(rawText);
-      } catch {
-        parsed = rawText;
+      if (!response.ok) {
+        const message = getErrorMessage(
+          parsed,
+          `No se pudo confirmar la reserva (HTTP ${response.status}).`,
+        );
+
+        // If the slot changed between load and submit, refresh options.
+        if (response.status === 409 || response.status === 400) {
+          setSelectedTime(null);
+          await reloadSlotsForSelectedDate();
+        }
+
+        throw new Error(message);
       }
 
       const appointmentId = String((parsed as { id?: string }).id ?? '').trim();
       return appointmentId || null;
-    } catch {
-      showAlert('No se pudo confirmar la reserva. Intenta nuevamente.');
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'No se pudo confirmar la reserva. Intenta nuevamente.';
+      showAlert(message);
       return null;
     }
   };
@@ -686,6 +825,10 @@ export function ReservaModal() {
         return null;
       }
 
+      const storedUser = readStoredUser();
+      const payerEmail = storedUser?.email?.trim() || patientEmail.trim();
+      const payerName = storedUser?.fullName?.trim() || patientName.trim();
+
       const response = await fetch(paymentsUrl, {
         method: 'POST',
         headers: {
@@ -697,8 +840,8 @@ export function ReservaModal() {
           amount,
           description: `Reserva de ${selectedService.name}`,
           payer: {
-            email: patientEmail,
-            name: patientName,
+            email: payerEmail,
+            name: payerName,
           },
         }),
       });
@@ -713,7 +856,7 @@ export function ReservaModal() {
         sandboxInitPoint?: string;
       };
 
-      return payload.checkoutUrl ?? payload.initPoint ?? payload.sandboxInitPoint ?? null;
+      return payload.checkoutUrl ?? payload.sandboxInitPoint ?? payload.initPoint ?? null;
     } catch {
       return null;
     }
