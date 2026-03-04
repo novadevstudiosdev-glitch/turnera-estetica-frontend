@@ -365,9 +365,12 @@ export function ReservaModal() {
   const availableTimeSlots = availableSlots
     .filter((slot) => slot.available)
     .map((slot) => slot.time);
-  const timeSlots = selectedDate && !dateError && !weekUnavailable ? availableSlots : [];
+  const showWeekUnavailable = weekUnavailable && !slotsError;
+  const timeSlots = selectedDate && !dateError && !showWeekUnavailable
+    ? availableSlots.filter((slot) => slot.available)
+    : [];
   const shouldShowNoSlotsMessage =
-    selectedDate && !dateError && !weekUnavailable
+    selectedDate && !dateError && !showWeekUnavailable
       ? !slotsLoading && !slotsError && availableTimeSlots.length === 0
       : false;
   const selectedLocationLabel = selectedLocation
@@ -540,7 +543,7 @@ export function ReservaModal() {
       showAlert(dateError);
       return false;
     }
-    if (weekUnavailable) {
+    if (showWeekUnavailable) {
       showAlert('No hay turnos disponibles en esa semana.');
       return false;
     }
@@ -801,15 +804,16 @@ export function ReservaModal() {
                     const dateValue = value.format('YYYY-MM-DD');
                     if (!isDateAvailable(selectedLocation, dateValue)) return true;
                     const knownAvailability = availabilityByDate[dateValue];
+                    // Solo habilitar fechas confirmadas como disponibles.
                     return knownAvailability !== true;
                   }}
                   slotProps={{
                     textField: {
                       fullWidth: true,
-                      error: Boolean(dateError || weekUnavailable),
+                      error: Boolean(dateError || showWeekUnavailable),
                       helperText: dateError
                         ? dateError
-                        : weekUnavailable
+                        : showWeekUnavailable
                           ? 'No hay turnos disponibles en esa semana.'
                           : monthLoading
                             ? 'Cargando disponibilidad del mes...'

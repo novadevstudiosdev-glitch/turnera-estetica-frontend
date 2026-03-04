@@ -29,6 +29,14 @@ const nextConfig: NextConfig = {
       envFromFile.NEXT_PUBLIC_GOOGLE_CLIENT_ID ??
       process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:3000/api/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
