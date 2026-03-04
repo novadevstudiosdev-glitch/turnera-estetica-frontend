@@ -62,6 +62,7 @@ export function ReservaModal() {
   const [alertMessage, setAlertMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentConfirmOpen, setPaymentConfirmOpen] = useState(false);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [servicesError, setServicesError] = useState<string | null>(null);
   const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
@@ -664,10 +665,16 @@ export function ReservaModal() {
     setPaymentDialogOpen(true);
   };
 
+  const handleOpenPaymentConfirm = () => {
+    setPaymentDialogOpen(false);
+    setPaymentConfirmOpen(true);
+  };
+
   const handleProceedToPayment = async () => {
     const ok = await createAppointment();
     if (!ok) return;
     setPaymentDialogOpen(false);
+    setPaymentConfirmOpen(false);
     setOpen(false);
     if (typeof window !== 'undefined') {
       window.location.href = paymentUrl;
@@ -1022,12 +1029,41 @@ export function ReservaModal() {
         <DialogTitle sx={{ fontWeight: 700 }}>Consulta paga</DialogTitle>
         <DialogContent>
           <Typography sx={{ color: '#6B6B6B', lineHeight: 1.7 }}>
-            La consulta tiene costo. Al continuar vas a ser redirigido a la pasarela de pago para
-            completar la reserva.
+            La consulta sale <strong>$20.000</strong>. Al continuar vas a ser redirigido a la
+            pasarela de pago para completar la reserva.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setPaymentDialogOpen(false)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={handleOpenPaymentConfirm}
+            disabled={isSubmitting}
+            sx={{
+              backgroundColor: '#EEBBC3',
+              color: '#2C2C2C',
+              '&:hover': { backgroundColor: '#FFB8C6' },
+            }}
+          >
+            Ir a pagar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={paymentConfirmOpen}
+        onClose={() => setPaymentConfirmOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Confirmar pago</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: '#6B6B6B', lineHeight: 1.7 }}>
+            La consulta sale <strong>$20.000</strong>. ¿Querés continuar con el pago?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setPaymentConfirmOpen(false)}>Cancelar</Button>
           <Button
             variant="contained"
             onClick={handleProceedToPayment}
@@ -1038,7 +1074,7 @@ export function ReservaModal() {
               '&:hover': { backgroundColor: '#FFB8C6' },
             }}
           >
-            Ir a pagar
+            Continuar
           </Button>
         </DialogActions>
       </Dialog>
