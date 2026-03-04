@@ -72,7 +72,7 @@ export function Footer() {
               />
               <Typography
                 sx={{
-                  fontFamily: '"Cormorant Garamond", serif',
+                  fontFamily: '"Bacalisties", cursive',
                   fontStyle: 'italic',
                   fontWeight: 300,
                   letterSpacing: '0.08em',

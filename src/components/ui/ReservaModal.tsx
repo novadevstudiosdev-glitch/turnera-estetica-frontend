@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {
   Alert,
@@ -15,13 +15,18 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { esES } from '@mui/x-date-pickers/locales';
 import CloseIcon from '@mui/icons-material/Close';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
-import { useEffect, useState } from 'react';
-import { LOCATIONS, LocationKey, getAvailableDaysLabel } from '@/lib/booking';
-
+import dayjs, { Dayjs } from 'dayjs';
+import 'dayjs/locale/es';
+import { useCallback, useEffect, useState } from 'react';
+import { LOCATIONS, LocationKey, getAvailableDaysLabel, isDateAvailable } from '@/lib/booking';
 
 type ServiceOption = {
   id: string;
@@ -35,6 +40,7 @@ type AvailableSlot = {
 };
 
 export function ReservaModal() {
+  dayjs.locale('es');
   const [open, setOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationKey | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
@@ -43,6 +49,14 @@ export function ReservaModal() {
   const [patientName, setPatientName] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
   const [patientEmail, setPatientEmail] = useState('');
+  const [patientNameError, setPatientNameError] = useState<string | null>(null);
+  const [patientPhoneError, setPatientPhoneError] = useState<string | null>(null);
+  const [dateError, setDateError] = useState<string | null>(null);
+  const [weekUnavailable, setWeekUnavailable] = useState(false);
+  const [weekCheckLoading, setWeekCheckLoading] = useState(false);
+  const [availabilityByDate, setAvailabilityByDate] = useState<Record<string, boolean | null>>({});
+  const [monthLoading, setMonthLoading] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(() => dayjs());
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,7 +140,13 @@ export function ReservaModal() {
   }, [apiBaseUrl, servicesUrl]);
 
   useEffect(() => {
-    if (!selectedDate || !selectedServiceId) {
+    if (!selectedDate || !selectedServiceId || !selectedLocation) {
+      setAvailableSlots([]);
+      setSlotsError(null);
+      setSlotsLoading(false);
+      return;
+    }
+    if (!isDateAvailable(selectedLocation, selectedDate)) {
       setAvailableSlots([]);
       setSlotsError(null);
       setSlotsLoading(false);
@@ -149,7 +169,9 @@ export function ReservaModal() {
           serviceId: selectedServiceId,
           date: selectedDate,
         }).toString();
-        const response = await fetch(`${availableSlotsUrl}?${query}`, { signal: controller.signal });
+        const response = await fetch(`${availableSlotsUrl}?${query}`, {
+          signal: controller.signal,
+        });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -180,6 +202,10 @@ export function ReservaModal() {
           .filter((slot): slot is AvailableSlot => Boolean(slot));
         if (mounted) {
           setAvailableSlots(normalized);
+          if (selectedDate) {
+            const hasAvailable = normalized.some((slot) => slot.available);
+            setAvailabilityByDate((prev) => ({ ...prev, [selectedDate]: hasAvailable }));
+          }
         }
       } catch {
         if (mounted) {
@@ -199,7 +225,7 @@ export function ReservaModal() {
       mounted = false;
       controller.abort();
     };
-  }, [apiBaseUrl, availableSlotsUrl, selectedDate, selectedServiceId]);
+  }, [apiBaseUrl, availableSlotsUrl, selectedDate, selectedLocation, selectedServiceId]);
 
   useEffect(() => {
     if (!selectedTime) return;
@@ -217,11 +243,96 @@ export function ReservaModal() {
     setSelectedLocation(location);
     setSelectedDate('');
     setSelectedTime(null);
+    setDateError(null);
+    setWeekUnavailable(false);
+    setAvailabilityByDate({});
   };
   const handleDateChange = (value: string) => {
     setSelectedDate(value);
     setSelectedTime(null);
+    if (value) {
+      setCurrentMonth(dayjs(value));
+    }
   };
+  const handleNameChange = (value: string) => {
+    const sanitized = value.replace(/[^\p{L}\s'-]/gu, '');
+    setPatientName(sanitized);
+    setPatientNameError(value !== sanitized ? 'Solo se permiten letras y espacios.' : null);
+  };
+  const handlePhoneChange = (value: string) => {
+    const hasInvalidChars = /[^\d+()\s-]/.test(value);
+    const sanitized = value.replace(/[^\d+()\s-]/g, '');
+    setPatientPhone(sanitized);
+    const digits = sanitized.replace(/\D/g, '');
+    if (hasInvalidChars) {
+      setPatientPhoneError('Solo se permiten números.');
+      return;
+    }
+    if (digits.length > 0 && (digits.length < 8 || digits.length > 15)) {
+      setPatientPhoneError('Ingresá un teléfono válido.');
+      return;
+    }
+    setPatientPhoneError(null);
+  };
+
+  const toLocalDateValue = (date: Date) => {
+    const local = new Date(date);
+    local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
+    return local.toISOString().slice(0, 10);
+  };
+
+  const getWeekDates = (dateValue: string) => {
+    const date = new Date(`${dateValue}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return [];
+    const day = date.getDay();
+    const mondayOffset = (day + 6) % 7;
+    const monday = new Date(date);
+    monday.setDate(date.getDate() - mondayOffset);
+    return Array.from({ length: 7 }, (_, index) => {
+      const current = new Date(monday);
+      current.setDate(monday.getDate() + index);
+      return toLocalDateValue(current);
+    });
+  };
+
+  const getMonthDates = (monthValue: Dayjs) => {
+    const start = monthValue.startOf('month');
+    const daysInMonth = monthValue.daysInMonth();
+    return Array.from({ length: daysInMonth }, (_, index) =>
+      start.add(index, 'day').format('YYYY-MM-DD'),
+    );
+  };
+
+  const fetchAvailabilityForDate = useCallback(
+    async (dateValue: string, signal?: AbortSignal) => {
+      if (!apiBaseUrl || !selectedServiceId) return null;
+      if (selectedLocation && !isDateAvailable(selectedLocation, dateValue)) return false;
+      try {
+        const query = new URLSearchParams({
+          serviceId: selectedServiceId,
+          date: dateValue,
+        }).toString();
+        const response = await fetch(`${availableSlotsUrl}?${query}`, { signal });
+        if (!response.ok) return null;
+        const rawText = await response.text();
+        let parsed: unknown = rawText;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch {
+          parsed = rawText;
+        }
+        const list = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray((parsed as { data?: unknown }).data)
+            ? ((parsed as { data?: unknown }).data as unknown[])
+            : [];
+        return list.some((item) => Boolean((item as { available?: boolean }).available));
+      } catch {
+        return null;
+      }
+    },
+    [apiBaseUrl, availableSlotsUrl, selectedLocation, selectedServiceId],
+  );
 
   const textFieldSx = {
     '& .MuiInputBase-root': {
@@ -250,30 +361,163 @@ export function ReservaModal() {
     },
   } as const;
 
-
-  const todayValue = (() => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 10);
-  })();
   const availableDaysLabel = selectedLocation ? getAvailableDaysLabel(selectedLocation) : '';
-  const availableTimeSlots = availableSlots.filter((slot) => slot.available).map((slot) => slot.time);
-  const timeSlots = selectedDate ? availableTimeSlots : [];
+  const availableTimeSlots = availableSlots
+    .filter((slot) => slot.available)
+    .map((slot) => slot.time);
+  const timeSlots = selectedDate && !dateError && !weekUnavailable ? availableSlots : [];
   const shouldShowNoSlotsMessage =
-    selectedDate ? !slotsLoading && !slotsError && timeSlots.length === 0 : false;
+    selectedDate && !dateError && !weekUnavailable
+      ? !slotsLoading && !slotsError && availableTimeSlots.length === 0
+      : false;
   const selectedLocationLabel = selectedLocation
-    ? LOCATIONS.find((item) => item.id === selectedLocation)?.label ?? ''
+    ? (LOCATIONS.find((item) => item.id === selectedLocation)?.label ?? '')
     : '';
   const showAlert = (message: string) => {
     setAlertMessage(message);
     setAlertOpen(true);
   };
 
+  useEffect(() => {
+    if (!selectedLocation || !selectedDate) {
+      setDateError(null);
+      return;
+    }
+    if (!isDateAvailable(selectedLocation, selectedDate)) {
+      setDateError('No hay atención ese día.');
+      setAvailableSlots([]);
+      setSelectedTime(null);
+      return;
+    }
+    setDateError(null);
+  }, [selectedDate, selectedLocation]);
+
+  useEffect(() => {
+    if (!open) return;
+    setCurrentMonth(selectedDate ? dayjs(selectedDate) : dayjs());
+  }, [open, selectedDate]);
+
+  useEffect(() => {
+    if (!open || !selectedLocation || !selectedServiceId || !apiBaseUrl) {
+      setMonthLoading(false);
+      return;
+    }
+    const monthDates = getMonthDates(currentMonth).filter((dateValue) =>
+      isDateAvailable(selectedLocation, dateValue),
+    );
+    const pendingDates = monthDates.filter((dateValue) => availabilityByDate[dateValue] === undefined);
+    if (pendingDates.length === 0) {
+      setMonthLoading(false);
+      return;
+    }
+    let mounted = true;
+    const controller = new AbortController();
+
+    const loadMonthAvailability = async () => {
+      setMonthLoading(true);
+      const results: Record<string, boolean | null> = {};
+      const queue = [...pendingDates];
+      const concurrency = Math.min(5, queue.length);
+      const worker = async () => {
+        while (queue.length > 0 && !controller.signal.aborted) {
+          const dateValue = queue.shift();
+          if (!dateValue) break;
+          const available = await fetchAvailabilityForDate(dateValue, controller.signal);
+          results[dateValue] = available;
+        }
+      };
+      try {
+        await Promise.all(Array.from({ length: concurrency }, () => worker()));
+        if (mounted && Object.keys(results).length > 0) {
+          setAvailabilityByDate((prev) => ({ ...prev, ...results }));
+        }
+      } finally {
+        if (mounted) setMonthLoading(false);
+      }
+    };
+
+    loadMonthAvailability();
+
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, [
+    apiBaseUrl,
+    availabilityByDate,
+    currentMonth,
+    fetchAvailabilityForDate,
+    open,
+    selectedLocation,
+    selectedServiceId,
+  ]);
+
+  useEffect(() => {
+    if (!selectedLocation || !selectedServiceId || !selectedDate || !apiBaseUrl) {
+      setWeekUnavailable(false);
+      setWeekCheckLoading(false);
+      return;
+    }
+    if (dateError) {
+      setWeekUnavailable(false);
+      setWeekCheckLoading(false);
+      return;
+    }
+    let mounted = true;
+    const controller = new AbortController();
+
+    const checkWeekAvailability = async () => {
+      setWeekCheckLoading(true);
+      try {
+        const weekDates = getWeekDates(selectedDate).filter((dateValue) =>
+          selectedLocation ? isDateAvailable(selectedLocation, dateValue) : true,
+        );
+        if (weekDates.length === 0) {
+          if (mounted) setWeekUnavailable(true);
+          return;
+        }
+        const results = await Promise.all(
+          weekDates.map(async (dateValue) => ({
+            date: dateValue,
+            available: await fetchAvailabilityForDate(dateValue, controller.signal),
+          })),
+        );
+        if (mounted) {
+          const availabilityMap = results.reduce<Record<string, boolean | null>>((acc, item) => {
+            acc[item.date] = item.available;
+            return acc;
+          }, {});
+          setAvailabilityByDate((prev) => ({ ...prev, ...availabilityMap }));
+          const hasKnown = results.some((item) => item.available !== null);
+          const hasAvailable = results.some((item) => item.available === true);
+          setWeekUnavailable(hasKnown ? !hasAvailable : false);
+        }
+      } finally {
+        if (mounted) setWeekCheckLoading(false);
+      }
+    };
+
+    checkWeekAvailability();
+
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, [apiBaseUrl, availableSlotsUrl, dateError, selectedDate, selectedLocation, selectedServiceId]);
+
   const validateReservation = () => {
     if (typeof window === 'undefined') return false;
     const token = localStorage.getItem('turnera_access_token');
     if (!token) {
       showAlert('Para confirmar la reserva necesitas iniciar sesion.');
+      return false;
+    }
+    if (patientNameError) {
+      showAlert(patientNameError);
+      return false;
+    }
+    if (patientPhoneError) {
+      showAlert(patientPhoneError);
       return false;
     }
     if (
@@ -285,6 +529,19 @@ export function ReservaModal() {
       !patientEmail
     ) {
       showAlert('Completa todos los datos para confirmar la reserva.');
+      return false;
+    }
+    const phoneDigits = patientPhone.replace(/\D/g, '');
+    if (phoneDigits.length < 8) {
+      showAlert('Ingresá un teléfono válido.');
+      return false;
+    }
+    if (dateError) {
+      showAlert(dateError);
+      return false;
+    }
+    if (weekUnavailable) {
+      showAlert('No hay turnos disponibles en esa semana.');
       return false;
     }
     if (!selectedServiceId) {
@@ -405,13 +662,13 @@ export function ReservaModal() {
       }}
     >
       <DialogContent sx={{ p: { xs: 3, md: 5 }, position: 'relative' }}>
-          <Box
-            component="form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              handleConfirm();
-            }}
-          >
+        <Box
+          component="form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleConfirm();
+          }}
+        >
           <IconButton
             aria-label="Cerrar"
             onClick={handleClose}
@@ -454,7 +711,9 @@ export function ReservaModal() {
                 fullWidth
                 placeholder="Ingresá tu nombre"
                 value={patientName}
-                onChange={(event) => setPatientName(event.target.value)}
+                onChange={(event) => handleNameChange(event.target.value)}
+                error={Boolean(patientNameError)}
+                helperText={patientNameError ?? ' '}
                 sx={textFieldSx}
               />
             </Box>
@@ -464,7 +723,9 @@ export function ReservaModal() {
                 fullWidth
                 placeholder="+54 9 11 1234-5678"
                 value={patientPhone}
-                onChange={(event) => setPatientPhone(event.target.value)}
+                onChange={(event) => handlePhoneChange(event.target.value)}
+                error={Boolean(patientPhoneError)}
+                helperText={patientPhoneError ?? ' '}
                 sx={textFieldSx}
               />
             </Box>
@@ -520,19 +781,49 @@ export function ReservaModal() {
             </Box>
             <Box>
               <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>Fecha</Typography>
-              <TextField
-                fullWidth
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={selectedDate}
-                onChange={(event) => handleDateChange(event.target.value)}
-                disabled={!selectedLocation}
-                inputProps={{ min: todayValue }}
-                sx={textFieldSx}
-              />
+              <LocalizationProvider
+                dateAdapter={AdapterDayjs}
+                adapterLocale="es"
+                localeText={esES.components.MuiLocalizationProvider.defaultProps.localeText}
+              >
+                <DatePicker
+                  value={selectedDate ? dayjs(selectedDate) : null}
+                  onChange={(newValue) =>
+                    handleDateChange(
+                      newValue && newValue.isValid() ? newValue.format('YYYY-MM-DD') : '',
+                    )
+                  }
+                  onMonthChange={(newMonth) => setCurrentMonth(newMonth)}
+                  disabled={!selectedLocation}
+                  disablePast
+                  shouldDisableDate={(value) => {
+                    if (!selectedLocation) return true;
+                    const dateValue = value.format('YYYY-MM-DD');
+                    if (!isDateAvailable(selectedLocation, dateValue)) return true;
+                    const knownAvailability = availabilityByDate[dateValue];
+                    return knownAvailability !== true;
+                  }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: Boolean(dateError || weekUnavailable),
+                      helperText: dateError
+                        ? dateError
+                        : weekUnavailable
+                          ? 'No hay turnos disponibles en esa semana.'
+                          : monthLoading
+                            ? 'Cargando disponibilidad del mes...'
+                            : weekCheckLoading
+                              ? 'Verificando disponibilidad de la semana...'
+                              : ' ',
+                      sx: textFieldSx,
+                    },
+                  }}
+                />
+              </LocalizationProvider>
               <Typography sx={{ mt: 1, fontSize: '0.82rem', color: '#666666' }}>
                 {selectedLocation
-                  ? `Días disponibles: ${availableDaysLabel}`
+                  ? `Dí­as disponibles: ${availableDaysLabel}`
                   : 'Selecciona una sede para ver los días disponibles.'}
               </Typography>
             </Box>
@@ -555,30 +846,40 @@ export function ReservaModal() {
               }}
             >
               {timeSlots.map((slot) => {
-                const isSelected = selectedTime === slot;
+                const isSelected = selectedTime === slot.time;
+                const isAvailable = slot.available;
                 return (
                   <Button
-                    key={slot}
-                    onClick={() => setSelectedTime(slot)}
+                    key={slot.time}
+                    onClick={() => setSelectedTime(slot.time)}
                     variant="outlined"
+                    disabled={!isAvailable}
+                    title={slot.reason ?? (isAvailable ? 'Disponible' : 'No disponible')}
                     sx={{
                       borderRadius: '20px',
                       px: 2,
                       py: 1.2,
                       borderWidth: '2px',
-                      borderColor: '#EEBBC3',
+                      borderColor: isAvailable ? '#EEBBC3' : '#E0E0E0',
                       backgroundColor: isSelected ? '#EEBBC3' : '#FFFFFF',
-                      color: isSelected ? '#FFFFFF' : '#2C2C2C',
+                      color: isSelected ? '#FFFFFF' : isAvailable ? '#2C2C2C' : '#B0B0B0',
                       textTransform: 'none',
                       transition: 'all 0.3s ease',
                       '&:hover': {
-                        backgroundColor: isSelected ? '#EEBBC3' : '#F5E6E8',
-                        transform: 'translateY(-2px)',
-                        borderColor: '#FFB8C6',
+                        backgroundColor: isAvailable ? (isSelected ? '#EEBBC3' : '#F5E6E8') : '#FFFFFF',
+                        transform: isAvailable ? 'translateY(-2px)' : 'none',
+                        borderColor: isAvailable ? '#FFB8C6' : '#E0E0E0',
+                      },
+                      '&.Mui-disabled': {
+                        opacity: 1,
+                        borderColor: '#E0E0E0',
+                        backgroundColor: '#F7F4F5',
+                        color: '#B0B0B0',
+                        textDecoration: 'line-through',
                       },
                     }}
                   >
-                    {slot}
+                    {slot.time}
                   </Button>
                 );
               })}
@@ -586,7 +887,7 @@ export function ReservaModal() {
           )}
           {shouldShowNoSlotsMessage && (
             <Typography sx={{ color: '#9C6B6B', fontSize: '0.9rem', mb: 3 }}>
-              No hay turnos disponibles este día
+              No hay turnos disponibles este d­a
             </Typography>
           )}
           {slotsError && (
@@ -702,9 +1003,3 @@ export function ReservaModal() {
     </Dialog>
   );
 }
-
-
-
-
-
-
