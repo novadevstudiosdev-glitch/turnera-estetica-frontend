@@ -51,6 +51,7 @@ export function ReservaModal() {
   const [patientEmail, setPatientEmail] = useState('');
   const [patientNameError, setPatientNameError] = useState<string | null>(null);
   const [patientPhoneError, setPatientPhoneError] = useState<string | null>(null);
+  const [patientEmailError, setPatientEmailError] = useState<string | null>(null);
   const [dateError, setDateError] = useState<string | null>(null);
   const [weekUnavailable, setWeekUnavailable] = useState(false);
   const [weekCheckLoading, setWeekCheckLoading] = useState(false);
@@ -259,20 +260,58 @@ export function ReservaModal() {
     setPatientName(sanitized);
     setPatientNameError(value !== sanitized ? 'Solo se permiten letras y espacios.' : null);
   };
+  const isSequentialDigits = (digits: string) => {
+    if (digits.length < 8) return false;
+    let ascending = true;
+    let descending = true;
+    for (let index = 1; index < digits.length; index += 1) {
+      const prev = Number(digits[index - 1]);
+      const current = Number(digits[index]);
+      if (Number.isNaN(prev) || Number.isNaN(current)) return false;
+      if (current - prev !== 1) ascending = false;
+      if (current - prev !== -1) descending = false;
+      if (!ascending && !descending) return false;
+    }
+    return ascending || descending;
+  };
+  const getPhoneValidationError = (value: string) => {
+    if (!value.trim()) return null;
+    if (/[^\d+()\s-]/.test(value)) {
+      return 'Solo se permiten números y símbolos como + ( ) o -.';
+    }
+    const plusMatches = value.match(/\+/g);
+    if (plusMatches && (plusMatches.length > 1 || !value.trim().startsWith('+'))) {
+      return 'El signo + solo puede ir al comienzo.';
+    }
+    const digits = value.replace(/\D/g, '');
+    if (digits.length < 8 || digits.length > 15) {
+      return 'Ingresá un teléfono válido.';
+    }
+    if (/^(\d)\1+$/.test(digits) || isSequentialDigits(digits)) {
+      return 'Ingresá un teléfono válido.';
+    }
+    return null;
+  };
   const handlePhoneChange = (value: string) => {
-    const hasInvalidChars = /[^\d+()\s-]/.test(value);
     const sanitized = value.replace(/[^\d+()\s-]/g, '');
     setPatientPhone(sanitized);
-    const digits = sanitized.replace(/\D/g, '');
-    if (hasInvalidChars) {
-      setPatientPhoneError('Solo se permiten números.');
+    setPatientPhoneError(getPhoneValidationError(sanitized));
+  };
+  const isValidEmail = (value: string) => {
+    const normalized = value.trim();
+    if (!normalized) return false;
+    if (normalized.length > 254) return false;
+    const basic = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    return basic.test(normalized);
+  };
+  const handleEmailChange = (value: string) => {
+    const normalized = value.trim();
+    setPatientEmail(normalized);
+    if (!normalized) {
+      setPatientEmailError(null);
       return;
     }
-    if (digits.length > 0 && (digits.length < 8 || digits.length > 15)) {
-      setPatientPhoneError('Ingresá un teléfono válido.');
-      return;
-    }
-    setPatientPhoneError(null);
+    setPatientEmailError(isValidEmail(normalized) ? null : 'Ingresá un email válido.');
   };
 
   const toLocalDateValue = (date: Date) => {
@@ -519,24 +558,18 @@ export function ReservaModal() {
       showAlert(patientNameError);
       return false;
     }
-    if (patientPhoneError) {
-      showAlert(patientPhoneError);
+    const phoneError = patientPhoneError ?? getPhoneValidationError(patientPhone);
+    if (phoneError) {
+      showAlert(phoneError);
       return false;
     }
-    if (
-      !selectedLocation ||
-      !selectedDate ||
-      !selectedTime ||
-      !patientName ||
-      !patientPhone ||
-      !patientEmail
-    ) {
+    const emailError = patientEmailError ?? (patientEmail ? null : 'Ingresá un email válido.');
+    if (emailError) {
+      showAlert(emailError);
+      return false;
+    }
+    if (!selectedLocation || !selectedDate || !selectedTime || !patientName || !patientPhone) {
       showAlert('Completa todos los datos para confirmar la reserva.');
-      return false;
-    }
-    const phoneDigits = patientPhone.replace(/\D/g, '');
-    if (phoneDigits.length < 8) {
-      showAlert('Ingresá un teléfono válido.');
       return false;
     }
     if (dateError) {
@@ -727,6 +760,7 @@ export function ReservaModal() {
                 placeholder="+54 9 11 1234-5678"
                 value={patientPhone}
                 onChange={(event) => handlePhoneChange(event.target.value)}
+                inputProps={{ inputMode: 'tel' }}
                 error={Boolean(patientPhoneError)}
                 helperText={patientPhoneError ?? ' '}
                 sx={textFieldSx}
@@ -738,7 +772,11 @@ export function ReservaModal() {
                 fullWidth
                 placeholder="Ingresá tu email"
                 value={patientEmail}
-                onChange={(event) => setPatientEmail(event.target.value)}
+                onChange={(event) => handleEmailChange(event.target.value)}
+                type="email"
+                inputProps={{ inputMode: 'email' }}
+                error={Boolean(patientEmailError)}
+                helperText={patientEmailError ?? ' '}
                 sx={textFieldSx}
               />
             </Box>
