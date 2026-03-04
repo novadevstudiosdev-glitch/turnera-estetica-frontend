@@ -4,15 +4,10 @@ import {
   AppBar,
   Avatar,
   Box,
-  Chip,
   Container,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   Toolbar,
   Button,
   IconButton,
-  Stack,
   Tooltip,
   Menu,
   MenuItem,
@@ -30,77 +25,35 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { AuthModal } from '../ui/AuthModal';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { keyframes } from '@mui/system';
-import { products } from '@/lib/data';
 
 const NAV_ITEMS = [
   { key: 'inicio', label: 'Inicio', href: '#hero' },
-  { key: 'servicios', label: 'Servicios', href: '#servicios' },
-  { key: 'productos', label: 'Productos', action: 'products' as const },
+  { key: 'servicios', label: 'Tratamientos', href: '#servicios' },
   { key: 'testimonios', label: 'Testimonios', href: '#testimonios' },
   { key: 'ubicación', label: 'Ubicación', href: '#ubicacion' },
 ];
 
 const accountBreathing = keyframes`
-  0% {
-    opacity: 0.86;
-    transform: translateY(0px) scale(1);
-    filter: drop-shadow(0 0 0 rgba(212, 165, 165, 0));
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(-6px) scale(1.03);
-    filter: drop-shadow(0 8px 18px rgba(212, 165, 165, 0.38));
-  }
-  100% {
-    opacity: 0.92;
-    transform: translateY(0px) scale(1);
-    filter: drop-shadow(0 0 0 rgba(212, 165, 165, 0));
-  }
+  0% { opacity: 0.86; transform: translateY(0px) scale(1); filter: drop-shadow(0 0 0 rgba(212, 165, 165, 0)); }
+  50% { opacity: 1; transform: translateY(-6px) scale(1.03); filter: drop-shadow(0 8px 18px rgba(212, 165, 165, 0.38)); }
+  100% { opacity: 0.92; transform: translateY(0px) scale(1); filter: drop-shadow(0 0 0 rgba(212, 165, 165, 0)); }
 `;
 
 const accountPing = keyframes`
-  0%,
-  70% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.85);
-  }
-  78% {
-    opacity: 0.3;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.8);
-  }
+  0%, 70% { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+  78% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.8); }
 `;
 
 const heartFloat = keyframes`
-  0% {
-    opacity: 0;
-    transform: translate(-50%, 6px) scale(0.6);
-  }
-  12% {
-    opacity: 0.9;
-    transform: translate(calc(-50% - 2px), 0px) scale(0.95);
-  }
-  28% {
-    opacity: 0.85;
-    transform: translate(calc(-50% + 2px), -6px) scale(1);
-  }
-  45% {
-    opacity: 0.7;
-    transform: translate(calc(-50% - 2px), -12px) scale(1);
-  }
-  65% {
-    opacity: 0.55;
-    transform: translate(calc(-50% + 2px), -20px) scale(0.98);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -30px) scale(0.8);
-  }
+  0% { opacity: 0; transform: translate(-50%, 6px) scale(0.6); }
+  12% { opacity: 0.9; transform: translate(calc(-50% - 2px), 0px) scale(0.95); }
+  28% { opacity: 0.85; transform: translate(calc(-50% + 2px), -6px) scale(1); }
+  45% { opacity: 0.7; transform: translate(calc(-50% - 2px), -12px) scale(1); }
+  65% { opacity: 0.55; transform: translate(calc(-50% + 2px), -20px) scale(0.98); }
+  100% { opacity: 0; transform: translate(-50%, -30px) scale(0.8); }
 `;
 
 export function Navbar() {
@@ -111,14 +64,15 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
-  const [productsModalOpen, setProductsModalOpen] = useState(false);
   const [tab, setTab] = useState(0);
   const [userName, setUserName] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [accountAnchorEl, setAccountAnchorEl] = useState<null | HTMLElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+
   const displayName = userName
     ? userName.includes('@')
       ? userName.split('@')[0]
@@ -139,7 +93,7 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!isMounted || typeof window === 'undefined') return;
     const authParam = searchParams?.get('auth') ?? searchParams?.get('login');
     const registerParam = searchParams?.get('register');
     const tabParam = searchParams?.get('tab');
@@ -154,9 +108,13 @@ export function Navbar() {
     if (!shouldOpen) return;
     const token = localStorage.getItem('turnera_access_token');
     if (token) return;
-    setAuthOpen(true);
-    setTab(authParam === 'register' || registerParam || tabParam === 'register' ? 1 : 0);
-  }, [searchParams]);
+    const nextTab = authParam === 'register' || registerParam || tabParam === 'register' ? 1 : 0;
+    const timeoutId = window.setTimeout(() => {
+      setAuthOpen(true);
+      setTab(nextTab);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [isMounted, searchParams]);
 
   useEffect(() => {
     const readUser = () => {
@@ -181,19 +139,19 @@ export function Navbar() {
           role?: string;
         };
         const nameCandidates = [parsed?.fullName, parsed?.name, parsed?.firstName, parsed?.email]
-          .map((value) => (value ?? '').trim())
-          .filter((value) => value.length > 0);
+          .map((v) => (v ?? '').trim())
+          .filter((v) => v.length > 0);
         setUserName(nameCandidates[0] ?? null);
         const storedGooglePicture =
           typeof window !== 'undefined' ? localStorage.getItem('turnera_google_picture') : null;
-        const avatarCandidate =
+        setUserAvatar(
           parsed?.avatarUrl ??
-          parsed?.photoUrl ??
-          parsed?.picture ??
-          parsed?.image ??
-          storedGooglePicture ??
-          null;
-        setUserAvatar(avatarCandidate);
+            parsed?.photoUrl ??
+            parsed?.picture ??
+            parsed?.image ??
+            storedGooglePicture ??
+            null,
+        );
         setUserRole(parsed?.role ?? null);
       } catch {
         setUserName(null);
@@ -201,7 +159,6 @@ export function Navbar() {
         setUserRole(null);
       }
     };
-
     readUser();
     window.addEventListener('auth-changed', readUser);
     window.addEventListener('storage', readUser);
@@ -213,16 +170,15 @@ export function Navbar() {
 
   const handleNavClick = (href: string) => {
     setMobileMenuOpen(false);
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    if (pathname !== '/') {
+      router.push(`/${href}`);
+      return;
     }
+    document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleOpenReserva = () => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('open-reserva-modal'));
-    }
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-reserva-modal'));
   };
 
   const handleOpenAuth = (nextTab?: number) => {
@@ -232,22 +188,16 @@ export function Navbar() {
   };
 
   const handleAccountClick = (event: MouseEvent<HTMLElement>) => {
-    if (userName) {
-      setAccountAnchorEl(event.currentTarget);
-    } else {
-      handleOpenAuth(0);
-    }
+    if (userName) setAccountAnchorEl(event.currentTarget);
+    else handleOpenAuth(0);
   };
 
-  const handleCloseAccountMenu = () => {
-    setAccountAnchorEl(null);
-  };
+  const handleCloseAccountMenu = () => setAccountAnchorEl(null);
 
   const handleGoProfile = () => {
     handleCloseAccountMenu();
     setMobileMenuOpen(false);
-    const role = userRole?.toLowerCase();
-    router.push(role === 'admin' ? '/admin' : '/dashboard');
+    router.push(userRole?.toLowerCase() === 'admin' ? '/admin' : '/dashboard');
   };
 
   const handleLogout = () => {
@@ -261,14 +211,6 @@ export function Navbar() {
     handleCloseAccountMenu();
   };
 
-  const productsByCategory = products.reduce<Record<string, typeof products>>((acc, product) => {
-    if (!acc[product.category]) {
-      acc[product.category] = [];
-    }
-    acc[product.category].push(product);
-    return acc;
-  }, {});
-
   const navItemStyle = {
     color: '#2C2C2C',
     fontSize: '0.95rem',
@@ -280,8 +222,9 @@ export function Navbar() {
     transform: 'none',
     borderRadius: '0',
     minWidth: 'auto',
-    px: 2.25,
+    px: 1.5,
     py: 1,
+    whiteSpace: 'nowrap',
     transition: 'color 0.25s ease',
     '&:hover': {
       color: '#EEBBC3',
@@ -289,11 +232,7 @@ export function Navbar() {
       boxShadow: 'none',
       transform: 'none',
     },
-    '&:active': {
-      backgroundColor: 'transparent',
-      boxShadow: 'none',
-      transform: 'none',
-    },
+    '&:active': { backgroundColor: 'transparent', boxShadow: 'none', transform: 'none' },
     '&.Mui-focusVisible': {
       color: '#EEBBC3',
       backgroundColor: 'transparent',
@@ -321,31 +260,30 @@ export function Navbar() {
         transition: 'all 0.3s ease',
       }}
     >
-      <Container maxWidth="lg" sx={{ px: { xs: 3, md: 7.5 } }}>
+      <Container maxWidth="lg" sx={{ px: { xs: 3, md: 10 } }}>
         <Toolbar
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             minHeight: 80,
             padding: 0,
+            // position: relative es clave para que la nav absoluta se posicione dentro del Toolbar
+            position: 'relative',
           }}
         >
-          {/* Logo + Inicio */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* ── LOGO (izquierda, nunca se encoge) ── */}
+          <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <Link href="/">
               <Box
                 sx={{
                   display: 'flex',
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: 2,
+                  gap: 1,
                   cursor: 'pointer',
-                  transition: 'transform 0.3s ease',
                   height: 80,
-                  '&:hover': {
-                    transform: 'scale(1.02)',
-                  },
+                  transition: 'transform 0.3s ease',
+                  '&:hover': { transform: 'scale(1.02)' },
                 }}
               >
                 <Typography
@@ -361,49 +299,47 @@ export function Navbar() {
                 </Typography>
                 <Box
                   aria-hidden="true"
-                  sx={{
-                    width: '1px',
-                    height: 30,
-                    backgroundColor: '#E0E0E0',
-                  }}
+                  sx={{ width: '1px', height: 30, backgroundColor: '#E0E0E0' }}
                 />
                 <Typography
                   sx={{
-                    fontFamily: '"Cormorant Garamond", serif',
+                    fontFamily: '"Bacalisties", cursive',
                     fontStyle: 'italic',
                     fontWeight: 300,
                     letterSpacing: '0.08em',
                     color: '#666666',
-                    fontSize: '0.82rem',
+                    fontSize: '0.9rem',
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   Dra. Jaquelina Grassetti
                 </Typography>
               </Box>
             </Link>
-            {!isMobileView && (
-              <Button
-                onClick={() => handleNavClick('#hero')}
-                disableRipple
-                disableFocusRipple
-                sx={navItemStyle}
-              >
-                Inicio
-              </Button>
-            )}
           </Box>
 
-          {/* Desktop Navigation */}
+          {/* ── NAV CENTRAL ──
+               position:absolute + left:50% + translateX(-50%) la centra perfectamente
+               dentro del Toolbar sin participar en el flujo flex, así nunca
+               comprime al logo ni a los botones de la derecha.             ── */}
           {!isMobileView && (
-            <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 1.5 }}>
-              {NAV_ITEMS.filter((item) => item.key !== 'inicio').map((item) => (
+            <Box
+              sx={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                display: 'flex',
+                alignItems: 'center',
+                // pointerEvents en el contenedor: none para que no bloquee clicks en zonas vacías
+                pointerEvents: 'none',
+                '& > *': { pointerEvents: 'auto' },
+              }}
+            >
+              {NAV_ITEMS.map((item) => (
                 <Button
                   key={item.key}
-                  onClick={
-                    item.action === 'products'
-                      ? () => setProductsModalOpen(true)
-                      : () => handleNavClick(item.href ?? '#hero')
-                  }
+                  onClick={() => handleNavClick(item.href ?? '#hero')}
                   disableRipple
                   disableFocusRipple
                   sx={navItemStyle}
@@ -414,7 +350,18 @@ export function Navbar() {
             </Box>
           )}
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          {/* ── BOTONES DERECHA ──
+               marginLeft:auto los empuja siempre al extremo derecho.
+               flexShrink:0 garantiza que nunca se compriman.               ── */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              marginLeft: 'auto',
+              flexShrink: 0,
+            }}
+          >
             <Button
               variant="contained"
               onClick={handleOpenReserva}
@@ -429,6 +376,9 @@ export function Navbar() {
                 boxShadow: '0 6px 18px rgba(238, 187, 195, 0.25)',
                 textTransform: 'none',
                 fontWeight: 500,
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+                ml: { md: 2 },
                 transition: 'all 0.3s ease',
                 '&:hover': {
                   backgroundColor: '#FFB8C6',
@@ -439,43 +389,58 @@ export function Navbar() {
             >
               Reservar
             </Button>
+
             {displayName ? (
               <>
-                <Button
-                  onClick={handleAccountClick}
-                  sx={{
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    color: '#2C2C2C',
-                    borderRadius: '999px',
-                    px: 1.6,
-                    py: 0.7,
-                    gap: 1,
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    border: '1px solid rgba(212, 165, 165, 0.4)',
-                    boxShadow: '0 8px 18px rgba(212, 165, 165, 0.16)',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 1)',
-                    },
-                  }}
-                >
-                  <Avatar
-                    key={normalizedAvatar ?? 'avatar'}
-                    src={normalizedAvatar ?? undefined}
-                    alt={displayName ?? 'Usuario'}
-                    imgProps={{ referrerPolicy: 'no-referrer', crossOrigin: 'anonymous' }}
+                <Tooltip title={displayName} placement="bottom" arrow>
+                  <Button
+                    onClick={handleAccountClick}
                     sx={{
-                      width: 36,
-                      height: 36,
-                      fontSize: '0.9rem',
-                      backgroundColor: '#E7C7CC',
+                      textTransform: 'none',
+                      fontWeight: 600,
                       color: '#2C2C2C',
+                      borderRadius: '999px',
+                      px: 1.6,
+                      py: 0.7,
+                      gap: 1,
+                      minWidth: 0,
+                      maxWidth: 200,
+                      flexShrink: 0,
+                      overflow: 'hidden',
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      border: '1px solid rgba(212, 165, 165, 0.4)',
+                      boxShadow: '0 8px 18px rgba(212, 165, 165, 0.16)',
+                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
                     }}
-                  />
-                  <Typography sx={{ fontSize: '0.98rem', fontWeight: 600, lineHeight: 1.3 }}>
-                    {displayName}
-                  </Typography>
-                </Button>
+                  >
+                    <Avatar
+                      key={normalizedAvatar ?? 'avatar'}
+                      src={normalizedAvatar ?? undefined}
+                      alt={displayName ?? 'Usuario'}
+                      imgProps={{ referrerPolicy: 'no-referrer', crossOrigin: 'anonymous' }}
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        fontSize: '0.9rem',
+                        backgroundColor: '#E7C7CC',
+                        color: '#2C2C2C',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Typography
+                      sx={{
+                        fontSize: '0.98rem',
+                        fontWeight: 600,
+                        lineHeight: 1.3,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {displayName}
+                    </Typography>
+                  </Button>
+                </Tooltip>
                 <Menu
                   anchorEl={accountAnchorEl}
                   open={accountMenuOpen}
@@ -517,6 +482,7 @@ export function Navbar() {
                     backgroundColor: 'transparent',
                     borderRadius: '999px',
                     position: 'relative',
+                    flexShrink: 0,
                     animation: `${accountBreathing} 1.4s ease-in-out infinite`,
                     transition: 'color 0.2s ease, transform 0.2s ease',
                     '&::before': {
@@ -552,16 +518,9 @@ export function Navbar() {
                       color: '#B68484',
                       backgroundColor: 'transparent',
                     },
-                    '&:hover::before': {
-                      animationPlayState: 'paused',
-                    },
-                    '&:hover::after': {
-                      width: '70%',
-                      opacity: 1,
-                    },
-                    '&:active': {
-                      transform: 'translateY(-3px) scale(0.96)',
-                    },
+                    '&:hover::before': { animationPlayState: 'paused' },
+                    '&:hover::after': { width: '70%', opacity: 1 },
+                    '&:active': { transform: 'translateY(-3px) scale(0.96)' },
                     '&.Mui-focusVisible': {
                       animationPlayState: 'paused',
                       boxShadow: '0 0 0 4px rgba(238, 187, 195, 0.18)',
@@ -598,11 +557,7 @@ export function Navbar() {
             {isMobileView && (
               <Button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                sx={{
-                  color: '#2C2C2C',
-                  minWidth: 'auto',
-                  p: 1,
-                }}
+                sx={{ color: '#2C2C2C', minWidth: 'auto', p: 1, flexShrink: 0 }}
               >
                 {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
               </Button>
@@ -627,14 +582,7 @@ export function Navbar() {
               <Button
                 key={item.key}
                 fullWidth
-                onClick={() => {
-                  if (item.action === 'products') {
-                    setProductsModalOpen(true);
-                    setMobileMenuOpen(false);
-                    return;
-                  }
-                  handleNavClick(item.href ?? '#hero');
-                }}
+                onClick={() => handleNavClick(item.href ?? '#hero')}
                 disableRipple
                 disableFocusRipple
                 sx={{
@@ -690,9 +638,7 @@ export function Navbar() {
                 color: '#2C2C2C',
                 border: '1px solid #D4A5A5',
                 textTransform: 'none',
-                '&:hover': {
-                  backgroundColor: '#FFB8C6',
-                },
+                '&:hover': { backgroundColor: '#FFB8C6' },
               }}
             >
               Reservar
@@ -700,82 +646,7 @@ export function Navbar() {
           </Box>
         )}
       </Container>
-      <Dialog
-        open={productsModalOpen}
-        onClose={() => setProductsModalOpen(false)}
-        fullWidth
-        maxWidth="md"
-      >
-        <DialogTitle sx={{ pr: 6 }}>
-          Todos los productos por categoria
-          <IconButton
-            onClick={() => setProductsModalOpen(false)}
-            sx={{ position: 'absolute', right: 8, top: 8 }}
-            aria-label="Cerrar productos"
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={2.5}>
-            {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
-              <Box key={category}>
-                <Typography sx={{ fontWeight: 700, color: '#8F5161', mb: 1.2 }}>
-                  {category}
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-                    gap: 1.5,
-                  }}
-                >
-                  {categoryProducts.map((product) => (
-                    <Box
-                      key={product.id}
-                      sx={{
-                        border: '1px solid #ECE7E3',
-                        borderRadius: '12px',
-                        p: 1.5,
-                        backgroundColor: '#FFFFFF',
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={product.image}
-                        alt={product.name}
-                        sx={{
-                          width: '100%',
-                          height: 120,
-                          objectFit: 'cover',
-                          borderRadius: '8px',
-                          mb: 1,
-                        }}
-                      />
-                      <Typography sx={{ fontWeight: 700, color: '#1A1A1A' }}>
-                        {product.icon} {product.name}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.88rem', color: '#666666', mt: 0.5 }}>
-                        {product.description}
-                      </Typography>
-                      <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
-                        <Chip
-                          label={product.presentation}
-                          size="small"
-                          sx={{ backgroundColor: '#EFEDEB', color: '#555555' }}
-                        />
-                      </Stack>
-                      <Typography sx={{ fontWeight: 700, color: '#C48A9A', mt: 1 }}>
-                        {product.price}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            ))}
-          </Stack>
-        </DialogContent>
-      </Dialog>
+
       <AuthModal
         open={authOpen}
         onClose={() => setAuthOpen(false)}

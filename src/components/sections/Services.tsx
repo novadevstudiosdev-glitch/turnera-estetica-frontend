@@ -231,7 +231,7 @@ export function ServicesSection() {
         border: '1px solid #E9E4E2',
       }}
     >
-      <CardContent sx={{ flexGrow: 1 }}>
+      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
         {service.image && (
           <Box
             component="img"
@@ -264,6 +264,7 @@ export function ServicesSection() {
           sx={{
             color: '#7A7A7A',
             lineHeight: 1.8,
+            flexGrow: 1,
           }}
         >
           {service.description}
@@ -273,7 +274,9 @@ export function ServicesSection() {
           variant="contained"
           onClick={() => openBaseServiceDetail(service)}
           sx={{
-            mt: 2.2,
+            mt: 'auto',
+            alignSelf: 'flex-start',
+            width: 'fit-content',
             borderRadius: '999px',
             px: 2,
             py: 0.8,
@@ -356,7 +359,7 @@ export function ServicesSection() {
     >
       <Container maxWidth="lg">
         <SectionTitle
-          title="Nuestros Servicios"
+          title="Tratamientos"
           subtitle="Descubre nuestro amplio catalogo de tratamientos esteticos especializados"
         />
 
@@ -475,46 +478,6 @@ export function ServicesSection() {
                   )}
                 </Box>
 
-                <Divider />
-
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-                    gap: 2,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      borderRadius: '12px',
-                      border: '1px solid #E9E0DD',
-                      p: 2,
-                      backgroundColor: '#FFFFFF',
-                    }}
-                  >
-                    <Typography sx={{ color: '#8B7A7A', fontSize: '0.82rem', mb: 0.5 }}>
-                      Duracion estimada
-                    </Typography>
-                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C' }}>
-                      {selectedService.duration || 'A definir'}
-                    </Typography>
-                  </Box>
-                  <Box
-                    sx={{
-                      borderRadius: '12px',
-                      border: '1px solid #E9E0DD',
-                      p: 2,
-                      backgroundColor: '#FFFFFF',
-                    }}
-                  >
-                    <Typography sx={{ color: '#8B7A7A', fontSize: '0.82rem', mb: 0.5 }}>
-                      Frecuencia sugerida
-                    </Typography>
-                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C' }}>
-                      {selectedService.frequency || 'A definir'}
-                    </Typography>
-                  </Box>
-                </Box>
               </Stack>
             </Box>
           ) : null}

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
@@ -6,6 +6,7 @@ import { Providers } from './providers';
 import { Navbar } from '@/components/layout/Navbar';
 import { ReservaModal } from '@/components/ui/ReservaModal';
 import { WhatsAppFloatingButton } from '@/components/ui/WhatsAppFloatingButton';
+import { FloatingFeedbackButtonDraggable } from '@/components/FloatingFeedbackButtonDraggable';
 import { Suspense } from 'react';
 
 const geistSans = Geist({
@@ -19,15 +20,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'MOK - Consultorio MÃ©dico EstÃ©tico',
-  description:
-    'Consultorio especializado en estÃ©tica y belleza. Tratamientos profesionales con tecnologÃ­a de punta.',
-  icons: {
-    icon: '/favicon.ico',
-  },
+  title: 'Dra. Jaquelina Grassetti',
+  description: 'Medicina estética',
 };
-
-
 
 export const viewport = {
   width: 'device-width',
@@ -50,7 +45,15 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap"
+          rel="stylesheet"
+        />
+        <link
+          href="https://db.onlinewebfonts.com/c/9a7927751df300f137ecadcd39ec25ed?family=Bacalisties"
+          rel="stylesheet"
+        />
+        <link
+          href="https://fonts.cdnfonts.com/css/arteriononcommercial"
           rel="stylesheet"
         />
       </head>
@@ -70,11 +73,13 @@ export default function RootLayout({
           </Suspense>
           <ReservaModal />
           <WhatsAppFloatingButton />
+          <FloatingFeedbackButtonDraggable />
           {children}
         </Providers>
       </body>
     </html>
   );
 }
+
 
 

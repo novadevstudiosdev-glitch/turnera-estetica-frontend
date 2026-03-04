@@ -93,6 +93,11 @@ export const theme = createTheme({
     },
   },
   components: {
+    MuiUseMediaQuery: {
+      defaultProps: {
+        noSsr: true,
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {

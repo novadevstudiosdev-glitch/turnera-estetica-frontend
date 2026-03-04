@@ -1,11 +1,12 @@
 'use client';
 
-import { Box, Button, Card, CardContent, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Skeleton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Card, CardContent, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Skeleton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 type AdminStatus = 'Pendiente' | 'Confirmado' | 'Reprogramado' | 'Cancelado' | 'Completado' | 'No asistio';
 
@@ -22,10 +23,33 @@ type AdminAppointment = {
 
 type ApiAppointment = Record<string, unknown>;
 
+type BlockedSlotType = 'vacation' | 'holiday' | 'maintenance' | 'personal' | 'other';
+
+type BlockedSlot = {
+  id: string;
+  blockedDate: string;
+  startTime?: string | null;
+  endTime?: string | null;
+  type?: BlockedSlotType | string;
+  reason?: string | null;
+  isActive?: boolean;
+};
+
+type ApiBlockedSlot = Record<string, unknown>;
+
 const initialAdminAppointments: AdminAppointment[] = [];
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
 const appointmentsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/appointments`;
+const blockedSlotsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/blocked-slots`;
+
+const BLOCKED_SLOT_TYPES: { value: BlockedSlotType; label: string }[] = [
+  { value: 'vacation', label: 'Vacaciones' },
+  { value: 'holiday', label: 'Feriado' },
+  { value: 'maintenance', label: 'Mantenimiento' },
+  { value: 'personal', label: 'Personal' },
+  { value: 'other', label: 'Otro' },
+];
 
 const statusColor = (status: AdminStatus) => {
   switch (status) {
@@ -122,6 +146,36 @@ const normalizeAppointment = (raw: ApiAppointment, index: number): AdminAppointm
   };
 };
 
+const normalizeBlockedTime = (value?: string | null) => {
+  if (!value) return null;
+  return String(value).slice(0, 5);
+};
+
+const normalizeBlockedSlot = (raw: ApiBlockedSlot, index: number): BlockedSlot => {
+  const id = String((raw.id as string | number | undefined) ?? (raw._id as string | number | undefined) ?? `BS-${index + 1}`);
+  const rawDateValue =
+    (raw.blockedDate as string | undefined) ??
+    (raw.blocked_date as string | undefined) ??
+    (raw.date as string | undefined) ??
+    '';
+  const dateString = String(rawDateValue ?? '');
+  const normalizedDate = dateString ? (dateString.includes('T') ? dateString.slice(0, 10) : dateString.slice(0, 10)) : '';
+  return {
+    id,
+    blockedDate: normalizedDate,
+    startTime: normalizeBlockedTime((raw.startTime as string | undefined) ?? (raw.start_time as string | undefined)),
+    endTime: normalizeBlockedTime((raw.endTime as string | undefined) ?? (raw.end_time as string | undefined)),
+    type: (raw.type as string | undefined) ?? undefined,
+    reason: (raw.reason as string | undefined) ?? undefined,
+    isActive: typeof raw.isActive === 'boolean' ? raw.isActive : (raw.is_active as boolean | undefined),
+  };
+};
+
+const formatBlockedTypeLabel = (value?: string | null) => {
+  if (!value) return 'Otro';
+  return BLOCKED_SLOT_TYPES.find((item) => item.value === value)?.label ?? 'Otro';
+};
+
 export default function AdminDashboardPage() {
   return (
     <RequireAuth requiredRole="admin">
@@ -151,6 +205,32 @@ function AdminDashboardContent() {
   const [statusFilter, setStatusFilter] = useState<'Todos' | AdminStatus>('Todos');
   const [locationFilter, setLocationFilter] = useState('Todas');
   const [sortBy, setSortBy] = useState<'date-asc' | 'date-desc' | 'name-asc'>('date-asc');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createValues, setCreateValues] = useState({
+    clientName: '',
+    service: '',
+    date: '',
+    time: '',
+    location: 'Rosario',
+    status: 'Confirmado' as AdminStatus,
+    durationMinutes: '30',
+  });
+  const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
+  const [blockedSlotsLoading, setBlockedSlotsLoading] = useState(false);
+  const [blockedSlotsError, setBlockedSlotsError] = useState<string | null>(null);
+  const [rangeBlockOpen, setRangeBlockOpen] = useState(false);
+  const [rangeStartDate, setRangeStartDate] = useState('');
+  const [rangeEndDate, setRangeEndDate] = useState('');
+  const [rangeReason, setRangeReason] = useState('');
+  const [rangeType, setRangeType] = useState<BlockedSlotType>('other');
+  const [rangeNotice, setRangeNotice] = useState<string | null>(null);
+  const [timeBlockOpen, setTimeBlockOpen] = useState(false);
+  const [timeBlockDate, setTimeBlockDate] = useState('');
+  const [timeBlockStart, setTimeBlockStart] = useState('');
+  const [timeBlockEnd, setTimeBlockEnd] = useState('');
+  const [timeBlockReason, setTimeBlockReason] = useState('');
+  const [timeBlockType, setTimeBlockType] = useState<BlockedSlotType>('other');
 
   const stats = useMemo(() => {
     return {
@@ -179,6 +259,13 @@ function AdminDashboardContent() {
     return start;
   }, [monthStart]);
 
+  const monthGridEnd = useMemo(() => {
+    const end = new Date(monthGridStart);
+    end.setDate(end.getDate() + 41);
+    end.setHours(0, 0, 0, 0);
+    return end;
+  }, [monthGridStart]);
+
   const monthDays = useMemo(() => {
     return Array.from({ length: 42 }).map((_, index) => {
       const day = new Date(monthGridStart);
@@ -194,6 +281,66 @@ function AdminDashboardContent() {
     }
   }, [monthStart, selectedDate]);
 
+  useEffect(() => {
+    if (!blockedSlotsUrl) {
+      setBlockedSlotsError('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+      setBlockedSlots([]);
+      return;
+    }
+    let mounted = true;
+    const controller = new AbortController();
+    const startDate = monthGridStart.toISOString().slice(0, 10);
+    const endDate = monthGridEnd.toISOString().slice(0, 10);
+
+    const loadBlockedSlots = async () => {
+      setBlockedSlotsLoading(true);
+      setBlockedSlotsError(null);
+      try {
+        const query = new URLSearchParams({
+          startDate,
+          endDate,
+          isActive: 'true',
+        }).toString();
+        const response = await fetch(`${blockedSlotsUrl}?${query}`, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const rawText = await response.text();
+        let parsed: unknown = rawText;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch {
+          parsed = rawText;
+        }
+        const list = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray((parsed as { data?: unknown }).data)
+            ? ((parsed as { data?: unknown }).data as unknown[])
+            : [];
+        const normalized = list
+          .map((item, index) => normalizeBlockedSlot(item as ApiBlockedSlot, index))
+          .filter((slot) => slot.blockedDate);
+        if (mounted) {
+          setBlockedSlots(normalized);
+        }
+      } catch {
+        if (mounted) {
+          setBlockedSlotsError('No se pudieron cargar los bloqueos.');
+          setBlockedSlots([]);
+        }
+      } finally {
+        if (mounted) setBlockedSlotsLoading(false);
+      }
+    };
+
+    loadBlockedSlots();
+
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, [blockedSlotsUrl, monthGridEnd, monthGridStart]);
+
   const timeSlots = useMemo(() => {
     const slots: string[] = [];
     const startMinutes = 9 * 60;
@@ -206,6 +353,17 @@ function AdminDashboardContent() {
     }
     return slots;
   }, []);
+
+  const rangePreview = useMemo(() => {
+    if (!rangeStartDate || !rangeEndDate) return null;
+    const start = parseIsoDate(rangeStartDate);
+    const end = parseIsoDate(rangeEndDate);
+    if (!start || !end) return null;
+    if (end < start) {
+      return { start: end, end: start };
+    }
+    return { start, end };
+  }, [rangeStartDate, rangeEndDate]);
 
   const toDateTime = (appointment: AdminAppointment) => {
     const parsed = new Date(`${appointment.date}T${appointment.time}:00`);
@@ -223,6 +381,53 @@ function AdminDashboardContent() {
   const isSameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
   const isSameMonth = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+
+  const toIsoDate = (date: Date) => date.toISOString().slice(0, 10);
+
+  function parseIsoDate(value: string) {
+    const parsed = new Date(`${value}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const getWeekRange = (date: Date) => {
+    const start = new Date(date);
+    const day = start.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    start.setDate(start.getDate() + diff);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  };
+
+  const getBlockedSlotsForDate = (date: Date) => {
+    const dateKey = date.toISOString().slice(0, 10);
+    return blockedSlots.filter((slot) => slot.blockedDate === dateKey && slot.isActive !== false);
+  };
+
+  const isDateFullyBlocked = (date: Date) => {
+    const blocks = getBlockedSlotsForDate(date);
+    return blocks.some((block) => !block.startTime || !block.endTime);
+  };
+
+  const isSlotBlocked = (date: Date, time: string) => {
+    const blocks = getBlockedSlotsForDate(date);
+    if (blocks.length === 0) return false;
+    const slotMinutes = parseTimeToMinutes(time);
+    return blocks.some((block) => {
+      if (!block.startTime || !block.endTime) return true;
+      const startMinutes = parseTimeToMinutes(block.startTime);
+      const endMinutes = parseTimeToMinutes(block.endTime);
+      return slotMinutes >= startMinutes && slotMinutes < endMinutes;
+    });
+  };
+
+  const selectedDayBlocks = getBlockedSlotsForDate(selectedDate);
+  const isSelectedDayFullyBlocked = selectedDayBlocks.some(
+    (block) => !block.startTime || !block.endTime
+  );
+  const hasSelectedDayPartialBlock = !isSelectedDayFullyBlocked && selectedDayBlocks.length > 0;
 
   const getAppointmentForSlot = (date: Date, time: string) => {
     const dateKey = date.toISOString().slice(0, 10);
@@ -275,6 +480,20 @@ function AdminDashboardContent() {
 
     return sorted;
   }, [appointments, locationFilter, searchTerm, sortBy, statusFilter]);
+
+  const blockedSlotsList = useMemo(() => {
+    const list = blockedSlots.filter((slot) => slot.isActive !== false && slot.blockedDate);
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      if (a.blockedDate !== b.blockedDate) {
+        return a.blockedDate.localeCompare(b.blockedDate);
+      }
+      const timeA = a.startTime ?? '00:00';
+      const timeB = b.startTime ?? '00:00';
+      return timeA.localeCompare(timeB);
+    });
+    return sorted;
+  }, [blockedSlots]);
 
   const todayAppointments = useMemo(() => appointments.filter((appt) => appt.date === todayKey), [appointments, todayKey]);
 
@@ -470,6 +689,270 @@ function AdminDashboardContent() {
     setCancelReason('');
   };
 
+  const handleOpenCreate = () => {
+    const dateIso = toIsoDate(selectedDate);
+    const firstFreeTime =
+      timeSlots.find((time) => !getAppointmentForSlot(selectedDate, time) && !isSlotBlocked(selectedDate, time)) ?? '09:00';
+    setCreateValues({
+      clientName: '',
+      service: '',
+      date: dateIso,
+      time: firstFreeTime,
+      location: 'Rosario',
+      status: 'Confirmado',
+      durationMinutes: '30',
+    });
+    setCreateError(null);
+    setCreateOpen(true);
+  };
+
+  const handleOpenCreateFromSlot = (date: Date, time: string) => {
+    const dateIso = toIsoDate(date);
+    setCreateValues({
+      clientName: '',
+      service: '',
+      date: dateIso,
+      time,
+      location: 'Rosario',
+      status: 'Confirmado',
+      durationMinutes: '30',
+    });
+    setCreateError(null);
+    setCreateOpen(true);
+  };
+
+  const handleConfirmCreate = () => {
+    setCreateError(null);
+    const trimmedName = createValues.clientName.trim();
+    const trimmedService = createValues.service.trim();
+    if (!trimmedName || !trimmedService || !createValues.date || !createValues.time) {
+      setCreateError('Completa todos los campos obligatorios.');
+      return;
+    }
+    const parsedDate = parseIsoDate(createValues.date);
+    if (!parsedDate) {
+      setCreateError('Fecha inválida.');
+      return;
+    }
+    if (isSlotBlocked(parsedDate, createValues.time)) {
+      setCreateError('El horario seleccionado está bloqueado.');
+      return;
+    }
+    const occupied = getAppointmentForSlot(parsedDate, createValues.time);
+    if (occupied) {
+      setCreateError('Ese horario ya está ocupado.');
+      return;
+    }
+    const duration = Number(createValues.durationMinutes);
+    const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 30;
+    const newAppointment: AdminAppointment = {
+      id: `local-${Date.now()}`,
+      clientName: trimmedName,
+      service: trimmedService,
+      date: createValues.date,
+      time: createValues.time,
+      durationMinutes: safeDuration,
+      location: createValues.location || 'Rosario',
+      status: createValues.status,
+    };
+    setAppointments((prev) => [...prev, newAppointment]);
+    setCreateOpen(false);
+  };
+
+  const refreshBlockedSlots = async () => {
+    if (!blockedSlotsUrl) {
+      setBlockedSlotsError('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+      return;
+    }
+    const startDate = monthGridStart.toISOString().slice(0, 10);
+    const endDate = monthGridEnd.toISOString().slice(0, 10);
+    setBlockedSlotsLoading(true);
+    setBlockedSlotsError(null);
+    try {
+      const query = new URLSearchParams({
+        startDate,
+        endDate,
+        isActive: 'true',
+      }).toString();
+      const response = await fetch(`${blockedSlotsUrl}?${query}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const rawText = await response.text();
+      let parsed: unknown = rawText;
+      try {
+        parsed = JSON.parse(rawText);
+      } catch {
+        parsed = rawText;
+      }
+      const list = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray((parsed as { data?: unknown }).data)
+          ? ((parsed as { data?: unknown }).data as unknown[])
+          : [];
+      const normalized = list
+        .map((item, index) => normalizeBlockedSlot(item as ApiBlockedSlot, index))
+        .filter((slot) => slot.blockedDate);
+      setBlockedSlots(normalized);
+    } catch {
+      setBlockedSlotsError('No se pudieron cargar los bloqueos.');
+      setBlockedSlots([]);
+    } finally {
+      setBlockedSlotsLoading(false);
+    }
+  };
+
+  const handleOpenRangeBlock = () => {
+    setRangeNotice(null);
+    setRangeReason('');
+    setRangeType('other');
+    const todayIso = toIsoDate(selectedDate);
+    setRangeStartDate(todayIso);
+    setRangeEndDate(todayIso);
+    setRangeBlockOpen(true);
+  };
+
+  const handleConfirmRangeBlock = async () => {
+    setRangeNotice(null);
+    if (!rangeStartDate || !rangeEndDate) {
+      setRangeNotice('Selecciona el rango de fechas.');
+      return;
+    }
+    const startDate = parseIsoDate(rangeStartDate);
+    const endDate = parseIsoDate(rangeEndDate);
+    if (!startDate || !endDate) {
+      setRangeNotice('Fecha inválida.');
+      return;
+    }
+    if (!blockedSlotsUrl) {
+      setRangeNotice('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+      return;
+    }
+    const normalizedStart = endDate < startDate ? endDate : startDate;
+    const normalizedEnd = endDate < startDate ? startDate : endDate;
+    const startIso = toIsoDate(normalizedStart);
+    const endIso = toIsoDate(normalizedEnd);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
+    if (!token) {
+      setRangeNotice('Necesitas iniciar sesion como admin para bloquear fechas.');
+      return;
+    }
+    try {
+      const response = await fetch(`${blockedSlotsUrl}/block-range`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          startDate: startIso,
+          endDate: endIso,
+          type: rangeType,
+          reason: rangeReason.trim() || undefined,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      await refreshBlockedSlots();
+      setRangeBlockOpen(false);
+      setRangeNotice(
+        `Rango bloqueado del ${normalizedStart.toLocaleDateString('es-AR')} al ${normalizedEnd.toLocaleDateString('es-AR')}.`
+      );
+    } catch {
+      setRangeNotice('No se pudo bloquear el rango. Intenta nuevamente.');
+    }
+  };
+
+  const handleOpenTimeBlock = () => {
+    setRangeNotice(null);
+    setTimeBlockReason('');
+    setTimeBlockType('other');
+    const dateIso = toIsoDate(selectedDate);
+    setTimeBlockDate(dateIso);
+    const defaultStart = timeSlots[0] ?? '09:00';
+    const defaultEnd = timeSlots[1] ?? '09:30';
+    setTimeBlockStart(defaultStart);
+    setTimeBlockEnd(defaultEnd);
+    setTimeBlockOpen(true);
+  };
+
+  const handleConfirmTimeBlock = async () => {
+    setRangeNotice(null);
+    if (!timeBlockDate || !timeBlockStart || !timeBlockEnd) {
+      setRangeNotice('Completa fecha y horario.');
+      return;
+    }
+    const startMinutes = parseTimeToMinutes(timeBlockStart);
+    const endMinutes = parseTimeToMinutes(timeBlockEnd);
+    if (endMinutes <= startMinutes) {
+      setRangeNotice('La hora de fin debe ser posterior a la de inicio.');
+      return;
+    }
+    if (!blockedSlotsUrl) {
+      setRangeNotice('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+      return;
+    }
+    const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
+    if (!token) {
+      setRangeNotice('Necesitas iniciar sesion como admin para bloquear horarios.');
+      return;
+    }
+    try {
+      const response = await fetch(blockedSlotsUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          blockedDate: timeBlockDate,
+          startTime: timeBlockStart,
+          endTime: timeBlockEnd,
+          type: timeBlockType,
+          reason: timeBlockReason.trim() || undefined,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      await refreshBlockedSlots();
+      setTimeBlockOpen(false);
+      setRangeNotice(
+        `Franja bloqueada para ${new Date(`${timeBlockDate}T00:00:00`).toLocaleDateString('es-AR')} de ${timeBlockStart} a ${timeBlockEnd}.`
+      );
+    } catch {
+      setRangeNotice('No se pudo bloquear la franja. Intenta nuevamente.');
+    }
+  };
+
+  const handleDeactivateBlockedSlot = async (id: string) => {
+    if (!blockedSlotsUrl) {
+      setRangeNotice('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+      return;
+    }
+    const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
+    if (!token) {
+      setRangeNotice('Necesitas iniciar sesion como admin para reactivar horarios.');
+      return;
+    }
+    try {
+      const response = await fetch(`${blockedSlotsUrl}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      setBlockedSlots((prev) => prev.filter((slot) => slot.id !== id));
+      setRangeNotice('Bloqueo reactivado.');
+    } catch {
+      setRangeNotice('No se pudo reactivar el bloqueo.');
+    }
+  };
+
   return (
     <Box sx={{ backgroundColor: '#FDF7F7', minHeight: '100vh', py: { xs: 6, md: 10 } }}>
       <Container maxWidth="lg" sx={{ px: { xs: 2, md: 3 } }}>
@@ -503,6 +986,24 @@ function AdminDashboardContent() {
             <Typography sx={{ color: '#6B6B6B' }}>Gestiona turnos, estados y disponibilidad con una vista clara.</Typography>
           </Box>
           <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
+              onClick={handleOpenCreate}
+              sx={{
+                borderRadius: '999px',
+                px: 3,
+                py: 1,
+                backgroundColor: '#EEBBC3',
+                color: '#2C2C2C',
+                textTransform: 'none',
+                fontWeight: 600,
+                '&:hover': {
+                  backgroundColor: '#FFB8C6',
+                },
+              }}
+            >
+              Nuevo turno
+            </Button>
             <Button
               variant="contained"
               onClick={() => {
@@ -558,6 +1059,20 @@ function AdminDashboardContent() {
             }}
           >
             <Typography sx={{ color: '#B00020' }}>{error}</Typography>
+          </Box>
+        )}
+
+        {rangeNotice && (
+          <Box
+            sx={{
+              borderRadius: '16px',
+              border: '1px solid #EAD6DA',
+              backgroundColor: '#FFF5F7',
+              p: 2.5,
+              mb: 3,
+            }}
+          >
+            <Typography sx={{ color: '#7A5A5A' }}>{rangeNotice}</Typography>
           </Box>
         )}
 
@@ -685,6 +1200,165 @@ function AdminDashboardContent() {
                         {item.label}
                       </Button>
                     ))}
+                  </Box>
+
+                  <Box
+                    sx={{
+                      borderRadius: '14px',
+                      border: '1px solid #F5E6E8',
+                      backgroundColor: '#FFFDFD',
+                      p: 2,
+                    }}
+                  >
+                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>
+                      Bloqueo de disponibilidad
+                    </Typography>
+                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.88rem', mb: 1.5 }}>
+                      Bloquea dias completos o franjas horarias para evitar nuevas reservas.
+                    </Typography>
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                      <Button
+                        variant="contained"
+                        onClick={handleOpenRangeBlock}
+                        sx={{
+                          borderRadius: '999px',
+                          px: 2.6,
+                          py: 1,
+                          backgroundColor: '#EEBBC3',
+                          color: '#2C2C2C',
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          '&:hover': {
+                            backgroundColor: '#FFB8C6',
+                          },
+                        }}
+                      >
+                        Bloquear fechas
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={handleOpenTimeBlock}
+                        sx={{
+                          borderRadius: '999px',
+                          px: 2.6,
+                          py: 1,
+                          borderColor: '#E9E4E2',
+                          color: '#6B6B6B',
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          '&:hover': {
+                            borderColor: '#EEBBC3',
+                            backgroundColor: '#FDF4F6',
+                          },
+                        }}
+                      >
+                        Bloquear franja horaria
+                      </Button>
+                    </Stack>
+
+                    {blockedSlotsError && (
+                      <Typography sx={{ color: '#B00020', fontSize: '0.85rem', mt: 2 }}>
+                        {blockedSlotsError}
+                      </Typography>
+                    )}
+                    <Accordion
+                      disableGutters
+                      elevation={0}
+                      sx={{
+                        mt: 2,
+                        borderRadius: '12px',
+                        border: '1px solid #F3E0E4',
+                        backgroundColor: '#FFFFFF',
+                        '&:before': { display: 'none' },
+                      }}
+                    >
+                      <AccordionSummary
+                        expandIcon={<ExpandMoreIcon sx={{ color: '#8B6B6B' }} />}
+                        sx={{
+                          px: 1.5,
+                          py: 0.5,
+                          '& .MuiAccordionSummary-content': {
+                            alignItems: 'center',
+                            gap: 1,
+                            flexWrap: 'wrap',
+                          },
+                        }}
+                      >
+                        <Typography sx={{ fontWeight: 600, color: '#8B6B6B' }}>
+                          Bloqueos activos
+                        </Typography>
+                        <Chip
+                          size="small"
+                          label={`${blockedSlotsList.length}`}
+                          sx={{ backgroundColor: '#F5E6E8', color: '#6B6B6B' }}
+                        />
+                        {blockedSlotsLoading && (
+                          <Typography sx={{ color: '#9C6B6B', fontSize: '0.8rem' }}>
+                            Actualizando...
+                          </Typography>
+                        )}
+                      </AccordionSummary>
+                      <AccordionDetails sx={{ pt: 0, pb: 1.5 }}>
+                        {blockedSlotsLoading ? (
+                          <Typography sx={{ color: '#9C6B6B', fontSize: '0.82rem' }}>
+                            Cargando bloqueos...
+                          </Typography>
+                        ) : blockedSlotsList.length > 0 ? (
+                          <Stack spacing={1.2}>
+                            {blockedSlotsList.map((slot) => {
+                              const timeLabel =
+                                slot.startTime && slot.endTime
+                                  ? `${slot.startTime} - ${slot.endTime}`
+                                  : 'Todo el dia';
+                              return (
+                                <Box
+                                  key={slot.id}
+                                  sx={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 0.6,
+                                    borderRadius: '12px',
+                                    border: '1px solid #F3E0E4',
+                                    backgroundColor: '#FFFFFF',
+                                    p: 1.5,
+                                  }}
+                                >
+                                  <Typography sx={{ fontWeight: 600, color: '#8B6B6B', fontSize: '0.9rem' }}>
+                                    {new Date(`${slot.blockedDate}T00:00:00`).toLocaleDateString('es-AR')} · {timeLabel}
+                                  </Typography>
+                                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+                                    <Chip
+                                      size="small"
+                                      label={formatBlockedTypeLabel(slot.type ?? 'other')}
+                                      sx={{ backgroundColor: '#F5E6E8', color: '#6B6B6B' }}
+                                    />
+                                    {slot.reason ? (
+                                      <Typography sx={{ color: '#6B6B6B', fontSize: '0.82rem' }}>
+                                        Motivo: {slot.reason}
+                                      </Typography>
+                                    ) : null}
+                                  </Stack>
+                                  <Box>
+                                    <Button
+                                      size="small"
+                                      variant="text"
+                                      onClick={() => handleDeactivateBlockedSlot(slot.id)}
+                                      sx={{ color: '#B00020', textTransform: 'none', fontWeight: 600, px: 0 }}
+                                    >
+                                      Reactivar bloqueo
+                                    </Button>
+                                  </Box>
+                                </Box>
+                              );
+                            })}
+                          </Stack>
+                        ) : (
+                          <Typography sx={{ color: '#9C6B6B', fontSize: '0.82rem' }}>
+                            No hay bloqueos cargados.
+                          </Typography>
+                        )}
+                      </AccordionDetails>
+                    </Accordion>
                   </Box>
                 </Stack>
               </CardContent>
@@ -998,6 +1672,9 @@ function AdminDashboardContent() {
                           const occupiedSlots = timeSlots.filter((slot) => getAppointmentForSlot(day, slot)).length;
                           const isInMonth = isSameMonth(day, monthStart);
                           const isSelected = isSameDay(day, selectedDate);
+                          const dayBlocks = getBlockedSlotsForDate(day);
+                          const isFullyBlocked = dayBlocks.some((block) => !block.startTime || !block.endTime);
+                          const hasPartialBlock = !isFullyBlocked && dayBlocks.length > 0;
                           return (
                             <Box
                               key={day.toISOString()}
@@ -1007,17 +1684,39 @@ function AdminDashboardContent() {
                                 p: 1.5,
                                 borderBottom: '1px solid #F5E6E8',
                                 borderLeft: '1px solid #F5E6E8',
-                                backgroundColor: isSelected ? '#F9E7EC' : '#FFFFFF',
+                                backgroundColor: isSelected ? '#F9E7EC' : isFullyBlocked ? '#FFF1F4' : hasPartialBlock ? '#FFF8F0' : '#FFFFFF',
                                 opacity: isInMonth ? 1 : 0.4,
                                 cursor: 'pointer',
                                 transition: 'background-color 0.2s ease',
                                 '&:hover': {
-                                  backgroundColor: isSelected ? '#F9E7EC' : '#FFF5F7',
+                                  backgroundColor: isSelected ? '#F9E7EC' : isFullyBlocked ? '#FFE9EE' : hasPartialBlock ? '#FFF1E6' : '#FFF5F7',
                                 },
                               }}
                             >
                               <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>{day.getDate()}</Typography>
-                              {appointmentsForDay.length > 0 ? (
+                              {isFullyBlocked ? (
+                                <Stack spacing={0.4}>
+                                  <Typography sx={{ fontSize: '0.78rem', color: '#9C6B6B', fontWeight: 600 }}>
+                                    Bloqueada
+                                  </Typography>
+                                  {appointmentsForDay.length > 0 ? (
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#8B6B6B' }}>
+                                      {appointmentsForDay.length} turnos
+                                    </Typography>
+                                  ) : null}
+                                </Stack>
+                              ) : hasPartialBlock ? (
+                                <Stack spacing={0.4}>
+                                  <Typography sx={{ fontSize: '0.78rem', color: '#9C6B6B', fontWeight: 600 }}>
+                                    Bloqueos parciales
+                                  </Typography>
+                                  {appointmentsForDay.length > 0 ? (
+                                    <Typography sx={{ fontSize: '0.75rem', color: '#8B6B6B' }}>
+                                      {appointmentsForDay.length} turnos
+                                    </Typography>
+                                  ) : null}
+                                </Stack>
+                              ) : appointmentsForDay.length > 0 ? (
                                 <Stack spacing={0.5}>
                                   <Typography sx={{ fontSize: '0.78rem', color: '#6B6B6B' }}>{appointmentsForDay.length} turnos</Typography>
                                   <Typography sx={{ fontSize: '0.75rem', color: '#8B6B6B' }}>Ocupados: {occupiedSlots}</Typography>
@@ -1048,13 +1747,59 @@ function AdminDashboardContent() {
                       </Typography>
                       <Typography sx={{ color: '#6B6B6B', mb: 2 }}>Horarios disponibles y ocupados</Typography>
 
+                      {isSelectedDayFullyBlocked && (
+                        <Box
+                          sx={{
+                            borderRadius: '12px',
+                            border: '1px solid #F0DEDE',
+                            backgroundColor: '#FFF5F7',
+                            p: 1.5,
+                            mb: 2,
+                          }}
+                        >
+                          <Typography sx={{ fontWeight: 600, color: '#8B6B6B' }}>
+                            Dia bloqueado
+                          </Typography>
+                          <Typography sx={{ color: '#6B6B6B', fontSize: '0.85rem' }}>
+                            No se permiten nuevos turnos en este dia.
+                          </Typography>
+                        </Box>
+                      )}
+                      {!isSelectedDayFullyBlocked && hasSelectedDayPartialBlock && (
+                        <Box
+                          sx={{
+                            borderRadius: '12px',
+                            border: '1px solid #F0DEDE',
+                            backgroundColor: '#FFF9F2',
+                            p: 1.5,
+                            mb: 2,
+                          }}
+                        >
+                          <Typography sx={{ fontWeight: 600, color: '#8B6B6B' }}>
+                            Bloqueos parciales
+                          </Typography>
+                          <Typography sx={{ color: '#6B6B6B', fontSize: '0.85rem' }}>
+                            Hay franjas horarias bloqueadas en este dia.
+                          </Typography>
+                        </Box>
+                      )}
+
                       <Stack spacing={1.2}>
                         {timeSlots.map((time) => {
                           const appointment = getAppointmentForSlot(selectedDate, time);
+                          const isBlockedSlot = !appointment && isSlotBlocked(selectedDate, time);
                           return (
                             <Box
                               key={time}
-                              onClick={() => appointment && handleOpenEdit(appointment)}
+                              onClick={() => {
+                                if (appointment) {
+                                  handleOpenEdit(appointment);
+                                  return;
+                                }
+                                if (!isBlockedSlot) {
+                                  handleOpenCreateFromSlot(selectedDate, time);
+                                }
+                              }}
                               sx={{
                                 display: 'grid',
                                 gridTemplateColumns: '90px 1fr',
@@ -1062,9 +1807,9 @@ function AdminDashboardContent() {
                                 alignItems: 'center',
                                 p: 1.2,
                                 borderRadius: '12px',
-                                backgroundColor: appointment ? '#F6E9ED' : '#FFFDFD',
+                                backgroundColor: appointment ? '#F6E9ED' : isBlockedSlot ? '#F7F1F2' : '#FFFDFD',
                                 border: '1px solid #F5E6E8',
-                                cursor: appointment ? 'pointer' : 'default',
+                                cursor: appointment ? 'pointer' : isBlockedSlot ? 'not-allowed' : 'pointer',
                               }}
                             >
                               <Typography sx={{ fontWeight: 600, color: '#8B6B6B' }}>{time}</Typography>
@@ -1077,7 +1822,9 @@ function AdminDashboardContent() {
                                   <Chip label={appointment.status} size="small" color={statusColor(appointment.status)} sx={{ alignSelf: 'flex-start' }} />
                                 </Stack>
                               ) : (
-                                <Typography sx={{ fontSize: '0.82rem', color: '#B8A4A4' }}>Libre</Typography>
+                                <Typography sx={{ fontSize: '0.82rem', color: '#B8A4A4' }}>
+                                  {isBlockedSlot ? 'Bloqueado' : 'Libre (agendar)'}
+                                </Typography>
                               )}
                             </Box>
                           );
@@ -1091,6 +1838,236 @@ function AdminDashboardContent() {
           </Card>
         </Stack>
       </Container>
+
+      <Dialog open={rangeBlockOpen} onClose={() => setRangeBlockOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Bloquear fechas</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
+          <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>
+            Selecciona un rango para cancelar turnos (una semana, un mes o dias sueltos).
+          </Typography>
+          <TextField
+            label="Desde"
+            type="date"
+            value={rangeStartDate}
+            onChange={(event) => setRangeStartDate(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            label="Hasta"
+            type="date"
+            value={rangeEndDate}
+            onChange={(event) => setRangeEndDate(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            select
+            label="Tipo de bloqueo"
+            value={rangeType}
+            onChange={(event) => setRangeType(event.target.value as BlockedSlotType)}
+          >
+            {BLOCKED_SLOT_TYPES.map((item) => (
+              <MenuItem key={item.value} value={item.value}>
+                {item.label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label="Motivo (opcional)"
+            value={rangeReason}
+            onChange={(event) => setRangeReason(event.target.value)}
+            multiline
+            rows={2}
+          />
+          {rangePreview && (
+            <Box
+              sx={{
+                borderRadius: '12px',
+                border: '1px solid #F0DEDE',
+                backgroundColor: '#FFF5F7',
+                p: 1.5,
+              }}
+            >
+              <Typography sx={{ fontWeight: 600, color: '#8B6B6B', fontSize: '0.9rem' }}>
+                Rango: {rangePreview.start.toLocaleDateString('es-AR')} -{' '}
+                {rangePreview.end.toLocaleDateString('es-AR')}
+              </Typography>
+            </Box>
+          )}
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                const { start, end } = getWeekRange(selectedDate);
+                setRangeStartDate(toIsoDate(start));
+                setRangeEndDate(toIsoDate(end));
+              }}
+              sx={{ textTransform: 'none' }}
+            >
+              Semana actual
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                const base = new Date();
+                const start = new Date(base.getFullYear(), base.getMonth(), 1);
+                const end = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+                setRangeStartDate(toIsoDate(start));
+                setRangeEndDate(toIsoDate(end));
+              }}
+              sx={{ textTransform: 'none' }}
+            >
+              Mes actual
+            </Button>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 1 }}>
+          <Button onClick={() => setRangeBlockOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleConfirmRangeBlock}>
+            Bloquear
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={timeBlockOpen} onClose={() => setTimeBlockOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Bloquear franja horaria</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
+          <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>
+            Selecciona una fecha y horario para bloquear reservas en ese rango.
+          </Typography>
+          <TextField
+            label="Fecha"
+            type="date"
+            value={timeBlockDate}
+            onChange={(event) => setTimeBlockDate(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+            <TextField
+              label="Desde"
+              type="time"
+              value={timeBlockStart}
+              onChange={(event) => setTimeBlockStart(event.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Hasta"
+              type="time"
+              value={timeBlockEnd}
+              onChange={(event) => setTimeBlockEnd(event.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Box>
+          <TextField
+            select
+            label="Tipo de bloqueo"
+            value={timeBlockType}
+            onChange={(event) => setTimeBlockType(event.target.value as BlockedSlotType)}
+          >
+            {BLOCKED_SLOT_TYPES.map((item) => (
+              <MenuItem key={item.value} value={item.value}>
+                {item.label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label="Motivo (opcional)"
+            value={timeBlockReason}
+            onChange={(event) => setTimeBlockReason(event.target.value)}
+            multiline
+            rows={2}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 1 }}>
+          <Button onClick={() => setTimeBlockOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleConfirmTimeBlock}>
+            Bloquear
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Agendar turno</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
+          <TextField
+            label="Nombre del paciente"
+            value={createValues.clientName}
+            onChange={(event) =>
+              setCreateValues((prev) => ({ ...prev, clientName: event.target.value }))
+            }
+          />
+          <TextField
+            label="Servicio"
+            value={createValues.service}
+            onChange={(event) =>
+              setCreateValues((prev) => ({ ...prev, service: event.target.value }))
+            }
+          />
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+            <TextField
+              label="Fecha"
+              type="date"
+              value={createValues.date}
+              onChange={(event) =>
+                setCreateValues((prev) => ({ ...prev, date: event.target.value }))
+              }
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Hora"
+              type="time"
+              value={createValues.time}
+              onChange={(event) =>
+                setCreateValues((prev) => ({ ...prev, time: event.target.value }))
+              }
+              InputLabelProps={{ shrink: true }}
+            />
+          </Box>
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+            <TextField
+              label="Duración (min)"
+              type="number"
+              value={createValues.durationMinutes}
+              onChange={(event) =>
+                setCreateValues((prev) => ({ ...prev, durationMinutes: event.target.value }))
+              }
+              inputProps={{ min: 10, step: 10 }}
+            />
+            <TextField
+              label="Ubicación"
+              value={createValues.location}
+              onChange={(event) =>
+                setCreateValues((prev) => ({ ...prev, location: event.target.value }))
+              }
+            />
+          </Box>
+          <TextField
+            select
+            label="Estado"
+            value={createValues.status}
+            onChange={(event) =>
+              setCreateValues((prev) => ({
+                ...prev,
+                status: event.target.value as AdminStatus,
+              }))
+            }
+          >
+            {['Pendiente', 'Confirmado', 'Reprogramado', 'Cancelado', 'Completado', 'No asistio'].map(
+              (status) => (
+                <MenuItem key={status} value={status}>
+                  {status}
+                </MenuItem>
+              )
+            )}
+          </TextField>
+          {createError && <Typography sx={{ color: '#B00020' }}>{createError}</Typography>}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 1 }}>
+          <Button onClick={() => setCreateOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleConfirmCreate}>
+            Agendar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={Boolean(editing)} onClose={() => setEditing(null)} fullWidth maxWidth="sm">
         <DialogTitle>Editar turno</DialogTitle>
@@ -1163,4 +2140,7 @@ function AdminDashboardContent() {
     </Box>
   );
 }
+
+
+
 

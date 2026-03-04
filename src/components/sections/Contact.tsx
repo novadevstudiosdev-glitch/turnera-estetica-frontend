@@ -14,7 +14,6 @@ import { useState } from 'react';
 import { SectionTitle } from '../ui/SectionTitle';
 import { contactInfo } from '@/lib/data';
 import PhoneIcon from '@mui/icons-material/Phone';
-import EmailIcon from '@mui/icons-material/Email';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 
 interface FormData {
@@ -106,21 +105,15 @@ export function ContactSection() {
   const contactOptions = [
     {
       icon: PhoneIcon,
-      title: 'Teléfono',
-      value: contactInfo.phone,
-      href: `tel:${contactInfo.phone}`,
+      title: "Celular",
+      value: contactInfo.whatsapp,
+      href: `tel:${contactInfo.whatsapp}`,
     },
     {
       icon: WhatsAppIcon,
-      title: 'WhatsApp',
+      title: "WhatsApp",
       value: contactInfo.whatsapp,
-      href: `https://wa.me/${contactInfo.whatsapp.replace(/[^\d]/g, '')}`,
-    },
-    {
-      icon: EmailIcon,
-      title: 'Email',
-      value: contactInfo.email,
-      href: `mailto:${contactInfo.email}`,
+      href: `https://wa.me/${contactInfo.whatsapp.replace(/[^\d]/g, "")}`,
     },
   ];
 
