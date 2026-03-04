@@ -384,6 +384,45 @@ export function ReservaModal() {
     setAlertOpen(true);
   };
 
+  const parseResponsePayload = async (response: Response) => {
+    const rawText = await response.text();
+
+    if (!rawText) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(rawText) as unknown;
+    } catch {
+      return rawText;
+    }
+  };
+
+  const getErrorMessage = (payload: unknown, fallback: string) => {
+    if (typeof payload === 'string' && payload.trim()) {
+      return payload;
+    }
+
+    if (payload && typeof payload === 'object') {
+      const message = (payload as { message?: unknown }).message;
+
+      if (typeof message === 'string' && message.trim()) {
+        return message;
+      }
+
+      if (Array.isArray(message) && message.length > 0) {
+        return message.join(' | ');
+      }
+
+      const error = (payload as { error?: unknown }).error;
+      if (typeof error === 'string' && error.trim()) {
+        return error;
+      }
+    }
+
+    return fallback;
+  };
+
   useEffect(() => {
     if (!selectedLocation || !selectedDate) {
       setDateError(null);
@@ -611,22 +650,25 @@ export function ReservaModal() {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      const parsed = await parseResponsePayload(response);
 
-      const rawText = await response.text();
-      let parsed: unknown = rawText;
-      try {
-        parsed = JSON.parse(rawText);
-      } catch {
-        parsed = rawText;
+      if (!response.ok) {
+        const message = getErrorMessage(
+          parsed,
+          `No se pudo confirmar la reserva (HTTP ${response.status}).`,
+        );
+        throw new Error(message);
       }
 
       const appointmentId = String((parsed as { id?: string }).id ?? '').trim();
       return appointmentId || null;
-    } catch {
-      showAlert('No se pudo confirmar la reserva. Intenta nuevamente.');
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'No se pudo confirmar la reserva. Intenta nuevamente.';
+      console.error('Error creando turno', error);
+      showAlert(message);
       return null;
     }
   };
@@ -670,17 +712,37 @@ export function ReservaModal() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const payload = (await response.json()) as {
+      const payload = (await parseResponsePayload(response)) as {
         initPoint?: string;
         sandboxInitPoint?: string;
-      };
+        checkoutUrl?: string;
+        message?: string | string[];
+        error?: string;
+      } | null;
 
-      return payload.sandboxInitPoint ?? payload.initPoint ?? null;
-    } catch {
+      if (!response.ok) {
+        const message = getErrorMessage(
+          payload,
+          `No se pudo crear la preferencia de pago (HTTP ${response.status}).`,
+        );
+        throw new Error(message);
+      }
+
+      console.info('Respuesta de preferencia MP', payload);
+
+      return (
+        payload?.checkoutUrl ??
+        payload?.initPoint ??
+        payload?.sandboxInitPoint ??
+        null
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'No se pudo iniciar el pago online.';
+      console.error('Error creando preferencia de pago', error);
+      showAlert(message);
       return null;
     }
   };
@@ -697,8 +759,6 @@ export function ReservaModal() {
       if (!appointmentId) return;
 
       const paymentLink = await createPaymentPreference(appointmentId);
-      setPaymentDialogOpen(false);
-      setOpen(false);
 
       if (!paymentLink) {
         showAlert(
@@ -706,6 +766,9 @@ export function ReservaModal() {
         );
         return;
       }
+
+      setPaymentDialogOpen(false);
+      setOpen(false);
 
       if (typeof window !== 'undefined') {
         window.location.href = paymentLink;
