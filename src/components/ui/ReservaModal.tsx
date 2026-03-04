@@ -62,7 +62,6 @@ export function ReservaModal() {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentConfirmOpen, setPaymentConfirmOpen] = useState(false);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [servicesError, setServicesError] = useState<string | null>(null);
@@ -242,7 +241,7 @@ export function ReservaModal() {
 
   const handleClose = () => {
     setOpen(false);
-    setPaymentDialogOpen(false);
+    setPaymentConfirmOpen(false);
   };
   const handleLocationChange = (location: LocationKey) => {
     setSelectedLocation(location);
@@ -721,11 +720,6 @@ export function ReservaModal() {
 
   const handleConfirm = () => {
     if (!validateReservation()) return;
-    setPaymentDialogOpen(true);
-  };
-
-  const handleOpenPaymentConfirm = () => {
-    setPaymentDialogOpen(false);
     setPaymentConfirmOpen(true);
   };
 
@@ -736,7 +730,7 @@ export function ReservaModal() {
       if (!appointmentId) return;
 
       const paymentLink = await createPaymentPreference(appointmentId);
-      setPaymentDialogOpen(false);
+      setPaymentConfirmOpen(false);
       setOpen(false);
 
       if (!paymentLink) {
@@ -1092,36 +1086,6 @@ export function ReservaModal() {
           {alertMessage}
         </Alert>
       </Snackbar>
-
-      <Dialog
-        open={paymentDialogOpen}
-        onClose={() => setPaymentDialogOpen(false)}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle sx={{ fontWeight: 700 }}>Consulta paga</DialogTitle>
-        <DialogContent>
-          <Typography sx={{ color: '#6B6B6B', lineHeight: 1.7 }}>
-            La consulta sale <strong>$20.000</strong>. Al continuar vas a ser redirigido a la
-            pasarela de pago para completar la reserva.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setPaymentDialogOpen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleOpenPaymentConfirm}
-            disabled={isSubmitting}
-            sx={{
-              backgroundColor: '#EEBBC3',
-              color: '#2C2C2C',
-              '&:hover': { backgroundColor: '#FFB8C6' },
-            }}
-          >
-            Ir a pagar
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       <Dialog
         open={paymentConfirmOpen}
