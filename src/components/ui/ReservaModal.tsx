@@ -708,11 +708,12 @@ export function ReservaModal() {
       }
 
       const payload = (await response.json()) as {
+        checkoutUrl?: string;
         initPoint?: string;
         sandboxInitPoint?: string;
       };
 
-      return payload.sandboxInitPoint ?? payload.initPoint ?? null;
+      return payload.checkoutUrl ?? payload.initPoint ?? payload.sandboxInitPoint ?? null;
     } catch {
       return null;
     }
