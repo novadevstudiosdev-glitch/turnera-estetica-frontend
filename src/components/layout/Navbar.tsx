@@ -93,7 +93,7 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!isMounted || typeof window === 'undefined') return;
     const authParam = searchParams?.get('auth') ?? searchParams?.get('login');
     const registerParam = searchParams?.get('register');
     const tabParam = searchParams?.get('tab');
@@ -108,9 +108,13 @@ export function Navbar() {
     if (!shouldOpen) return;
     const token = localStorage.getItem('turnera_access_token');
     if (token) return;
-    setAuthOpen(true);
-    setTab(authParam === 'register' || registerParam || tabParam === 'register' ? 1 : 0);
-  }, [searchParams]);
+    const nextTab = authParam === 'register' || registerParam || tabParam === 'register' ? 1 : 0;
+    const timeoutId = window.setTimeout(() => {
+      setAuthOpen(true);
+      setTab(nextTab);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [isMounted, searchParams]);
 
   useEffect(() => {
     const readUser = () => {
