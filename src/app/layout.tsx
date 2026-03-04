@@ -7,7 +7,6 @@ import { Navbar } from '@/components/layout/Navbar';
 import { ReservaModal } from '@/components/ui/ReservaModal';
 import { WhatsAppFloatingButton } from '@/components/ui/WhatsAppFloatingButton';
 import { FloatingFeedbackButtonDraggable } from '@/components/FloatingFeedbackButtonDraggable';
-import { Suspense } from 'react';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -68,9 +67,7 @@ export default function RootLayout({
           />
         ) : null}
         <Providers>
-          <Suspense fallback={null}>
-            <Navbar />
-          </Suspense>
+          <Navbar />
           <ReservaModal />
           <WhatsAppFloatingButton />
           <FloatingFeedbackButtonDraggable />
@@ -80,6 +77,5 @@ export default function RootLayout({
     </html>
   );
 }
-
 
 

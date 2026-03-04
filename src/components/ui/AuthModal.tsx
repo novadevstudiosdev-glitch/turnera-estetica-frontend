@@ -20,7 +20,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 type AuthModalProps = {
   open: boolean;
@@ -87,7 +87,6 @@ const GoogleLogo = () => (
 
 export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [registerName, setRegisterName] = useState('');

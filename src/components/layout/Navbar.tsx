@@ -25,7 +25,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { AuthModal } from '../ui/AuthModal';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { keyframes } from '@mui/system';
 
 const NAV_ITEMS = [
@@ -71,7 +71,6 @@ export function Navbar() {
   const [accountAnchorEl, setAccountAnchorEl] = useState<null | HTMLElement>(null);
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   const displayName = userName
     ? userName.includes('@')
@@ -94,9 +93,10 @@ export function Navbar() {
 
   useEffect(() => {
     if (!isMounted || typeof window === 'undefined') return;
-    const authParam = searchParams?.get('auth') ?? searchParams?.get('login');
-    const registerParam = searchParams?.get('register');
-    const tabParam = searchParams?.get('tab');
+    const params = new URLSearchParams(window.location.search);
+    const authParam = params.get('auth') ?? params.get('login');
+    const registerParam = params.get('register');
+    const tabParam = params.get('tab');
     const shouldOpen =
       authParam === 'login' ||
       authParam === '1' ||
@@ -114,7 +114,7 @@ export function Navbar() {
       setTab(nextTab);
     }, 0);
     return () => window.clearTimeout(timeoutId);
-  }, [isMounted, searchParams]);
+  }, [isMounted]);
 
   useEffect(() => {
     const readUser = () => {
