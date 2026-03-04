@@ -31,6 +31,7 @@ import { LOCATIONS, LocationKey, getAvailableDaysLabel, isDateAvailable } from '
 type ServiceOption = {
   id: string;
   name: string;
+  depositAmount: number;
 };
 
 type AvailableSlot = {
@@ -71,10 +72,9 @@ export function ReservaModal() {
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
   const appointmentsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/appointments`;
+  const paymentsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/payments/create-preference`;
   const servicesUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/services`;
   const availableSlotsUrl = `${appointmentsUrl}/available-slots`;
-  const paymentUrl = (process.env.NEXT_PUBLIC_PAYMENT_URL ?? '').trim();
-  const hasPaymentUrl = paymentUrl.length > 0;
 
   useEffect(() => {
     const handler = () => setOpen(true);
@@ -112,6 +112,9 @@ export function ReservaModal() {
           .map((item) => ({
             id: String((item as { id?: string }).id ?? ''),
             name: String((item as { name?: string }).name ?? 'Servicio'),
+            depositAmount: Number(
+              (item as { depositAmount?: number | string }).depositAmount ?? 0,
+            ),
           }))
           .filter((item) => item.id);
         if (mounted) {
@@ -605,20 +608,15 @@ export function ReservaModal() {
       showAlert(servicesError);
       return false;
     }
-    if (!hasPaymentUrl) {
-      showAlert('Falta configurar la pasarela de pago.');
-      return false;
-    }
     return true;
   };
 
   const createAppointment = async () => {
-    setIsSubmitting(true);
     try {
       const token = localStorage.getItem('turnera_access_token');
       if (!token) {
         showAlert('Para confirmar la reserva necesitas iniciar sesion.');
-        return false;
+        return null;
       }
       const notesParts: string[] = [];
       if (selectedLocationLabel) {
@@ -626,7 +624,7 @@ export function ReservaModal() {
       }
       if (!selectedServiceId) {
         showAlert('No hay tratamientos disponibles para reservar.');
-        return false;
+        return null;
       }
       const payload = {
         serviceId: selectedServiceId,
@@ -651,12 +649,73 @@ export function ReservaModal() {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      return true;
+      const rawText = await response.text();
+      let parsed: unknown = rawText;
+      try {
+        parsed = JSON.parse(rawText);
+      } catch {
+        parsed = rawText;
+      }
+
+      const appointmentId = String((parsed as { id?: string }).id ?? '').trim();
+      return appointmentId || null;
     } catch {
       showAlert('No se pudo confirmar la reserva. Intenta nuevamente.');
-      return false;
-    } finally {
-      setIsSubmitting(false);
+      return null;
+    }
+  };
+
+  const createPaymentPreference = async (appointmentId: string) => {
+    try {
+      const token = localStorage.getItem('turnera_access_token');
+      if (!token) {
+        showAlert('Para confirmar la reserva necesitas iniciar sesion.');
+        return null;
+      }
+
+      const selectedService = services.find((service) => service.id === selectedServiceId);
+      if (!selectedService) {
+        showAlert('No se pudo identificar el tratamiento seleccionado.');
+        return null;
+      }
+
+      const amount = Number.isFinite(selectedService.depositAmount)
+        ? selectedService.depositAmount
+        : 0;
+
+      if (amount <= 0) {
+        return null;
+      }
+
+      const response = await fetch(paymentsUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          appointmentId,
+          amount,
+          description: `Reserva de ${selectedService.name}`,
+          payer: {
+            email: patientEmail,
+            name: patientName,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const payload = (await response.json()) as {
+        initPoint?: string;
+        sandboxInitPoint?: string;
+      };
+
+      return payload.sandboxInitPoint ?? payload.initPoint ?? null;
+    } catch {
+      return null;
     }
   };
 
@@ -671,13 +730,27 @@ export function ReservaModal() {
   };
 
   const handleProceedToPayment = async () => {
-    const ok = await createAppointment();
-    if (!ok) return;
-    setPaymentDialogOpen(false);
-    setPaymentConfirmOpen(false);
-    setOpen(false);
-    if (typeof window !== 'undefined') {
-      window.location.href = paymentUrl;
+    setIsSubmitting(true);
+    try {
+      const appointmentId = await createAppointment();
+      if (!appointmentId) return;
+
+      const paymentLink = await createPaymentPreference(appointmentId);
+      setPaymentDialogOpen(false);
+      setOpen(false);
+
+      if (!paymentLink) {
+        showAlert(
+          'El turno fue creado, pero no se pudo iniciar el pago online. Contactanos para completarlo.',
+        );
+        return;
+      }
+
+      if (typeof window !== 'undefined') {
+        window.location.href = paymentLink;
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -836,15 +909,15 @@ export function ReservaModal() {
               >
                 <DatePicker
                   value={selectedDate ? dayjs(selectedDate) : null}
-                  onChange={(newValue) =>
+                  onChange={(newValue: Dayjs | null) =>
                     handleDateChange(
                       newValue && newValue.isValid() ? newValue.format('YYYY-MM-DD') : '',
                     )
                   }
-                  onMonthChange={(newMonth) => setCurrentMonth(newMonth)}
+                  onMonthChange={(newMonth: Dayjs) => setCurrentMonth(newMonth)}
                   disabled={!selectedLocation}
                   disablePast
-                  shouldDisableDate={(value) => {
+                  shouldDisableDate={(value: Dayjs) => {
                     if (!selectedLocation) return true;
                     const dateValue = value.format('YYYY-MM-DD');
                     if (!isDateAvailable(selectedLocation, dateValue)) return true;
