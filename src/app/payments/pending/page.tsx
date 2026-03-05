@@ -5,17 +5,30 @@ type SearchParams = Record<string, string | string[] | undefined>;
 const getValue = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value.join(', ') : value;
 
-export default function PaymentPendingPage({
+const resolvePendingTtlMinutes = () => {
+  const rawValue = process.env.NEXT_PUBLIC_PENDING_APPOINTMENT_TTL_MINUTES ?? '15';
+  const parsed = Number(rawValue);
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return 15;
+  }
+
+  return Math.floor(parsed);
+};
+
+export default async function PaymentPendingPage({
   searchParams,
 }: {
-  searchParams?: SearchParams;
+  searchParams?: Promise<SearchParams>;
 }) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const pendingTtlMinutes = resolvePendingTtlMinutes();
   const details = [
-    { label: 'Estado', value: getValue(searchParams?.status) },
-    { label: 'Pago', value: getValue(searchParams?.payment_id) },
-    { label: 'Orden', value: getValue(searchParams?.merchant_order_id) },
-    { label: 'Referencia', value: getValue(searchParams?.external_reference) },
-    { label: 'Preferencia', value: getValue(searchParams?.preference_id) },
+    { label: 'Estado', value: getValue(resolvedSearchParams?.status) },
+    { label: 'Pago', value: getValue(resolvedSearchParams?.payment_id) },
+    { label: 'Orden', value: getValue(resolvedSearchParams?.merchant_order_id) },
+    { label: 'Referencia', value: getValue(resolvedSearchParams?.external_reference) },
+    { label: 'Preferencia', value: getValue(resolvedSearchParams?.preference_id) },
   ].filter((item) => item.value);
 
   return (
@@ -45,7 +58,8 @@ export default function PaymentPendingPage({
           Pago pendiente
         </h1>
         <p style={{ color: '#6B6B6B', lineHeight: 1.7, marginTop: 12 }}>
-          Tu pago está en proceso. En breve vas a recibir la confirmación.
+          Tu pago esta en proceso. Si no se acredita dentro de {pendingTtlMinutes} minutos, la
+          reserva se cancela automaticamente.
         </p>
 
         {details.length > 0 ? (

@@ -5,17 +5,18 @@ type SearchParams = Record<string, string | string[] | undefined>;
 const getValue = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value.join(', ') : value;
 
-export default function PaymentFailurePage({
+export default async function PaymentFailurePage({
   searchParams,
 }: {
-  searchParams?: SearchParams;
+  searchParams?: Promise<SearchParams>;
 }) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const details = [
-    { label: 'Estado', value: getValue(searchParams?.status) },
-    { label: 'Pago', value: getValue(searchParams?.payment_id) },
-    { label: 'Orden', value: getValue(searchParams?.merchant_order_id) },
-    { label: 'Referencia', value: getValue(searchParams?.external_reference) },
-    { label: 'Preferencia', value: getValue(searchParams?.preference_id) },
+    { label: 'Estado', value: getValue(resolvedSearchParams?.status) },
+    { label: 'Pago', value: getValue(resolvedSearchParams?.payment_id) },
+    { label: 'Orden', value: getValue(resolvedSearchParams?.merchant_order_id) },
+    { label: 'Referencia', value: getValue(resolvedSearchParams?.external_reference) },
+    { label: 'Preferencia', value: getValue(resolvedSearchParams?.preference_id) },
   ].filter((item) => item.value);
 
   return (

@@ -5,17 +5,48 @@ type SearchParams = Record<string, string | string[] | undefined>;
 const getValue = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value.join(', ') : value;
 
-export default function PaymentSuccessPage({
+const resolveFirstNumber = (value: string | undefined): number | null => {
+  if (!value) return null;
+  const first = value.split(',')[0]?.trim();
+  const parsed = Number(first);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return Math.floor(parsed);
+};
+
+export default async function PaymentSuccessPage({
   searchParams,
 }: {
-  searchParams?: SearchParams;
+  searchParams?: Promise<SearchParams>;
 }) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const rawPaymentId = getValue(resolvedSearchParams?.payment_id);
+  const paymentId = resolveFirstNumber(rawPaymentId);
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '');
+
+  if (paymentId && apiBaseUrl) {
+    try {
+      await fetch(`${apiBaseUrl}/api/payments/webhook`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'payment',
+          data: { id: paymentId },
+        }),
+        cache: 'no-store',
+      });
+    } catch {
+      // No bloquear la UI de éxito por fallas de sincronización.
+    }
+  }
+
   const details = [
-    { label: 'Estado', value: getValue(searchParams?.status) },
-    { label: 'Pago', value: getValue(searchParams?.payment_id) },
-    { label: 'Orden', value: getValue(searchParams?.merchant_order_id) },
-    { label: 'Referencia', value: getValue(searchParams?.external_reference) },
-    { label: 'Preferencia', value: getValue(searchParams?.preference_id) },
+    { label: 'Estado', value: getValue(resolvedSearchParams?.status) },
+    { label: 'Pago', value: getValue(resolvedSearchParams?.payment_id) },
+    { label: 'Orden', value: getValue(resolvedSearchParams?.merchant_order_id) },
+    { label: 'Referencia', value: getValue(resolvedSearchParams?.external_reference) },
+    { label: 'Preferencia', value: getValue(resolvedSearchParams?.preference_id) },
   ].filter((item) => item.value);
 
   return (
