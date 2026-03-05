@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Card, CardContent, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Skeleton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
@@ -2111,6 +2111,9 @@ function AdminDashboardContent() {
         <DialogContent>
           <Typography sx={{ color: '#6B6B6B' }}>
             ¿Está seguro que quiere eliminar el turno?
+          </Typography>
+          <Typography sx={{ color: '#B00020', mt: 1, fontWeight: 600 }}>
+            Advertencia: si cancela el turno, no se le devolvera la seña.
           </Typography>
           <TextField
             label="Motivo de cancelación (opcional)"
