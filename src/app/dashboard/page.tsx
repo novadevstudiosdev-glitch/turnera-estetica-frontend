@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {
   Box,
@@ -557,6 +557,9 @@ function DashboardContent() {
         <DialogContent>
           <Typography sx={{ color: '#6B6B6B' }}>
             ¿Está seguro que quiere eliminar el turno?
+          </Typography>
+          <Typography sx={{ color: '#B00020', mt: 1, fontWeight: 600 }}>
+            Advertencia: si cancela el turno, no se le devolvera la plata.
           </Typography>
           <TextField
             label="Motivo de cancelación (opcional)"
