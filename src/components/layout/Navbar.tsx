@@ -33,6 +33,7 @@ const NAV_ITEMS = [
   { key: 'servicios', label: 'Tratamientos', href: '#servicios' },
   { key: 'testimonios', label: 'Testimonios', href: '#testimonios' },
   { key: 'ubicación', label: 'Ubicación', href: '#ubicacion' },
+  { key: 'gift-card', label: 'Gift Card', href: '/gift-cards' },
 ];
 
 const accountBreathing = keyframes`
@@ -170,6 +171,10 @@ export function Navbar() {
 
   const handleNavClick = (href: string) => {
     setMobileMenuOpen(false);
+    if (href.startsWith('/')) {
+      router.push(href);
+      return;
+    }
     if (pathname !== '/') {
       router.push(`/${href}`);
       return;
@@ -260,7 +265,7 @@ export function Navbar() {
         transition: 'all 0.3s ease',
       }}
     >
-      <Container maxWidth="lg" sx={{ px: { xs: 3, md: 10 } }}>
+      <Container maxWidth="xl" sx={{ px: { xs: 3, md: 10 } }}>
         <Toolbar
           sx={{
             display: 'flex',
