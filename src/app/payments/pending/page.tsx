@@ -94,6 +94,7 @@ export default async function PaymentPendingPage({
         <div style={{ marginTop: 26, display: 'flex', justifyContent: 'center', gap: 12 }}>
           <Link
             href="/"
+            className="payment-primary-link"
             style={{
               display: 'inline-flex',
               alignItems: 'center',

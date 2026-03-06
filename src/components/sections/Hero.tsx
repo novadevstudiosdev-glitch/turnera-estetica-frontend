@@ -14,7 +14,7 @@ export function HeroSection() {
   };
 
   return (
-    <section style={styles.hero(heroBg)}>
+    <section id="hero" style={styles.hero(heroBg)}>
       <div style={styles.heroInner}>
         {/* CONTENEDOR IZQUIERDO */}
         <div style={styles.heroLeft}>

@@ -89,6 +89,7 @@ export default async function PaymentFailurePage({
         >
           <Link
             href="/"
+            className="payment-primary-link"
             style={{
               display: 'inline-flex',
               alignItems: 'center',

@@ -91,3 +91,23 @@ main > section#hero {
 .grecaptcha-badge {
   visibility: hidden;
 }
+
+.payment-primary-link {
+  box-shadow: 0 6px 18px rgba(238, 187, 195, 0.25);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+.payment-primary-link:hover {
+  transform: translateY(-2px);
+  background-color: #ffb8c6;
+  box-shadow: 0 14px 26px rgba(238, 187, 195, 0.35);
+}
+
+.payment-primary-link:active {
+  transform: translateY(0);
+}
+
+.payment-primary-link:focus-visible {
+  outline: 2px solid rgba(212, 165, 165, 0.45);
+  outline-offset: 3px;
+}
