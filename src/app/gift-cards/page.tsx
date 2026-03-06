@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 
@@ -6,20 +6,22 @@ interface GiftCardForm {
   amount: string;
   buyerName: string;
   buyerEmail: string;
+  buyerPhone: string;
   recipientName: string;
   recipientEmail: string;
+  recipientPhone: string;
   message: string;
-  delivery: string;
 }
 
 const INITIAL: GiftCardForm = {
   amount: '',
   buyerName: '',
   buyerEmail: '',
+  buyerPhone: '',
   recipientName: '',
   recipientEmail: '',
+  recipientPhone: '',
   message: '',
-  delivery: '',
 };
 
 const HOW_STEPS = [
@@ -44,14 +46,154 @@ const HOW_STEPS = [
 export default function GiftCardsPage() {
   const [form, setForm] = useState<GiftCardForm>(INITIAL);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
+  const giftCardPurchaseUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/gift-cards/purchase`;
+  const giftCardPreferenceUrl = (giftCardId: string) =>
+    `${apiBaseUrl.replace(/\/$/, '')}/api/payments/gift-card/${giftCardId}/create-preference`;
+  const MIN_AMOUNT = 1000;
+  const MAX_AMOUNT = 100000;
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
-  const handleSubmit = () => {
-    // TODO: conectar con tu backend / API
-    setSubmitted(true);
+  const parseAmount = (value: string) => {
+    const digits = value.replace(/[^\d]/g, '');
+    return digits ? Number(digits) : 0;
+  };
+
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitError(null);
+
+    const amountValue = parseAmount(form.amount);
+    if (!amountValue || amountValue < MIN_AMOUNT || amountValue > MAX_AMOUNT) {
+      setSubmitError(`Ingresá un monto entre $${MIN_AMOUNT} y $${MAX_AMOUNT}.`);
+      return;
+    }
+    if (!form.buyerName.trim() || !form.buyerEmail.trim()) {
+      setSubmitError('Completá nombre y email del comprador.');
+      return;
+    }
+    if (!isValidEmail(form.buyerEmail.trim())) {
+      setSubmitError('Ingresá un email válido del comprador.');
+      return;
+    }
+    if (!form.recipientName.trim() || !form.recipientEmail.trim()) {
+      setSubmitError('Completá nombre y email del beneficiario.');
+      return;
+    }
+    if (!isValidEmail(form.recipientEmail.trim())) {
+      setSubmitError('Ingresá un email válido del beneficiario.');
+      return;
+    }
+    if (!apiBaseUrl) {
+      setSubmitError('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const purchaseResponse = await fetch(giftCardPurchaseUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amountValue,
+          purchaserName: form.buyerName.trim(),
+          purchaserEmail: form.buyerEmail.trim(),
+          purchaserPhone: form.buyerPhone.trim() || undefined,
+          recipientName: form.recipientName.trim(),
+          recipientEmail: form.recipientEmail.trim(),
+          recipientPhone: form.recipientPhone.trim() || undefined,
+          personalMessage: form.message.trim() || undefined,
+        }),
+      });
+
+      const purchaseRaw = await purchaseResponse.text();
+      let purchasePayload: {
+        id?: string;
+        message?: string;
+        error?: string;
+      } = {};
+
+      try {
+        purchasePayload = purchaseRaw ? (JSON.parse(purchaseRaw) as typeof purchasePayload) : {};
+      } catch {
+        purchasePayload = {};
+      }
+
+      const purchaseMessage =
+        purchasePayload.message ||
+        purchasePayload.error ||
+        (purchaseRaw ? purchaseRaw : 'No pudimos iniciar el pago.');
+
+      if (!purchaseResponse.ok) {
+        setSubmitError(purchaseMessage);
+        return;
+      }
+
+      const giftCardId = purchasePayload.id?.trim() || '';
+      if (!giftCardId) {
+        setSubmitError('No pudimos iniciar el pago. Falta el ID de la gift card.');
+        return;
+      }
+
+      const preferenceResponse = await fetch(giftCardPreferenceUrl(giftCardId), {
+        method: 'POST',
+      });
+
+      const preferenceRaw = await preferenceResponse.text();
+      let preferencePayload: {
+        initPoint?: string;
+        sandboxInitPoint?: string;
+        checkoutUrl?: string;
+        paymentUrl?: string;
+        url?: string;
+        message?: string;
+        error?: string;
+      } = {};
+
+      try {
+        preferencePayload = preferenceRaw
+          ? (JSON.parse(preferenceRaw) as typeof preferencePayload)
+          : {};
+      } catch {
+        preferencePayload = {};
+      }
+
+      const preferenceMessage =
+        preferencePayload.message ||
+        preferencePayload.error ||
+        (preferenceRaw ? preferenceRaw : 'No pudimos iniciar el pago.');
+
+      if (!preferenceResponse.ok) {
+        setSubmitError(preferenceMessage);
+        return;
+      }
+
+      const redirectUrl =
+        preferencePayload.checkoutUrl ??
+        preferencePayload.sandboxInitPoint ??
+        preferencePayload.initPoint ??
+        preferencePayload.paymentUrl ??
+        preferencePayload.url ??
+        '';
+
+      if (redirectUrl && typeof window !== 'undefined') {
+        window.location.href = redirectUrl;
+        return;
+      }
+
+      setSubmitted(true);
+    } catch {
+      setSubmitError('No pudimos iniciar el pago. Probá nuevamente.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const inputStyle: React.CSSProperties = {
@@ -102,9 +244,7 @@ export default function GiftCardsPage() {
         className="bg-[#faf6f4] min-h-screen overflow-x-hidden"
         style={{ fontFamily: "'Poppins', sans-serif" }}
       >
-        {/* ══════════════════════════════════════════════════════
-            HERO — dos columnas igual que la home
-        ══════════════════════════════════════════════════════ */}
+        {/*  HERO â€” dos columnas igual que la home*/}
         <section
           className="relative min-h-[92vh] flex items-center overflow-hidden"
           style={{
@@ -112,7 +252,7 @@ export default function GiftCardsPage() {
               'radial-gradient(ellipse 60% 80% at 75% 40%, rgba(209,168,172,0.22) 0%, transparent 65%), #faf6f4',
           }}
         >
-          {/* textura mármol rosado — lado derecho, igual que la home */}
+          {/* textura mármol rosado ” lado derecho, igual que la home */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -120,7 +260,7 @@ export default function GiftCardsPage() {
                 'radial-gradient(ellipse 55% 70% at 80% 50%, rgba(217,149,158,0.16) 0%, rgba(240,218,218,0.10) 40%, transparent 70%)',
             }}
           />
-          {/* línea diagonal decorativa */}
+          {/* lÃ­nea diagonal decorativa */}
           <div
             className="absolute top-0 bottom-0 pointer-events-none hidden md:block"
             style={{
@@ -131,306 +271,334 @@ export default function GiftCardsPage() {
             }}
           />
 
-          <div className="relative z-10 w-full max-w-[1120px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 px-16 md:px-20 lg:px-24 xl:px-28 2xl:px-32 py-20">
-            {/* ── COLUMNA IZQUIERDA — texto ── */}
-            <div className="flex flex-col justify-center md:pr-8">
-              <p
-                className="fade-up flex items-center gap-3 mb-6 text-[#c47a85]"
-                style={{ fontSize: '10px', letterSpacing: '4px', textTransform: 'uppercase' }}
-              >
-                <span className="block w-8 h-px bg-[#c47a85]" />
-                Regala bienestar
-              </p>
-
-              <h1
-                className="fade-up delay-1 font-bacalisties text-[#2b1f20] leading-[1.1] mb-6"
-                style={{ fontSize: 'clamp(50px, 6vw, 82px)' }}
-              >
-                El regalo
-                <br />
-                más especial
-              </h1>
-
-              <p
-                className="fade-up delay-2 text-[#6b4f50] mb-8 max-w-sm"
-                style={{ fontSize: '13px', fontWeight: 300, lineHeight: '1.9' }}
-              >
-                Sorprendé a quien más querés con una experiencia de medicina estética de lujo. Cada
-                gift card es un gesto de cuidado y elegancia.
-              </p>
-
-              {/* bullets informativos */}
-              <div className="fade-up delay-3 space-y-3 mb-10">
-                {[
-                  'Monto libre a tu elección',
-                  'Entrega digital o en caja premium',
-                  'Válida para cualquier tratamiento',
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-3">
-                    <span className="text-[#c47a85]" style={{ fontSize: '10px' }}>
-                      ✦
-                    </span>
-                    <span className="text-[#6b4f50]" style={{ fontSize: '12px', fontWeight: 300 }}>
-                      {item}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* ornamento */}
-              <div className="fade-up delay-4 flex items-center gap-4">
-                <span className="block w-12 h-px bg-[#c47a85]/40" />
-                <span
-                  className="font-cormorant text-[#c47a85]/60"
-                  style={{
-                    fontSize: '18px',
-                    letterSpacing: '6px',
-                    textTransform: 'uppercase',
-                    fontWeight: 300,
-                  }}
+          {/* â”€â”€ FIX: padding lateral real con clamp para que SIEMPRE haya margen â”€â”€ */}
+          <div
+            className="w-full"
+            style={{
+              paddingLeft: 'clamp(36px, 9vw, 144px)',
+              paddingRight: 'clamp(36px, 9vw, 144px)',
+            }}
+          >
+            <div className="relative z-10 w-full max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16 px-0 py-20">
+              {/* â”€â”€ COLUMNA IZQUIERDA â€” texto â”€â”€ */}
+              <div className="flex flex-col justify-center pr-6 md:pr-12 lg:pr-16">
+                <p
+                  className="fade-up flex items-center gap-3 mb-6 text-[#c47a85]"
+                  style={{ fontSize: '10px', letterSpacing: '4px', textTransform: 'uppercase' }}
                 >
-                  JG
-                </span>
-                <span className="block w-12 h-px bg-[#c47a85]/40" />
-              </div>
-            </div>
+                  <span className="block w-8 h-px bg-[#c47a85]" />
+                  Regala bienestar
+                </p>
 
-            {/* ── COLUMNA DERECHA — formulario ── */}
-            <div className="flex flex-col justify-center mt-12 md:mt-0 md:pl-8">
-              {submitted ? (
-                /* Éxito */
-                <div
-                  className="text-center"
-                  style={{
-                    background: 'rgba(255,255,255,0.80)',
-                    backdropFilter: 'blur(16px)',
-                    border: '1px solid rgba(196,122,133,0.2)',
-                    borderRadius: '24px',
-                    padding: '52px 36px',
-                    boxShadow: '0 12px 50px rgba(196,122,133,0.10)',
-                  }}
+                <h1
+                  className="fade-up delay-1 font-bacalisties text-[#2b1f20] leading-[1.1] mb-6"
+                  style={{ fontSize: 'clamp(50px, 6vw, 82px)' }}
                 >
-                  <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
-                    style={{
-                      background: 'rgba(196,122,133,0.10)',
-                      border: '1px solid rgba(196,122,133,0.25)',
-                    }}
-                  >
-                    <span style={{ fontSize: '20px' }}>✦</span>
-                  </div>
-                  <h3 className="font-bacalisties text-[#2b1f20] mb-3" style={{ fontSize: '42px' }}>
-                    ¡Gift Card creada!
-                  </h3>
-                  <p
-                    className="text-[#6b4f50] mb-8"
-                    style={{ fontSize: '13px', fontWeight: 300, lineHeight: '1.9' }}
-                  >
-                    Recibimos tu solicitud. En breve te contactamos para coordinar el pago y el
-                    envío.
-                  </p>
-                  <button
-                    onClick={() => setSubmitted(false)}
-                    className="transition-all duration-200 hover:scale-[1.03]"
-                    style={{
-                      background: '#c47a85',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '50px',
-                      padding: '13px 36px',
-                      fontSize: '10px',
-                      letterSpacing: '2px',
-                      textTransform: 'uppercase',
-                      fontFamily: "'Poppins', sans-serif",
-                      cursor: 'pointer',
-                      boxShadow: '0 8px 25px rgba(196,122,133,0.35)',
-                    }}
-                  >
-                    Crear otra
-                  </button>
+                  El regalo
+                  <br />
+                  más especial
+                </h1>
+
+                <p
+                  className="fade-up delay-2 text-[#6b4f50] mb-8 max-w-sm"
+                  style={{ fontSize: '13px', fontWeight: 300, lineHeight: '1.9' }}
+                >
+                  Sorprendé a quien más querés con una experiencia de medicina estética de lujo.
+                  Cada gift card es un gesto de cuidado y elegancia.
+                </p>
+
+                {/* bullets informativos */}
+                <div className="fade-up delay-3 space-y-3 mb-10">
+                  {[
+                    'Monto libre a tu elección',
+                    'Entrega digital o en caja premium',
+                    'Válida para cualquier tratamiento',
+                  ].map((item) => (
+                    <div key={item} className="flex items-center gap-3">
+                      <span className="text-[#c47a85]" style={{ fontSize: '10px' }}>
+                        âœ¦
+                      </span>
+                      <span
+                        className="text-[#6b4f50]"
+                        style={{ fontSize: '12px', fontWeight: 300 }}
+                      >
+                        {item}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                /* Formulario */
-                <div
-                  className="relative overflow-hidden"
-                  style={{
-                    background: 'rgba(255,255,255,0.72)',
-                    backdropFilter: 'blur(18px)',
-                    border: '1px solid rgba(196,122,133,0.18)',
-                    borderRadius: '24px',
-                    padding: '40px 36px',
-                    boxShadow: '0 12px 50px rgba(196,122,133,0.10)',
-                  }}
-                >
-                  {/* deco interna */}
-                  <div
-                    className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none"
+
+                {/* ornamento */}
+                <div className="fade-up delay-4 flex items-center gap-4">
+                  <span className="block w-12 h-px bg-[#c47a85]/40" />
+                  <span
+                    className="font-cormorant text-[#c47a85]/60"
                     style={{
-                      background:
-                        'radial-gradient(circle, rgba(196,122,133,0.08) 0%, transparent 70%)',
+                      fontSize: '18px',
+                      letterSpacing: '6px',
+                      textTransform: 'uppercase',
+                      fontWeight: 300,
                     }}
-                  />
+                  >
+                    JG
+                  </span>
+                  <span className="block w-12 h-px bg-[#c47a85]/40" />
+                </div>
+              </div>
 
-                  {/* título del form */}
-                  <div className="mb-6 text-center">
-                    <h2
-                      className="font-bacalisties text-[#2b1f20]"
-                      style={{ fontSize: 'clamp(28px, 3vw, 38px)' }}
+              {/* â”€â”€ COLUMNA DERECHA â€” formulario â”€â”€ */}
+              <div className="flex flex-col justify-center mt-12 md:mt-0 pl-2 md:pl-12 lg:pl-16">
+                {submitted ? (
+                  /* Ã‰xito */
+                  <div
+                    className="text-center"
+                    style={{
+                      background: 'rgba(255,255,255,0.80)',
+                      backdropFilter: 'blur(16px)',
+                      border: '1px solid rgba(196,122,133,0.2)',
+                      borderRadius: '24px',
+                      padding: '52px 36px',
+                      boxShadow: '0 12px 50px rgba(196,122,133,0.10)',
+                    }}
+                  >
+                    <div
+                      className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
+                      style={{
+                        background: 'rgba(196,122,133,0.10)',
+                        border: '1px solid rgba(196,122,133,0.25)',
+                      }}
                     >
-                      Personalizá tu regalo
-                    </h2>
+                      <span style={{ fontSize: '20px' }}>âœ¦</span>
+                    </div>
+                    <h3
+                      className="font-bacalisties text-[#2b1f20] mb-3"
+                      style={{ fontSize: '42px' }}
+                    >
+                      Â¡Gift Card creada!
+                    </h3>
                     <p
-                      className="text-[#6b4f50]/60 mt-1"
-                      style={{ fontSize: '11px', fontWeight: 300 }}
+                      className="text-[#6b4f50] mb-8"
+                      style={{ fontSize: '13px', fontWeight: 300, lineHeight: '1.9' }}
                     >
-                      Completá los datos a continuación
+                      Recibimos tu solicitud. En breve te contactamos para coordinar el pago y el
+                      envío.
                     </p>
+                    <button
+                      onClick={() => setSubmitted(false)}
+                      className="transition-all duration-200 hover:scale-[1.03]"
+                      style={{
+                        background: '#c47a85',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '50px',
+                        padding: '13px 36px',
+                        fontSize: '10px',
+                        letterSpacing: '2px',
+                        textTransform: 'uppercase',
+                        fontFamily: "'Poppins', sans-serif",
+                        cursor: 'pointer',
+                        boxShadow: '0 8px 25px rgba(196,122,133,0.35)',
+                      }}
+                    >
+                      Crear otra
+                    </button>
                   </div>
+                ) : (
+                  /* Formulario */
+                  <div
+                    className="relative overflow-hidden"
+                    style={{
+                      background: 'rgba(255,255,255,0.72)',
+                      backdropFilter: 'blur(18px)',
+                      border: '1px solid rgba(196,122,133,0.18)',
+                      borderRadius: '24px',
+                      padding: '40px 36px',
+                      boxShadow: '0 12px 50px rgba(196,122,133,0.10)',
+                    }}
+                  >
+                    {/* deco interna */}
+                    <div
+                      className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none"
+                      style={{
+                        background:
+                          'radial-gradient(circle, rgba(196,122,133,0.08) 0%, transparent 70%)',
+                      }}
+                    />
 
-                  <div className="space-y-5">
-                    {/* monto */}
-                    <div>
-                      <GCLabel>Monto del regalo ($)</GCLabel>
-                      <input
-                        type="number"
-                        name="amount"
-                        placeholder="Ej: 100.000"
-                        value={form.amount}
-                        onChange={handleChange}
-                        className="gc-input"
-                        style={inputStyle}
-                      />
-                    </div>
-
-                    {/* comprador */}
-                    <GCDivider label="Comprador" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <GCLabel>Nombre</GCLabel>
-                        <input
-                          type="text"
-                          name="buyerName"
-                          placeholder="Tu nombre"
-                          value={form.buyerName}
-                          onChange={handleChange}
-                          className="gc-input"
-                          style={inputStyle}
-                        />
-                      </div>
-                      <div>
-                        <GCLabel>Email</GCLabel>
-                        <input
-                          type="email"
-                          name="buyerEmail"
-                          placeholder="tu@email.com"
-                          value={form.buyerEmail}
-                          onChange={handleChange}
-                          className="gc-input"
-                          style={inputStyle}
-                        />
-                      </div>
-                    </div>
-
-                    {/* beneficiario */}
-                    <GCDivider label="Beneficiario" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <GCLabel>Nombre</GCLabel>
-                        <input
-                          type="text"
-                          name="recipientName"
-                          placeholder="Nombre de quien recibe"
-                          value={form.recipientName}
-                          onChange={handleChange}
-                          className="gc-input"
-                          style={inputStyle}
-                        />
-                      </div>
-                      <div>
-                        <GCLabel>Email</GCLabel>
-                        <input
-                          type="email"
-                          name="recipientEmail"
-                          placeholder="email@beneficiario.com"
-                          value={form.recipientEmail}
-                          onChange={handleChange}
-                          className="gc-input"
-                          style={inputStyle}
-                        />
-                      </div>
-                    </div>
-
-                    {/* entrega */}
-                    <div>
-                      <GCLabel>¿Cómo entregarlo?</GCLabel>
-                      <select
-                        name="delivery"
-                        value={form.delivery}
-                        onChange={handleChange}
-                        className="gc-input"
-                        style={inputStyle}
+                    {/* tÃ­tulo del form */}
+                    <div className="mb-6 text-center">
+                      <h2
+                        className="font-bacalisties text-[#2b1f20]"
+                        style={{ fontSize: 'clamp(28px, 3vw, 38px)' }}
                       >
-                        <option value="" disabled>
-                          Seleccioná una opción
-                        </option>
-                        <option value="digital">Digital por email</option>
-                        <option value="impreso">Impreso en sobre</option>
-                        <option value="caja">Caja regalo premium</option>
-                      </select>
-                    </div>
-
-                    {/* mensaje */}
-                    <div>
-                      <GCLabel>Mensaje personal (opcional)</GCLabel>
-                      <textarea
-                        name="message"
-                        placeholder="Escribí algo especial para el beneficiario..."
-                        value={form.message}
-                        onChange={handleChange}
-                        rows={3}
-                        className="gc-input"
-                        style={{ ...inputStyle, resize: 'none' }}
-                      />
-                    </div>
-
-                    {/* submit */}
-                    <div className="pt-1 text-center">
-                      <button
-                        onClick={handleSubmit}
-                        className="w-full transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_12px_35px_rgba(196,122,133,0.45)]"
-                        style={{
-                          background: 'linear-gradient(135deg, #c47a85 0%, #a5616e 100%)',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '50px',
-                          padding: '15px 36px',
-                          fontSize: '11px',
-                          letterSpacing: '2.5px',
-                          textTransform: 'uppercase',
-                          fontFamily: "'Poppins', sans-serif",
-                          boxShadow: '0 8px 28px rgba(196,122,133,0.38)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Crear mi Gift Card
-                      </button>
+                        Personalizá tu regalo
+                      </h2>
                       <p
-                        className="text-[#6b4f50]/45 mt-3"
-                        style={{ fontSize: '10px', fontWeight: 300 }}
+                        className="text-[#6b4f50]/60 mt-1"
+                        style={{ fontSize: '11px', fontWeight: 300 }}
                       >
-                        ✦ Te contactamos en menos de 24 hs para coordinar el pago
+                        Completá los datos a continuación
                       </p>
                     </div>
+
+                    <form className="space-y-5" onSubmit={handleSubmit}>
+                      {/* monto */}
+                      <div>
+                        <GCLabel>Monto del regalo ($)</GCLabel>
+                        <input
+                          type="text"
+                          name="amount"
+                          placeholder="Ej: 100.000"
+                          value={form.amount}
+                          onChange={handleChange}
+                          className="gc-input"
+                          style={inputStyle}
+                          inputMode="numeric"
+                        />
+                      </div>
+
+                      {/* comprador */}
+                      <GCDivider label="Comprador" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <GCLabel>Nombre</GCLabel>
+                          <input
+                            type="text"
+                            name="buyerName"
+                            placeholder="Tu nombre"
+                            value={form.buyerName}
+                            onChange={handleChange}
+                            className="gc-input"
+                            style={inputStyle}
+                          />
+                        </div>
+                        <div>
+                          <GCLabel>Email</GCLabel>
+                          <input
+                            type="email"
+                            name="buyerEmail"
+                            placeholder="tu@email.com"
+                            value={form.buyerEmail}
+                            onChange={handleChange}
+                            className="gc-input"
+                            style={inputStyle}
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <GCLabel>Teléfono</GCLabel>
+                          <input
+                            type="tel"
+                            name="buyerPhone"
+                            placeholder="+54 9 341 1234567"
+                            value={form.buyerPhone}
+                            onChange={handleChange}
+                            className="gc-input"
+                            style={inputStyle}
+                          />
+                        </div>
+                      </div>
+
+                      {/* beneficiario */}
+                      <GCDivider label="Beneficiario" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <GCLabel>Nombre</GCLabel>
+                          <input
+                            type="text"
+                            name="recipientName"
+                            placeholder="Nombre de quien recibe"
+                            value={form.recipientName}
+                            onChange={handleChange}
+                            className="gc-input"
+                            style={inputStyle}
+                          />
+                        </div>
+                        <div>
+                          <GCLabel>Email</GCLabel>
+                          <input
+                            type="email"
+                            name="recipientEmail"
+                            placeholder="email@beneficiario.com"
+                            value={form.recipientEmail}
+                            onChange={handleChange}
+                            className="gc-input"
+                            style={inputStyle}
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <GCLabel>Teléfono</GCLabel>
+                          <input
+                            type="tel"
+                            name="recipientPhone"
+                            placeholder="+54 9 341 7654321"
+                            value={form.recipientPhone}
+                            onChange={handleChange}
+                            className="gc-input"
+                            style={inputStyle}
+                          />
+                        </div>
+                      </div>
+
+                      {/* mensaje */}
+                      <div>
+                        <GCLabel>Mensaje personal (opcional)</GCLabel>
+                        <textarea
+                          name="message"
+                          placeholder="Escribí­ algo especial para el beneficiario..."
+                          value={form.message}
+                          onChange={handleChange}
+                          rows={3}
+                          className="gc-input"
+                          style={{ ...inputStyle, resize: 'none' }}
+                        />
+                      </div>
+
+                      {submitError && (
+                        <p className="text-[#b84b5a]" style={{ fontSize: '11px' }}>
+                          {submitError}
+                        </p>
+                      )}
+
+                      {/* submit */}
+                      <div className="pt-1 text-center">
+                        <button
+                          type="submit"
+                          disabled={submitting}
+                          className="w-full transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_12px_35px_rgba(196,122,133,0.45)] disabled:opacity-70 disabled:cursor-not-allowed"
+                          style={{
+                            background: 'linear-gradient(135deg, #c47a85 0%, #a5616e 100%)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '50px',
+                            padding: '15px 36px',
+                            fontSize: '11px',
+                            letterSpacing: '2.5px',
+                            textTransform: 'uppercase',
+                            fontFamily: "'Poppins', sans-serif",
+                            boxShadow: '0 8px 28px rgba(196,122,133,0.38)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {submitting ? 'Procesando...' : 'Crear mi Gift Card'}
+                        </button>
+                        <p
+                          className="text-[#6b4f50]/45 mt-3"
+                          style={{ fontSize: '10px', fontWeight: 300 }}
+                        >
+                          Te contactamos en menos de 24 hs para coordinar el pago
+                        </p>
+                      </div>
+                    </form>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════
-            CÓMO FUNCIONA
-        ══════════════════════════════════════════════════════ */}
+        {/*
+            CóMO FUNCIONA
+        */}
         <section
           className="px-8 md:px-20 py-20"
           style={{
@@ -451,7 +619,7 @@ export default function GiftCardsPage() {
               className="font-bacalisties text-[#2b1f20]"
               style={{ fontSize: 'clamp(32px, 5vw, 52px)' }}
             >
-              ¿Cómo funciona?
+              ¿Cmo funciona?
             </h2>
           </div>
 
@@ -495,36 +663,12 @@ export default function GiftCardsPage() {
           </div>
         </section>
 
-        {/* nota final */}
-        <div className="text-center px-6 py-12 bg-[#faf6f4]">
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <span className="block w-16 h-px bg-[#c47a85]/25" />
-            <span
-              className="font-cormorant text-[#c47a85]/40"
-              style={{ fontSize: '18px', letterSpacing: '5px' }}
-            >
-              JG
-            </span>
-            <span className="block w-16 h-px bg-[#c47a85]/25" />
-          </div>
-          <p className="text-[#6b4f50]/60" style={{ fontSize: '12px', fontWeight: 300 }}>
-            ¿Tenés dudas? Escribinos por{' '}
-            <a
-              href="https://wa.me/"
-              className="text-[#c47a85] hover:opacity-75 transition-opacity"
-              style={{ borderBottom: '1px solid rgba(196,122,133,0.35)' }}
-            >
-              WhatsApp
-            </a>
-            .
-          </p>
-        </div>
       </main>
     </>
   );
 }
 
-/* ── Helpers ── */
+/* â”€â”€ Helpers â”€â”€ */
 function GCLabel({ children }: { children: React.ReactNode }) {
   return (
     <label
