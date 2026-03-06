@@ -1,5 +1,11 @@
 ﻿import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import {
+  Geist,
+  Geist_Mono,
+  Dancing_Script,
+  Cormorant_Garamond,
+  Montserrat,
+} from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
 import { Providers } from './providers';
@@ -15,6 +21,22 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
+  subsets: ['latin'],
+});
+
+const dancingScript = Dancing_Script({
+  variable: '--font-dancing-script',
+  subsets: ['latin'],
+});
+
+const cormorantGaramond = Cormorant_Garamond({
+  variable: '--font-cormorant-garamond',
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+});
+
+const montserrat = Montserrat({
+  variable: '--font-montserrat',
   subsets: ['latin'],
 });
 
@@ -48,6 +70,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <link
+          href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+        <link
           href="https://db.onlinewebfonts.com/c/9a7927751df300f137ecadcd39ec25ed?family=Bacalisties"
           rel="stylesheet"
         />
@@ -56,7 +82,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${dancingScript.variable} ${cormorantGaramond.variable} ${montserrat.variable} antialiased`}
+      >
         {googleClientId ? (
           <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
         ) : null}
@@ -77,5 +105,4 @@ export default function RootLayout({
     </html>
   );
 }
-
 
