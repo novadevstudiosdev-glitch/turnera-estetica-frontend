@@ -37,11 +37,33 @@ type BlockedSlot = {
 
 type ApiBlockedSlot = Record<string, unknown>;
 
+type GiftCardStatus = 'pending' | 'active' | 'redeemed' | 'expired' | 'cancelled';
+
+type AdminGiftCard = {
+  id: string;
+  code: string;
+  amount: number;
+  remainingAmount: number;
+  status: GiftCardStatus;
+  purchaserName: string;
+  purchaserEmail: string;
+  recipientName: string;
+  recipientEmail: string;
+  purchaseDate?: string;
+  expirationDate?: string;
+  redeemedDate?: string;
+  redeemedBy?: string | null;
+  notes?: string | null;
+};
+
+type ApiGiftCard = Record<string, unknown>;
+
 const initialAdminAppointments: AdminAppointment[] = [];
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
 const appointmentsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/appointments`;
 const blockedSlotsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/blocked-slots`;
+const giftCardsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/gift-cards`;
 
 const BLOCKED_SLOT_TYPES: { value: BlockedSlotType; label: string }[] = [
   { value: 'vacation', label: 'Vacaciones' },
@@ -171,6 +193,88 @@ const normalizeBlockedSlot = (raw: ApiBlockedSlot, index: number): BlockedSlot =
   };
 };
 
+const parseMoneyValue = (value: unknown) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const normalized = value.replace(',', '.');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
+const normalizeGiftCardStatus = (value: unknown): GiftCardStatus => {
+  const normalized = String(value ?? '').toLowerCase();
+  if (normalized === 'pending') return 'pending';
+  if (normalized === 'active') return 'active';
+  if (normalized === 'redeemed') return 'redeemed';
+  if (normalized === 'expired') return 'expired';
+  if (normalized === 'cancelled' || normalized === 'canceled') return 'cancelled';
+  return 'pending';
+};
+
+const normalizeGiftCard = (raw: ApiGiftCard, index: number): AdminGiftCard => {
+  const id = String((raw.id as string | number | undefined) ?? (raw._id as string | number | undefined) ?? `GC-${index + 1}`);
+  const code = String((raw.code as string | undefined) ?? `GC-${index + 1}`);
+  const amount = parseMoneyValue(raw.amount);
+  const remainingAmount = parseMoneyValue((raw.remainingAmount as number | string | undefined) ?? (raw.remaining_amount as number | string | undefined));
+  const redeemedUser =
+    (raw.redeemedByUser as { fullName?: string; name?: string; email?: string } | undefined) ??
+    (raw.redeemed_by_user as { fullName?: string; name?: string; email?: string } | undefined);
+  return {
+    id,
+    code,
+    amount,
+    remainingAmount,
+    status: normalizeGiftCardStatus(raw.status),
+    purchaserName: String((raw.purchaserName as string | undefined) ?? (raw.purchaser_name as string | undefined) ?? 'Comprador'),
+    purchaserEmail: String((raw.purchaserEmail as string | undefined) ?? (raw.purchaser_email as string | undefined) ?? ''),
+    recipientName: String((raw.recipientName as string | undefined) ?? (raw.recipient_name as string | undefined) ?? 'Beneficiario'),
+    recipientEmail: String((raw.recipientEmail as string | undefined) ?? (raw.recipient_email as string | undefined) ?? ''),
+    purchaseDate: (raw.purchaseDate as string | undefined) ?? (raw.purchase_date as string | undefined),
+    expirationDate: (raw.expirationDate as string | undefined) ?? (raw.expiration_date as string | undefined),
+    redeemedDate: (raw.redeemedDate as string | undefined) ?? (raw.redeemed_date as string | undefined),
+    redeemedBy: redeemedUser?.fullName ?? redeemedUser?.name ?? redeemedUser?.email ?? null,
+    notes: (raw.notes as string | undefined) ?? null,
+  };
+};
+
+const resolveGiftCardStatus = (giftCard: AdminGiftCard) => {
+  if (giftCard.status === 'cancelled') return 'cancelled';
+  if (giftCard.status === 'redeemed') return 'redeemed';
+  if (giftCard.status === 'pending') return 'pending';
+  const expirationDate = giftCard.expirationDate ? new Date(giftCard.expirationDate) : null;
+  if (expirationDate && !Number.isNaN(expirationDate.getTime()) && new Date() > expirationDate) {
+    return 'expired';
+  }
+  return giftCard.status === 'active' ? 'active' : 'pending';
+};
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0,
+  }).format(value);
+
+const formatGiftCardDate = (value?: string) => {
+  if (!value) return '—';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  return parsed.toLocaleDateString('es-AR');
+};
+
+const giftCardStatusMeta: Record<
+  GiftCardStatus,
+  { label: string; color: 'default' | 'success' | 'warning' | 'info' | 'error' }
+> = {
+  pending: { label: 'Pendiente', color: 'warning' },
+  active: { label: 'Activa', color: 'success' },
+  redeemed: { label: 'Canjeada', color: 'success' },
+  expired: { label: 'Vencida', color: 'error' },
+  cancelled: { label: 'Cancelada', color: 'default' },
+};
+
 const formatBlockedTypeLabel = (value?: string | null) => {
   if (!value) return 'Otro';
   return BLOCKED_SLOT_TYPES.find((item) => item.value === value)?.label ?? 'Otro';
@@ -231,6 +335,18 @@ function AdminDashboardContent() {
   const [timeBlockEnd, setTimeBlockEnd] = useState('');
   const [timeBlockReason, setTimeBlockReason] = useState('');
   const [timeBlockType, setTimeBlockType] = useState<BlockedSlotType>('other');
+  const [giftCards, setGiftCards] = useState<AdminGiftCard[]>([]);
+  const [giftCardsLoading, setGiftCardsLoading] = useState(false);
+  const [giftCardsError, setGiftCardsError] = useState<string | null>(null);
+  const [giftCardSearch, setGiftCardSearch] = useState('');
+  const [giftCardStatusFilter, setGiftCardStatusFilter] = useState<'Todos' | GiftCardStatus>('Todos');
+  const [redeemOpen, setRedeemOpen] = useState(false);
+  const [redeemTarget, setRedeemTarget] = useState<AdminGiftCard | null>(null);
+  const [redeemValues, setRedeemValues] = useState({ amount: '', notes: '' });
+  const [redeemSubmitting, setRedeemSubmitting] = useState(false);
+  const [redeemError, setRedeemError] = useState<string | null>(null);
+  const [appointmentsExpanded, setAppointmentsExpanded] = useState(true);
+  const [giftCardsExpanded, setGiftCardsExpanded] = useState(true);
 
   const stats = useMemo(() => {
     return {
@@ -481,6 +597,29 @@ function AdminDashboardContent() {
     return sorted;
   }, [appointments, locationFilter, searchTerm, sortBy, statusFilter]);
 
+  const filteredGiftCards = useMemo(() => {
+    const normalizedSearch = giftCardSearch.trim().toLowerCase();
+    let list = giftCards;
+    if (normalizedSearch) {
+      list = list.filter((giftCard) =>
+        [
+          giftCard.code,
+          giftCard.purchaserName,
+          giftCard.purchaserEmail,
+          giftCard.recipientName,
+          giftCard.recipientEmail,
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalizedSearch)
+      );
+    }
+    if (giftCardStatusFilter !== 'Todos') {
+      list = list.filter((giftCard) => resolveGiftCardStatus(giftCard) === giftCardStatusFilter);
+    }
+    return list;
+  }, [giftCards, giftCardSearch, giftCardStatusFilter]);
+
   const blockedSlotsList = useMemo(() => {
     const list = blockedSlots.filter((slot) => slot.isActive !== false && slot.blockedDate);
     const sorted = [...list];
@@ -603,6 +742,83 @@ function AdminDashboardContent() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!giftCardsUrl) {
+      setGiftCardsError('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+      setGiftCards([]);
+      return;
+    }
+    let mounted = true;
+    const controller = new AbortController();
+
+    const loadGiftCards = async () => {
+      setGiftCardsLoading(true);
+      setGiftCardsError(null);
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
+        if (!token) {
+          if (mounted) {
+            setGiftCards([]);
+            setGiftCardsError('Necesitas iniciar sesion como admin para ver las gift cards.');
+          }
+          return;
+        }
+        const response = await fetch(`${giftCardsUrl}?limit=50`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('turnera_access_token');
+              localStorage.removeItem('turnera_user');
+              localStorage.removeItem('turnera_google_picture');
+              window.dispatchEvent(new Event('auth-changed'));
+            }
+            router.replace('/?auth=login&next=/admin');
+            return;
+          }
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const rawText = await response.text();
+        let parsed: unknown = rawText;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch {
+          parsed = rawText;
+        }
+        const list = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray((parsed as { data?: unknown }).data)
+            ? ((parsed as { data?: unknown }).data as unknown[])
+            : [];
+        const normalized = list.map((item, index) => normalizeGiftCard(item as ApiGiftCard, index));
+        if (mounted) {
+          setGiftCards(normalized);
+          if (normalized.length === 0) {
+            setGiftCardsError('No se encontraron gift cards en el servidor.');
+          }
+        }
+      } catch {
+        if (mounted) {
+          setGiftCardsError('No se pudieron cargar las gift cards.');
+          setGiftCards([]);
+        }
+      } finally {
+        if (mounted) setGiftCardsLoading(false);
+      }
+    };
+
+    loadGiftCards();
+
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, [giftCardsUrl, router]);
+
   const handleOpenEdit = (appointment: AdminAppointment) => {
     setEditing(appointment);
     setEditValues({
@@ -687,6 +903,82 @@ function AdminDashboardContent() {
     await handleCancelAppointment(cancelTargetId, cancelReason);
     setCancelTargetId(null);
     setCancelReason('');
+  };
+
+  const parseRedeemAmount = (value: string) => {
+    const digits = value.replace(/[^\d]/g, '');
+    return digits ? Number(digits) : 0;
+  };
+
+  const handleOpenRedeem = (giftCard: AdminGiftCard) => {
+    setRedeemTarget(giftCard);
+    setRedeemValues({ amount: String(Math.round(giftCard.remainingAmount)), notes: '' });
+    setRedeemError(null);
+    setRedeemOpen(true);
+  };
+
+  const handleCloseRedeem = () => {
+    setRedeemOpen(false);
+    setRedeemTarget(null);
+    setRedeemValues({ amount: '', notes: '' });
+    setRedeemError(null);
+  };
+
+  const handleConfirmRedeem = async () => {
+    if (!redeemTarget) return;
+    const amountValue = parseRedeemAmount(redeemValues.amount);
+    if (!amountValue || amountValue <= 0) {
+      setRedeemError('Ingresa un monto válido para canjear.');
+      return;
+    }
+    if (amountValue > redeemTarget.remainingAmount) {
+      setRedeemError('El monto a canjear supera el saldo disponible.');
+      return;
+    }
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
+      if (!token) {
+        setRedeemError('Necesitas iniciar sesion como admin para canjear una gift card.');
+        return;
+      }
+      setRedeemSubmitting(true);
+      setRedeemError(null);
+      const response = await fetch(`${giftCardsUrl}/${redeemTarget.code}/redeem`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          amountToRedeem: amountValue,
+          notes: redeemValues.notes.trim() || undefined,
+        }),
+      });
+      const rawText = await response.text();
+      let parsed: unknown = rawText;
+      try {
+        parsed = JSON.parse(rawText);
+      } catch {
+        parsed = rawText;
+      }
+      if (!response.ok) {
+        const message =
+          (parsed as { message?: string; error?: string }).message ??
+          (parsed as { message?: string; error?: string }).error ??
+          'No se pudo canjear la gift card.';
+        setRedeemError(message);
+        return;
+      }
+      const updated = normalizeGiftCard(parsed as ApiGiftCard, 0);
+      setGiftCards((prev) =>
+        prev.map((giftCard) => (giftCard.id === updated.id || giftCard.code === updated.code ? updated : giftCard))
+      );
+      handleCloseRedeem();
+    } catch {
+      setRedeemError('No se pudo canjear la gift card. Intenta nuevamente.');
+    } finally {
+      setRedeemSubmitting(false);
+    }
   };
 
   const handleOpenCreate = () => {
@@ -1465,135 +1757,385 @@ function AdminDashboardContent() {
               backgroundColor: '#FFFFFF',
             }}
           >
-            <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
-              <Stack spacing={2.5}>
-                <Box>
-                  <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>Listado de turnos</Typography>
-                  <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>Filtra y gestiona los turnos desde una vista ordenada.</Typography>
-                </Box>
-
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { xs: 'stretch', md: 'center' } }}>
-                    <TextField label="Buscar" placeholder="Cliente o sede" size="small" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} sx={{ flex: 1, backgroundColor: '#FFFFFF' }} />
-                  <TextField select label="Estado" size="small" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as AdminStatus | 'Todos')} sx={{ minWidth: 160, backgroundColor: '#FFFFFF' }}>
-                    <MenuItem value="Todos">Todos</MenuItem>
-                    {['Pendiente', 'Confirmado', 'Reprogramado', 'Cancelado', 'Completado', 'No asistio'].map((status) => (
-                      <MenuItem key={status} value={status}>
-                        {status}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField select label="Sede" size="small" value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} sx={{ minWidth: 160, backgroundColor: '#FFFFFF' }}>
-                    {locationOptions.map((location) => (
-                      <MenuItem key={location} value={location}>
-                        {location}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField select label="Ordenar por" size="small" value={sortBy} onChange={(event) => setSortBy(event.target.value as 'date-asc' | 'date-desc' | 'name-asc')} sx={{ minWidth: 180, backgroundColor: '#FFFFFF' }}>
-                    <MenuItem value="date-asc">Fecha (proximos)</MenuItem>
-                    <MenuItem value="date-desc">Fecha (recientes)</MenuItem>
-                    <MenuItem value="name-asc">Cliente (A-Z)</MenuItem>
-                  </TextField>
-                </Stack>
-
-                {loading ? (
-                  <Box sx={{ display: 'grid', gap: 1.5 }}>
-                    {Array.from({ length: 6 }).map((_, index) => (
-                      <Skeleton key={`table-skeleton-${index}`} height={42} />
-                    ))}
+            <CardContent sx={{ p: 0 }}>
+              <Accordion
+                disableGutters
+                elevation={0}
+                expanded={giftCardsExpanded}
+                onChange={(_, expanded) => setGiftCardsExpanded(expanded)}
+                sx={{
+                  borderRadius: '20px',
+                  backgroundColor: 'transparent',
+                  '&:before': { display: 'none' },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon sx={{ color: '#8B6B6B' }} />}
+                  sx={{
+                    px: { xs: 2.5, md: 3 },
+                    py: 1.5,
+                    '& .MuiAccordionSummary-content': {
+                      alignItems: 'center',
+                      gap: 1.5,
+                      flexWrap: 'wrap',
+                    },
+                  }}
+                >
+                  <Box>
+                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>Gift Cards</Typography>
+                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>
+                      Visualiza beneficiarios, estados y canjes pendientes.
+                    </Typography>
                   </Box>
-                ) : filteredAppointments.length === 0 ? (
-                  <Box
-                    sx={{
-                      borderRadius: '16px',
-                      border: '1px dashed #E6E0DD',
-                      p: { xs: 2, md: 3 },
-                      textAlign: 'center',
-                    }}
-                  >
-                    <Typography sx={{ color: '#6B6B6B', mb: 2 }}>No hay turnos para los filtros seleccionados.</Typography>
-                    <Button
-                      variant="outlined"
-                      onClick={() => {
-                        setSearchTerm('');
-                        setStatusFilter('Todos');
-                        setLocationFilter('Todas');
-                        setSortBy('date-asc');
-                      }}
-                      sx={{
-                        borderRadius: '999px',
-                        px: 3,
-                        py: 1,
-                        borderColor: '#E9E4E2',
-                        color: '#6B6B6B',
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        '&:hover': {
-                          borderColor: '#EEBBC3',
-                          backgroundColor: '#FDF4F6',
-                        },
-                      }}
-                    >
-                      Limpiar filtros
-                    </Button>
-                  </Box>
-                ) : (
-                  <TableContainer
-                    sx={{
-                      borderRadius: '16px',
-                      border: '1px solid #F0DEDE',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow sx={{ backgroundColor: '#FFF5F7' }}>
-                          {['Cliente', 'Fecha', 'Hora', 'Sede', 'Estado', 'Acciones'].map((label) => (
-                            <TableCell key={label} sx={{ fontWeight: 700, color: '#8B6B6B', fontSize: '0.82rem' }}>
-                              {label}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {filteredAppointments.map((appt) => {
-                          const dateLabel = new Date(`${appt.date}T00:00:00`).toLocaleDateString('es-AR', {
-                            day: '2-digit',
-                            month: 'short',
-                          });
-                          return (
-                            <TableRow
-                              key={`row-${appt.id}`}
-                              hover
-                              sx={{
-                                '&:last-of-type td': { borderBottom: 'none' },
-                              }}
-                            >
-                              <TableCell sx={{ fontWeight: 600, color: '#2C2C2C' }}>{appt.clientName}</TableCell>
-                              <TableCell sx={{ color: '#6B6B6B' }}>{dateLabel}</TableCell>
-                              <TableCell sx={{ color: '#6B6B6B' }}>{appt.time}</TableCell>
-                              <TableCell sx={{ color: '#6B6B6B' }}>{appt.location}</TableCell>
-                              <TableCell>
-                                <Chip label={appt.status} size="small" color={statusColor(appt.status)} />
+                  <Chip
+                    size="small"
+                    label={`${giftCards.length}`}
+                    sx={{ backgroundColor: '#F5E6E8', color: '#6B6B6B' }}
+                  />
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: { xs: 2.5, md: 3 }, pb: 3, pt: 0 }}>
+                  <Stack spacing={2.5}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { xs: 'stretch', md: 'center' } }}>
+                      <TextField
+                        label="Buscar"
+                        placeholder="Codigo, beneficiario o comprador"
+                        size="small"
+                        value={giftCardSearch}
+                        onChange={(event) => setGiftCardSearch(event.target.value)}
+                        sx={{ flex: 1, backgroundColor: '#FFFFFF' }}
+                      />
+                      <TextField
+                        select
+                        label="Estado"
+                        size="small"
+                        value={giftCardStatusFilter}
+                        onChange={(event) => setGiftCardStatusFilter(event.target.value as GiftCardStatus | 'Todos')}
+                        sx={{ minWidth: 180, backgroundColor: '#FFFFFF' }}
+                      >
+                        <MenuItem value="Todos">Todos</MenuItem>
+                        {(['pending', 'active', 'redeemed', 'expired', 'cancelled'] as GiftCardStatus[]).map((status) => (
+                          <MenuItem key={status} value={status}>
+                            {giftCardStatusMeta[status].label}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Stack>
+
+                    {giftCardsError && (
+                      <Typography sx={{ color: '#B00020', fontSize: '0.9rem' }}>{giftCardsError}</Typography>
+                    )}
+
+                    {giftCardsLoading ? (
+                      <Box sx={{ display: 'grid', gap: 1.5 }}>
+                        {Array.from({ length: 4 }).map((_, index) => (
+                          <Skeleton key={`giftcard-skeleton-${index}`} height={42} />
+                        ))}
+                      </Box>
+                    ) : filteredGiftCards.length === 0 ? (
+                      <Box
+                        sx={{
+                          borderRadius: '16px',
+                          border: '1px dashed #E6E0DD',
+                          p: { xs: 2, md: 3 },
+                          textAlign: 'center',
+                        }}
+                      >
+                        <Typography sx={{ color: '#6B6B6B', mb: 2 }}>
+                          No hay gift cards para los filtros seleccionados.
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          onClick={() => {
+                            setGiftCardSearch('');
+                            setGiftCardStatusFilter('Todos');
+                          }}
+                          sx={{
+                            borderRadius: '999px',
+                            px: 3,
+                            py: 1,
+                            borderColor: '#E9E4E2',
+                            color: '#6B6B6B',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            '&:hover': {
+                              borderColor: '#EEBBC3',
+                              backgroundColor: '#FDF4F6',
+                            },
+                          }}
+                        >
+                          Limpiar filtros
+                        </Button>
+                      </Box>
+                    ) : (
+                      <TableContainer
+                        sx={{
+                          borderRadius: '16px',
+                          border: '1px solid #F0DEDE',
+                          overflowX: 'auto',
+                          overflowY: 'hidden',
+                        }}
+                      >
+                        <Table size="small" sx={{ minWidth: 900 }}>
+                          <TableHead>
+                            <TableRow sx={{ backgroundColor: '#FFF7F7' }}>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }}>Codigo</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }}>Beneficiario</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }}>Comprador</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }} align="right">
+                                Monto
                               </TableCell>
-                              <TableCell>
-                                <Stack direction="row" spacing={1}>
-                                  <IconButton size="small" onClick={() => handleOpenEdit(appt)} sx={{ color: '#8B6B6B' }} aria-label="Editar turno">
-                                    <EditOutlinedIcon fontSize="small" />
-                                  </IconButton>
-                                  <IconButton size="small" onClick={() => handleOpenCancel(appt.id)} sx={{ color: '#B00020' }} aria-label="Cancelar turno" disabled={appt.status === 'Cancelado'}>
-                                    <DeleteOutlineIcon fontSize="small" />
-                                  </IconButton>
-                                </Stack>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }} align="right">
+                                Saldo
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }}>Estado</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }}>Vence</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }} align="right">
+                                Acciones
                               </TableCell>
                             </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                )}
-              </Stack>
+                          </TableHead>
+                          <TableBody>
+                            {filteredGiftCards.map((giftCard) => {
+                              const displayStatus = resolveGiftCardStatus(giftCard);
+                              const statusMeta = giftCardStatusMeta[displayStatus];
+                              const canRedeem = displayStatus === 'active' && giftCard.remainingAmount > 0;
+                              return (
+                                <TableRow key={giftCard.id} hover>
+                                  <TableCell>
+                                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C' }}>{giftCard.code}</Typography>
+                                    <Typography sx={{ fontSize: '0.78rem', color: '#8B6B6B' }}>
+                                      {giftCard.purchaseDate ? `Compra: ${formatGiftCardDate(giftCard.purchaseDate)}` : 'Sin pago confirmado'}
+                                    </Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Typography sx={{ fontWeight: 600, color: '#2C2C2C' }}>{giftCard.recipientName}</Typography>
+                                    <Typography sx={{ fontSize: '0.78rem', color: '#8B6B6B' }}>{giftCard.recipientEmail}</Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Typography sx={{ fontWeight: 600, color: '#2C2C2C' }}>{giftCard.purchaserName}</Typography>
+                                    <Typography sx={{ fontSize: '0.78rem', color: '#8B6B6B' }}>{giftCard.purchaserEmail}</Typography>
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    <Typography sx={{ fontWeight: 600, color: '#2C2C2C' }}>{formatCurrency(giftCard.amount)}</Typography>
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    <Typography sx={{ fontWeight: 600, color: '#2C2C2C' }}>{formatCurrency(giftCard.remainingAmount)}</Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip label={statusMeta.label} size="small" color={statusMeta.color} />
+                                    {giftCard.redeemedBy ? (
+                                      <Typography sx={{ fontSize: '0.75rem', color: '#8B6B6B', mt: 0.4 }}>
+                                        Canjeada por {giftCard.redeemedBy}
+                                      </Typography>
+                                    ) : null}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Typography sx={{ fontSize: '0.85rem', color: '#6B6B6B' }}>
+                                      {formatGiftCardDate(giftCard.expirationDate)}
+                                    </Typography>
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      disabled={!canRedeem}
+                                      onClick={() => handleOpenRedeem(giftCard)}
+                                      sx={{
+                                        borderRadius: '999px',
+                                        px: 2,
+                                        borderColor: '#E9E4E2',
+                                        color: '#6B6B6B',
+                                        textTransform: 'none',
+                                        fontWeight: 600,
+                                        '&:hover': {
+                                          borderColor: '#EEBBC3',
+                                          backgroundColor: '#FDF4F6',
+                                        },
+                                      }}
+                                    >
+                                      Canjear
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
+                  </Stack>
+                </AccordionDetails>
+              </Accordion>
+            </CardContent>
+          </Card>
+
+          <Card
+            sx={{
+              borderRadius: '20px',
+              border: '1px solid #F0DEDE',
+              backgroundColor: '#FFFFFF',
+            }}
+          >
+            <CardContent sx={{ p: 0 }}>
+              <Accordion
+                disableGutters
+                elevation={0}
+                expanded={appointmentsExpanded}
+                onChange={(_, expanded) => setAppointmentsExpanded(expanded)}
+                sx={{
+                  borderRadius: '20px',
+                  backgroundColor: 'transparent',
+                  '&:before': { display: 'none' },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon sx={{ color: '#8B6B6B' }} />}
+                  sx={{
+                    px: { xs: 2.5, md: 3 },
+                    py: 1.5,
+                    '& .MuiAccordionSummary-content': {
+                      alignItems: 'center',
+                      gap: 1.5,
+                      flexWrap: 'wrap',
+                    },
+                  }}
+                >
+                  <Box>
+                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>Listado de turnos</Typography>
+                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>Filtra y gestiona los turnos desde una vista ordenada.</Typography>
+                  </Box>
+                  <Chip
+                    size="small"
+                    label={`${appointments.length}`}
+                    sx={{ backgroundColor: '#F5E6E8', color: '#6B6B6B' }}
+                  />
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: { xs: 2.5, md: 3 }, pb: 3, pt: 0 }}>
+                  <Stack spacing={2.5}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { xs: 'stretch', md: 'center' } }}>
+                      <TextField label="Buscar" placeholder="Cliente o sede" size="small" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} sx={{ flex: 1, backgroundColor: '#FFFFFF' }} />
+                      <TextField select label="Estado" size="small" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as AdminStatus | 'Todos')} sx={{ minWidth: 160, backgroundColor: '#FFFFFF' }}>
+                        <MenuItem value="Todos">Todos</MenuItem>
+                        {['Pendiente', 'Confirmado', 'Reprogramado', 'Cancelado', 'Completado', 'No asistio'].map((status) => (
+                          <MenuItem key={status} value={status}>
+                            {status}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                      <TextField select label="Sede" size="small" value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} sx={{ minWidth: 160, backgroundColor: '#FFFFFF' }}>
+                        {locationOptions.map((location) => (
+                          <MenuItem key={location} value={location}>
+                            {location}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                      <TextField select label="Ordenar por" size="small" value={sortBy} onChange={(event) => setSortBy(event.target.value as 'date-asc' | 'date-desc' | 'name-asc')} sx={{ minWidth: 180, backgroundColor: '#FFFFFF' }}>
+                        <MenuItem value="date-asc">Fecha (proximos)</MenuItem>
+                        <MenuItem value="date-desc">Fecha (recientes)</MenuItem>
+                        <MenuItem value="name-asc">Cliente (A-Z)</MenuItem>
+                      </TextField>
+                    </Stack>
+
+                    {loading ? (
+                      <Box sx={{ display: 'grid', gap: 1.5 }}>
+                        {Array.from({ length: 6 }).map((_, index) => (
+                          <Skeleton key={`table-skeleton-${index}`} height={42} />
+                        ))}
+                      </Box>
+                    ) : filteredAppointments.length === 0 ? (
+                      <Box
+                        sx={{
+                          borderRadius: '16px',
+                          border: '1px dashed #E6E0DD',
+                          p: { xs: 2, md: 3 },
+                          textAlign: 'center',
+                        }}
+                      >
+                        <Typography sx={{ color: '#6B6B6B', mb: 2 }}>No hay turnos para los filtros seleccionados.</Typography>
+                        <Button
+                          variant="outlined"
+                          onClick={() => {
+                            setSearchTerm('');
+                            setStatusFilter('Todos');
+                            setLocationFilter('Todas');
+                            setSortBy('date-asc');
+                          }}
+                          sx={{
+                            borderRadius: '999px',
+                            px: 3,
+                            py: 1,
+                            borderColor: '#E9E4E2',
+                            color: '#6B6B6B',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            '&:hover': {
+                              borderColor: '#EEBBC3',
+                              backgroundColor: '#FDF4F6',
+                            },
+                          }}
+                        >
+                          Limpiar filtros
+                        </Button>
+                      </Box>
+                    ) : (
+                      <TableContainer
+                        sx={{
+                          borderRadius: '16px',
+                          border: '1px solid #F0DEDE',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow sx={{ backgroundColor: '#FFF5F7' }}>
+                              {['Cliente', 'Fecha', 'Hora', 'Sede', 'Estado', 'Acciones'].map((label) => (
+                                <TableCell key={label} sx={{ fontWeight: 700, color: '#8B6B6B', fontSize: '0.82rem' }}>
+                                  {label}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {filteredAppointments.map((appt) => {
+                              const dateLabel = new Date(`${appt.date}T00:00:00`).toLocaleDateString('es-AR', {
+                                day: '2-digit',
+                                month: 'short',
+                              });
+                              return (
+                                <TableRow
+                                  key={`row-${appt.id}`}
+                                  hover
+                                  sx={{
+                                    '&:last-of-type td': { borderBottom: 'none' },
+                                  }}
+                                >
+                                  <TableCell sx={{ fontWeight: 600, color: '#2C2C2C' }}>{appt.clientName}</TableCell>
+                                  <TableCell sx={{ color: '#6B6B6B' }}>{dateLabel}</TableCell>
+                                  <TableCell sx={{ color: '#6B6B6B' }}>{appt.time}</TableCell>
+                                  <TableCell sx={{ color: '#6B6B6B' }}>{appt.location}</TableCell>
+                                  <TableCell>
+                                    <Chip label={appt.status} size="small" color={statusColor(appt.status)} />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Stack direction="row" spacing={1}>
+                                      <IconButton size="small" onClick={() => handleOpenEdit(appt)} sx={{ color: '#8B6B6B' }} aria-label="Editar turno">
+                                        <EditOutlinedIcon fontSize="small" />
+                                      </IconButton>
+                                      <IconButton size="small" onClick={() => handleOpenCancel(appt.id)} sx={{ color: '#B00020' }} aria-label="Cancelar turno" disabled={appt.status === 'Cancelado'}>
+                                        <DeleteOutlineIcon fontSize="small" />
+                                      </IconButton>
+                                    </Stack>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
+                  </Stack>
+                </AccordionDetails>
+              </Accordion>
             </CardContent>
           </Card>
           <Card
@@ -2137,6 +2679,35 @@ function AdminDashboardContent() {
             }}
           >
             Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={redeemOpen} onClose={handleCloseRedeem} fullWidth maxWidth="xs">
+        <DialogTitle>Canjear Gift Card</DialogTitle>
+        <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
+          <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>
+            {redeemTarget ? `Codigo ${redeemTarget.code} · Saldo ${formatCurrency(redeemTarget.remainingAmount)}` : ''}
+          </Typography>
+          <TextField
+            label="Monto a canjear"
+            value={redeemValues.amount}
+            onChange={(event) => setRedeemValues((prev) => ({ ...prev, amount: event.target.value }))}
+            inputMode="numeric"
+          />
+          <TextField
+            label="Notas (opcional)"
+            value={redeemValues.notes}
+            onChange={(event) => setRedeemValues((prev) => ({ ...prev, notes: event.target.value }))}
+            multiline
+            minRows={2}
+          />
+          {redeemError && <Typography sx={{ color: '#B00020', fontSize: '0.9rem' }}>{redeemError}</Typography>}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 1 }}>
+          <Button onClick={handleCloseRedeem}>Cancelar</Button>
+          <Button variant="contained" onClick={handleConfirmRedeem} disabled={redeemSubmitting}>
+            {redeemSubmitting ? 'Canjeando...' : 'Canjear'}
           </Button>
         </DialogActions>
       </Dialog>
