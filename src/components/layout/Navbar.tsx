@@ -265,12 +265,12 @@ export function Navbar() {
         transition: 'all 0.3s ease',
       }}
     >
-      <Container maxWidth="xl" sx={{ px: { xs: 3, md: 10 } }}>
+      <Container maxWidth="xl" sx={{ px: { xs: 2, md: 10 } }}>
         <Toolbar
           sx={{
             display: 'flex',
             alignItems: 'center',
-            minHeight: 80,
+            minHeight: { xs: 68, md: 80 },
             padding: 0,
             // position: relative es clave para que la nav absoluta se posicione dentro del Toolbar
             position: 'relative',
@@ -313,8 +313,9 @@ export function Navbar() {
                     fontWeight: 300,
                     letterSpacing: '0.08em',
                     color: '#666666',
-                    fontSize: '0.9rem',
+                    fontSize: { xs: '0.8rem', md: '0.9rem' },
                     whiteSpace: 'nowrap',
+                    display: { xs: 'none', sm: 'block' },
                   }}
                 >
                   Dra. Jaquelina Grassetti
@@ -367,36 +368,39 @@ export function Navbar() {
               flexShrink: 0,
             }}
           >
-            <Button
-              variant="contained"
-              onClick={handleOpenReserva}
-              sx={{
-                borderRadius: '25px',
-                px: { xs: 2.6, md: 3.5 },
-                py: { xs: 0.9, md: 1.1 },
-                fontSize: { xs: '0.85rem', md: '0.95rem' },
-                backgroundColor: '#EEBBC3',
-                color: '#2C2C2C',
-                border: '1px solid #D4A5A5',
-                boxShadow: '0 6px 18px rgba(238, 187, 195, 0.25)',
-                textTransform: 'none',
-                fontWeight: 500,
-                flexShrink: 0,
-                whiteSpace: 'nowrap',
-                ml: { md: 2 },
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  backgroundColor: '#FFB8C6',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 14px 26px rgba(238, 187, 195, 0.35)',
-                },
-              }}
-            >
-              Reservar
-            </Button>
+            {!isMobileView && (
+              <Button
+                variant="contained"
+                onClick={handleOpenReserva}
+                sx={{
+                  borderRadius: '25px',
+                  px: { xs: 2.6, md: 3.5 },
+                  py: { xs: 0.9, md: 1.1 },
+                  fontSize: { xs: '0.85rem', md: '0.95rem' },
+                  backgroundColor: '#EEBBC3',
+                  color: '#2C2C2C',
+                  border: '1px solid #D4A5A5',
+                  boxShadow: '0 6px 18px rgba(238, 187, 195, 0.25)',
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                  ml: { md: 2 },
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    backgroundColor: '#FFB8C6',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 14px 26px rgba(238, 187, 195, 0.35)',
+                  },
+                }}
+              >
+                Reservar
+              </Button>
+            )}
 
-            {displayName ? (
-              <>
+            {!isMobileView &&
+              (displayName ? (
+                <>
                 <Tooltip title={displayName} placement="bottom" arrow>
                   <Button
                     onClick={handleAccountClick}
@@ -475,88 +479,88 @@ export function Navbar() {
                   </MenuItem>
                 </Menu>
               </>
-            ) : (
-              <Tooltip title="Ingresar / Registrarse" placement="bottom" arrow>
-                <IconButton
-                  aria-label="Cuenta"
-                  onClick={() => handleOpenAuth(0)}
-                  disableRipple
-                  sx={{
-                    p: 1.3,
-                    color: '#D4A5A5',
-                    backgroundColor: 'transparent',
-                    borderRadius: '999px',
-                    position: 'relative',
-                    flexShrink: 0,
-                    animation: `${accountBreathing} 1.4s ease-in-out infinite`,
-                    transition: 'color 0.2s ease, transform 0.2s ease',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      left: '50%',
-                      top: '50%',
-                      width: 34,
-                      height: 34,
-                      borderRadius: '50%',
-                      border: '1px solid rgba(212, 165, 165, 0.35)',
-                      transform: 'translate(-50%, -50%) scale(0.85)',
-                      opacity: 0,
-                      animation: `${accountPing} 8s ease-out infinite`,
-                      pointerEvents: 'none',
-                    },
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      left: '50%',
-                      bottom: 2,
-                      width: '0%',
-                      height: 2,
-                      borderRadius: 999,
-                      background: 'rgba(212, 165, 165, 0.6)',
-                      transform: 'translateX(-50%)',
-                      opacity: 0,
-                      transition: 'all 0.2s ease',
-                    },
-                    '&:hover': {
-                      animationPlayState: 'paused',
-                      transform: 'translateY(-3px)',
-                      color: '#B68484',
-                      backgroundColor: 'transparent',
-                    },
-                    '&:hover::before': { animationPlayState: 'paused' },
-                    '&:hover::after': { width: '70%', opacity: 1 },
-                    '&:active': { transform: 'translateY(-3px) scale(0.96)' },
-                    '&.Mui-focusVisible': {
-                      animationPlayState: 'paused',
-                      boxShadow: '0 0 0 4px rgba(238, 187, 195, 0.18)',
-                    },
-                  }}
-                >
-                  <PersonOutlineIcon sx={{ fontSize: 28 }} />
-                  <Box
+              ) : (
+                <Tooltip title="Ingresar / Registrarse" placement="bottom" arrow>
+                  <IconButton
+                    aria-label="Cuenta"
+                    onClick={() => handleOpenAuth(0)}
+                    disableRipple
                     sx={{
-                      position: 'absolute',
-                      left: '50%',
-                      top: 6,
-                      width: 13,
-                      height: 13,
-                      transform: 'translateX(-50%)',
-                      pointerEvents: 'none',
-                      animation: `${heartFloat} 2.8s ease-in-out infinite`,
-                      animationDelay: '0.4s',
-                      color: '#EE8FA0',
+                      p: 1.3,
+                      color: '#D4A5A5',
+                      backgroundColor: 'transparent',
+                      borderRadius: '999px',
+                      position: 'relative',
+                      flexShrink: 0,
+                      animation: `${accountBreathing} 1.4s ease-in-out infinite`,
+                      transition: 'color 0.2s ease, transform 0.2s ease',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        left: '50%',
+                        top: '50%',
+                        width: 34,
+                        height: 34,
+                        borderRadius: '50%',
+                        border: '1px solid rgba(212, 165, 165, 0.35)',
+                        transform: 'translate(-50%, -50%) scale(0.85)',
+                        opacity: 0,
+                        animation: `${accountPing} 8s ease-out infinite`,
+                        pointerEvents: 'none',
+                      },
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        left: '50%',
+                        bottom: 2,
+                        width: '0%',
+                        height: 2,
+                        borderRadius: 999,
+                        background: 'rgba(212, 165, 165, 0.6)',
+                        transform: 'translateX(-50%)',
+                        opacity: 0,
+                        transition: 'all 0.2s ease',
+                      },
+                      '&:hover': {
+                        animationPlayState: 'paused',
+                        transform: 'translateY(-3px)',
+                        color: '#B68484',
+                        backgroundColor: 'transparent',
+                      },
+                      '&:hover::before': { animationPlayState: 'paused' },
+                      '&:hover::after': { width: '70%', opacity: 1 },
+                      '&:active': { transform: 'translateY(-3px) scale(0.96)' },
+                      '&.Mui-focusVisible': {
+                        animationPlayState: 'paused',
+                        boxShadow: '0 0 0 4px rgba(238, 187, 195, 0.18)',
+                      },
                     }}
                   >
-                    <FavoriteIcon
+                    <PersonOutlineIcon sx={{ fontSize: 28 }} />
+                    <Box
                       sx={{
-                        fontSize: 13,
-                        filter: 'drop-shadow(0 6px 10px rgba(238, 143, 160, 0.35))',
+                        position: 'absolute',
+                        left: '50%',
+                        top: 6,
+                        width: 13,
+                        height: 13,
+                        transform: 'translateX(-50%)',
+                        pointerEvents: 'none',
+                        animation: `${heartFloat} 2.8s ease-in-out infinite`,
+                        animationDelay: '0.4s',
+                        color: '#EE8FA0',
                       }}
-                    />
-                  </Box>
-                </IconButton>
-              </Tooltip>
-            )}
+                    >
+                      <FavoriteIcon
+                        sx={{
+                          fontSize: 13,
+                          filter: 'drop-shadow(0 6px 10px rgba(238, 143, 160, 0.35))',
+                        }}
+                      />
+                    </Box>
+                  </IconButton>
+                </Tooltip>
+              ))}
 
             {/* Mobile Menu Button */}
             {isMobileView && (

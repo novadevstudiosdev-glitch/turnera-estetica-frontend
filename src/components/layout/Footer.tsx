@@ -7,9 +7,10 @@ import { Box, Container, Link as MuiLink, Typography } from '@mui/material';
 const quickLinks = [
   { label: 'Inicio', href: '#' },
   { label: 'Tratamiento', href: '#servicios' },
-  { label: 'Ubicacion', href: '#ubicacion' },
   // { label: 'Tienda Online', href: '#catalogo' },
   { label: 'Testimonios', href: '#testimonios' },
+  { label: 'Ubicacion', href: '#ubicacion' },
+  { label: 'Gift Card', href: '/gift-cards' },
 ];
 
 export function Footer() {

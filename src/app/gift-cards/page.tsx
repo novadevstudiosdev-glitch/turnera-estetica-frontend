@@ -316,7 +316,7 @@ export default function GiftCardsPage() {
                   ].map((item) => (
                     <div key={item} className="flex items-center gap-3">
                       <span className="text-[#c47a85]" style={{ fontSize: '10px' }}>
-                        âœ¦
+                        -
                       </span>
                       <span
                         className="text-[#6b4f50]"
@@ -662,7 +662,6 @@ export default function GiftCardsPage() {
             </div>
           </div>
         </section>
-
       </main>
     </>
   );
