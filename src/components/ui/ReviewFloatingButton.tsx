@@ -287,12 +287,13 @@ export function ReviewFloatingButton() {
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
         <DialogTitle>Dejar reseña</DialogTitle>
-        <DialogContent sx={{ display: 'grid', gap: 2, pt: 3, overflow: 'visible' }}>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: 4, overflow: 'visible' }}>
           <TextField
             label="Nombre"
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="Tu nombre"
+            sx={{ mt: 0.5 }}
           />
           <TextField
             label="Comentario"
