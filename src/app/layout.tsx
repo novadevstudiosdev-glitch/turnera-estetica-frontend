@@ -12,7 +12,7 @@ import { Providers } from './providers';
 import { Navbar } from '@/components/layout/Navbar';
 import { ReservaModal } from '@/components/ui/ReservaModal';
 import { WhatsAppFloatingButton } from '@/components/ui/WhatsAppFloatingButton';
-import { FloatingFeedbackButtonDraggable } from '@/components/FloatingFeedbackButtonDraggable';
+import { ReviewFloatingButton } from '@/components/ui/ReviewFloatingButton';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -98,11 +98,10 @@ export default function RootLayout({
           <Navbar />
           <ReservaModal />
           <WhatsAppFloatingButton />
-          <FloatingFeedbackButtonDraggable />
+          <ReviewFloatingButton />
           {children}
         </Providers>
       </body>
     </html>
   );
 }
-
