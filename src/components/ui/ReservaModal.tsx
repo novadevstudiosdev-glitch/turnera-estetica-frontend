@@ -1157,7 +1157,7 @@ export function ReservaModal() {
           )}
 
           <Typography sx={{ mb: 2, fontSize: '0.9rem', color: '#8B6B6B', textAlign: 'center' }}>
-            La consulta es paga. Al confirmar seras redirigido al pago.
+            Para confirmar tu turno, se abona una pequeña seña online. El resto se paga en el consultorio.
           </Typography>
 
           <Button

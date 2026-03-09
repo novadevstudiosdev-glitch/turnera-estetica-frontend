@@ -87,7 +87,7 @@ export function ReviewFloatingButton() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [name, setName] = useState('');
   const [comment, setComment] = useState('');
-  const [rating, setRating] = useState<number | null>(5);
+  const [rating, setRating] = useState<number | null>(null);
   const [appointmentId, setAppointmentId] = useState('');
   const [appointments, setAppointments] = useState<AppointmentOption[]>([]);
   const [appointmentsLoading, setAppointmentsLoading] = useState(false);
@@ -243,7 +243,7 @@ export function ReviewFloatingButton() {
       .then(() => {
         setName('');
         setComment('');
-        setRating(5);
+        setRating(null);
         setAppointmentId('');
         setOpen(false);
       })
@@ -287,13 +287,14 @@ export function ReviewFloatingButton() {
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
         <DialogTitle>Dejar reseña</DialogTitle>
-        <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: 3, overflow: 'visible' }}>
           <TextField
             label="Nombre"
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="Tu nombre"
-          />          <TextField
+          />
+          <TextField
             label="Comentario"
             value={comment}
             onChange={(event) => setComment(event.target.value)}
