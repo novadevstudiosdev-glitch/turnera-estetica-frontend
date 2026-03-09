@@ -1,7 +1,7 @@
 ﻿'use client';
 
-import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Card, CardContent, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Skeleton, Stack, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Card, CardContent, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Pagination, Skeleton, Stack, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -368,6 +368,14 @@ function AdminDashboardContent() {
   const [testimonialsError, setTestimonialsError] = useState<string | null>(null);
   const [testimonialUpdatingId, setTestimonialUpdatingId] = useState<string | null>(null);
   const [testimonialsExpanded, setTestimonialsExpanded] = useState(false);
+  const [giftCardPage, setGiftCardPage] = useState(1);
+  const [testimonialPage, setTestimonialPage] = useState(1);
+  const [appointmentPage, setAppointmentPage] = useState(1);
+
+  const GIFT_CARDS_PAGE_SIZE = 6;
+  const TESTIMONIALS_PAGE_SIZE = 6;
+  const APPOINTMENTS_PAGE_SIZE = 8;
+  const AUTO_REFRESH_MS = 60000;
 
   const stats = useMemo(() => {
     return {
@@ -418,27 +426,24 @@ function AdminDashboardContent() {
     }
   }, [monthStart, selectedDate]);
 
-  useEffect(() => {
-    if (!blockedSlotsUrl) {
-      setBlockedSlotsError('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
-      setBlockedSlots([]);
-      return;
-    }
-    let mounted = true;
-    const controller = new AbortController();
-    const startDate = monthGridStart.toISOString().slice(0, 10);
-    const endDate = monthGridEnd.toISOString().slice(0, 10);
-
-    const loadBlockedSlots = async () => {
+  const loadBlockedSlots = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!blockedSlotsUrl) {
+        setBlockedSlotsError('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+        setBlockedSlots([]);
+        return;
+      }
       setBlockedSlotsLoading(true);
       setBlockedSlotsError(null);
       try {
+        const startDate = monthGridStart.toISOString().slice(0, 10);
+        const endDate = monthGridEnd.toISOString().slice(0, 10);
         const query = new URLSearchParams({
           startDate,
           endDate,
           isActive: 'true',
         }).toString();
-        const response = await fetch(`${blockedSlotsUrl}?${query}`, { signal: controller.signal });
+        const response = await fetch(`${blockedSlotsUrl}?${query}`, { signal });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -457,26 +462,26 @@ function AdminDashboardContent() {
         const normalized = list
           .map((item, index) => normalizeBlockedSlot(item as ApiBlockedSlot, index))
           .filter((slot) => slot.blockedDate);
-        if (mounted) {
+        if (!signal?.aborted) {
           setBlockedSlots(normalized);
         }
       } catch {
-        if (mounted) {
+        if (!signal?.aborted) {
           setBlockedSlotsError('No se pudieron cargar los bloqueos.');
           setBlockedSlots([]);
         }
       } finally {
-        if (mounted) setBlockedSlotsLoading(false);
+        if (!signal?.aborted) setBlockedSlotsLoading(false);
       }
-    };
+    },
+    [blockedSlotsUrl, monthGridEnd, monthGridStart]
+  );
 
-    loadBlockedSlots();
-
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
-  }, [blockedSlotsUrl, monthGridEnd, monthGridStart]);
+  useEffect(() => {
+    const controller = new AbortController();
+    loadBlockedSlots(controller.signal);
+    return () => controller.abort();
+  }, [loadBlockedSlots]);
 
   const timeSlots = useMemo(() => {
     const slots: string[] = [];
@@ -641,6 +646,33 @@ function AdminDashboardContent() {
     return list;
   }, [giftCards, giftCardSearch, giftCardStatusFilter]);
 
+  const giftCardPageCount = useMemo(
+    () => Math.max(1, Math.ceil(filteredGiftCards.length / GIFT_CARDS_PAGE_SIZE)),
+    [filteredGiftCards.length, GIFT_CARDS_PAGE_SIZE]
+  );
+  const paginatedGiftCards = useMemo(() => {
+    const start = (giftCardPage - 1) * GIFT_CARDS_PAGE_SIZE;
+    return filteredGiftCards.slice(start, start + GIFT_CARDS_PAGE_SIZE);
+  }, [filteredGiftCards, giftCardPage, GIFT_CARDS_PAGE_SIZE]);
+
+  const appointmentPageCount = useMemo(
+    () => Math.max(1, Math.ceil(filteredAppointments.length / APPOINTMENTS_PAGE_SIZE)),
+    [filteredAppointments.length, APPOINTMENTS_PAGE_SIZE]
+  );
+  const paginatedAppointments = useMemo(() => {
+    const start = (appointmentPage - 1) * APPOINTMENTS_PAGE_SIZE;
+    return filteredAppointments.slice(start, start + APPOINTMENTS_PAGE_SIZE);
+  }, [filteredAppointments, appointmentPage, APPOINTMENTS_PAGE_SIZE]);
+
+  const testimonialPageCount = useMemo(
+    () => Math.max(1, Math.ceil(testimonials.length / TESTIMONIALS_PAGE_SIZE)),
+    [testimonials.length, TESTIMONIALS_PAGE_SIZE]
+  );
+  const paginatedTestimonials = useMemo(() => {
+    const start = (testimonialPage - 1) * TESTIMONIALS_PAGE_SIZE;
+    return testimonials.slice(start, start + TESTIMONIALS_PAGE_SIZE);
+  }, [testimonials, testimonialPage, TESTIMONIALS_PAGE_SIZE]);
+
   const blockedSlotsList = useMemo(() => {
     const list = blockedSlots.filter((slot) => slot.isActive !== false && slot.blockedDate);
     const sorted = [...list];
@@ -668,6 +700,36 @@ function AdminDashboardContent() {
   }, [appointments]);
 
   useEffect(() => {
+    setGiftCardPage(1);
+  }, [giftCardSearch, giftCardStatusFilter]);
+
+  useEffect(() => {
+    setAppointmentPage(1);
+  }, [searchTerm, statusFilter, locationFilter, sortBy]);
+
+  useEffect(() => {
+    setTestimonialPage(1);
+  }, [testimonials.length]);
+
+  useEffect(() => {
+    if (giftCardPage > giftCardPageCount) {
+      setGiftCardPage(giftCardPageCount);
+    }
+  }, [giftCardPage, giftCardPageCount]);
+
+  useEffect(() => {
+    if (appointmentPage > appointmentPageCount) {
+      setAppointmentPage(appointmentPageCount);
+    }
+  }, [appointmentPage, appointmentPageCount]);
+
+  useEffect(() => {
+    if (testimonialPage > testimonialPageCount) {
+      setTestimonialPage(testimonialPageCount);
+    }
+  }, [testimonialPage, testimonialPageCount]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     const stored = localStorage.getItem('turnera_user');
     if (!stored) {
@@ -690,17 +752,19 @@ function AdminDashboardContent() {
     }
   }, [router]);
 
-  useEffect(() => {
-    let mounted = true;
-    const controller = new AbortController();
-
-    const loadAppointments = async () => {
+  const loadAppointments = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!appointmentsUrl) {
+        setLoading(false);
+        setError('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+        return;
+      }
       setLoading(true);
       setError(null);
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
         if (!token) {
-          if (mounted) {
+          if (!signal?.aborted) {
             setAppointments([]);
             setError('Necesitas iniciar sesion como admin para ver los turnos.');
           }
@@ -710,7 +774,7 @@ function AdminDashboardContent() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          signal: controller.signal,
+          signal,
         });
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {
@@ -732,53 +796,43 @@ function AdminDashboardContent() {
         } catch {
           parsed = rawText;
         }
-        const list = Array.isArray(parsed) ? parsed : Array.isArray((parsed as { data?: unknown }).data) ? ((parsed as { data?: unknown }).data as unknown[]) : [];
+        const list = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray((parsed as { data?: unknown }).data)
+            ? ((parsed as { data?: unknown }).data as unknown[])
+            : [];
         const normalized = list.map((item, index) => normalizeAppointment(item as ApiAppointment, index));
-        if (mounted) {
+        if (!signal?.aborted) {
           setAppointments(normalized);
           if (normalized.length === 0) {
             setError('No se encontraron turnos en el servidor.');
           }
         }
       } catch {
-        if (mounted) {
+        if (!signal?.aborted) {
           setError('No se pudieron cargar los turnos desde el servidor.');
           setAppointments([]);
         }
       } finally {
-        if (mounted) setLoading(false);
+        if (!signal?.aborted) setLoading(false);
       }
-    };
+    },
+    [appointmentsUrl, router]
+  );
 
-    if (appointmentsUrl) {
-      loadAppointments();
-    } else {
-      setLoading(false);
-      setError('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
-    }
-
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!giftCardsUrl) {
-      setGiftCardsError('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
-      setGiftCards([]);
-      return;
-    }
-    let mounted = true;
-    const controller = new AbortController();
-
-    const loadGiftCards = async () => {
+  const loadGiftCards = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!giftCardsUrl) {
+        setGiftCardsError('Falta configurar NEXT_PUBLIC_API_BASE_URL.');
+        setGiftCards([]);
+        return;
+      }
       setGiftCardsLoading(true);
       setGiftCardsError(null);
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
         if (!token) {
-          if (mounted) {
+          if (!signal?.aborted) {
             setGiftCards([]);
             setGiftCardsError('Necesitas iniciar sesion como admin para ver las gift cards.');
           }
@@ -788,7 +842,7 @@ function AdminDashboardContent() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          signal: controller.signal,
+          signal,
         });
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {
@@ -816,69 +870,83 @@ function AdminDashboardContent() {
             ? ((parsed as { data?: unknown }).data as unknown[])
             : [];
         const normalized = list.map((item, index) => normalizeGiftCard(item as ApiGiftCard, index));
-        if (mounted) {
+        if (!signal?.aborted) {
           setGiftCards(normalized);
           if (normalized.length === 0) {
             setGiftCardsError('No se encontraron gift cards en el servidor.');
           }
         }
       } catch {
-        if (mounted) {
+        if (!signal?.aborted) {
           setGiftCardsError('No se pudieron cargar las gift cards.');
           setGiftCards([]);
         }
       } finally {
-        if (mounted) setGiftCardsLoading(false);
+        if (!signal?.aborted) setGiftCardsLoading(false);
       }
-    };
+    },
+    [giftCardsUrl, router]
+  );
 
-    loadGiftCards();
-
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
-  }, [giftCardsUrl, router]);
-
-  useEffect(() => {
-    let mounted = true;
-    const controller = new AbortController();
-    const loadTestimonials = async () => {
+  const loadTestimonials = useCallback(
+    async (signal?: AbortSignal) => {
       setTestimonialsLoading(true);
       setTestimonialsError(null);
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
         if (!token) {
-          if (mounted) {
+          if (!signal?.aborted) {
             setTestimonialsError('Necesitas iniciar sesion como admin para ver las reseñas.');
             setTestimonials([]);
           }
           return;
         }
-        const data = await fetchReviews({ token, signal: controller.signal });
-        if (mounted) {
+        const data = await fetchReviews({ token, signal });
+        if (!signal?.aborted) {
           setTestimonials(data);
           if (data.length === 0) {
             setTestimonialsError('No se encontraron reseñas en el servidor.');
           }
         }
       } catch (err) {
-        if (mounted) {
+        if (!signal?.aborted) {
           setTestimonialsError(err instanceof Error ? err.message : 'No se pudieron cargar las reseñas.');
           setTestimonials([]);
         }
       } finally {
-        if (mounted) setTestimonialsLoading(false);
+        if (!signal?.aborted) setTestimonialsLoading(false);
       }
-    };
+    },
+    []
+  );
 
-    loadTestimonials();
+  useEffect(() => {
+    const controller = new AbortController();
+    loadAppointments(controller.signal);
+    return () => controller.abort();
+  }, [loadAppointments]);
 
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
-  }, [router]);
+  useEffect(() => {
+    const controller = new AbortController();
+    loadGiftCards(controller.signal);
+    return () => controller.abort();
+  }, [loadGiftCards]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadTestimonials(controller.signal);
+    return () => controller.abort();
+  }, [loadTestimonials]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      loadAppointments();
+      loadGiftCards();
+      loadTestimonials();
+      loadBlockedSlots();
+    }, AUTO_REFRESH_MS);
+    return () => window.clearInterval(id);
+  }, [loadAppointments, loadGiftCards, loadTestimonials, loadBlockedSlots]);
 
   const handleOpenEdit = (appointment: AdminAppointment) => {
     setEditing(appointment);
@@ -1527,53 +1595,6 @@ function AdminDashboardContent() {
             >
               <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
                 <Stack spacing={2.5}>
-                  <Box>
-                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>Acciones rapidas</Typography>
-                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>Atajos frecuentes para gestionar el dia.</Typography>
-                  </Box>
-                  <Box
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-                      gap: 1.5,
-                    }}
-                  >
-                    {[
-                      {
-                        label: 'Ver hoy',
-                        action: () => {
-                          const today = new Date();
-                          setMonthOffset(0);
-                          setSelectedDate(today);
-                        },
-                      },
-                      { label: 'Mes actual', action: () => setMonthOffset(0) },
-                      { label: 'Pendientes', action: () => setStatusFilter('Pendiente') },
-                      { label: 'Confirmados', action: () => setStatusFilter('Confirmado') },
-                    ].map((item) => (
-                      <Button
-                        key={item.label}
-                        variant="outlined"
-                        onClick={item.action}
-                        sx={{
-                          borderRadius: '12px',
-                          py: 1.2,
-                          borderColor: '#E9E4E2',
-                          color: '#6B6B6B',
-                          textTransform: 'none',
-                          fontWeight: 600,
-                          backgroundColor: '#FFFFFF',
-                          '&:hover': {
-                            borderColor: '#EEBBC3',
-                            backgroundColor: '#FDF4F6',
-                          },
-                        }}
-                      >
-                        {item.label}
-                      </Button>
-                    ))}
-                  </Box>
-
                   <Box
                     sx={{
                       borderRadius: '14px',
@@ -1975,7 +1996,7 @@ function AdminDashboardContent() {
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {filteredGiftCards.map((giftCard) => {
+                            {paginatedGiftCards.map((giftCard) => {
                               const displayStatus = resolveGiftCardStatus(giftCard);
                               const statusMeta = giftCardStatusMeta[displayStatus];
                               const canRedeem = displayStatus === 'active' && giftCard.remainingAmount > 0;
@@ -2042,6 +2063,21 @@ function AdminDashboardContent() {
                           </TableBody>
                         </Table>
                       </TableContainer>
+                    )}
+                    {filteredGiftCards.length > 0 && giftCardPageCount > 1 && (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', pt: 2 }}>
+                        <Pagination
+                          count={giftCardPageCount}
+                          page={giftCardPage}
+                          onChange={(_, page) => setGiftCardPage(page)}
+                          size="small"
+                          shape="rounded"
+                          sx={{
+                            '& .MuiPaginationItem-root': { color: '#8B6B6B' },
+                            '& .Mui-selected': { backgroundColor: '#F5E6E8', color: '#8B6B6B' },
+                          }}
+                        />
+                      </Box>
                     )}
                   </Stack>
                 </AccordionDetails>
@@ -2141,7 +2177,7 @@ function AdminDashboardContent() {
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {testimonials.map((testimonial) => (
+                            {paginatedTestimonials.map((testimonial) => (
                               <TableRow key={testimonial.id} hover>
                                 <TableCell>
                                   <Typography sx={{ fontWeight: 600, color: '#2C2C2C' }}>
@@ -2190,6 +2226,21 @@ function AdminDashboardContent() {
                           </TableBody>
                         </Table>
                       </TableContainer>
+                    )}
+                    {testimonials.length > 0 && testimonialPageCount > 1 && (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', pt: 2 }}>
+                        <Pagination
+                          count={testimonialPageCount}
+                          page={testimonialPage}
+                          onChange={(_, page) => setTestimonialPage(page)}
+                          size="small"
+                          shape="rounded"
+                          sx={{
+                            '& .MuiPaginationItem-root': { color: '#8B6B6B' },
+                            '& .Mui-selected': { backgroundColor: '#F5E6E8', color: '#8B6B6B' },
+                          }}
+                        />
+                      </Box>
                     )}
                   </Stack>
                 </AccordionDetails>
@@ -2324,7 +2375,7 @@ function AdminDashboardContent() {
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {filteredAppointments.map((appt) => {
+                            {paginatedAppointments.map((appt) => {
                               const dateLabel = new Date(`${appt.date}T00:00:00`).toLocaleDateString('es-AR', {
                                 day: '2-digit',
                                 month: 'short',
@@ -2360,6 +2411,21 @@ function AdminDashboardContent() {
                           </TableBody>
                         </Table>
                       </TableContainer>
+                    )}
+                    {filteredAppointments.length > 0 && appointmentPageCount > 1 && (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', pt: 2 }}>
+                        <Pagination
+                          count={appointmentPageCount}
+                          page={appointmentPage}
+                          onChange={(_, page) => setAppointmentPage(page)}
+                          size="small"
+                          shape="rounded"
+                          sx={{
+                            '& .MuiPaginationItem-root': { color: '#8B6B6B' },
+                            '& .Mui-selected': { backgroundColor: '#F5E6E8', color: '#8B6B6B' },
+                          }}
+                        />
+                      </Box>
                     )}
                   </Stack>
                 </AccordionDetails>
@@ -2761,7 +2827,7 @@ function AdminDashboardContent() {
 
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Agendar turno</DialogTitle>
-        <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
+        <DialogContent sx={{ display: 'grid', gap: 2, pt: 2.5, overflow: 'visible' }}>
           <TextField
             label="Nombre del paciente"
             value={createValues.clientName}
@@ -2845,7 +2911,7 @@ function AdminDashboardContent() {
 
       <Dialog open={Boolean(editing)} onClose={() => setEditing(null)} fullWidth maxWidth="sm">
         <DialogTitle>Editar turno</DialogTitle>
-          <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
+          <DialogContent sx={{ display: 'grid', gap: 2, pt: 2.5, overflow: 'visible' }}>
             <TextField label="Fecha" type="date" value={editValues.date} onChange={(event) => setEditValues((prev) => ({ ...prev, date: event.target.value }))} InputLabelProps={{ shrink: true }} />
           <TextField label="Hora" type="time" value={editValues.time} onChange={(event) => setEditValues((prev) => ({ ...prev, time: event.target.value }))} InputLabelProps={{ shrink: true }} />
           <TextField
