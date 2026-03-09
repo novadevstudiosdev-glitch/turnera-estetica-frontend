@@ -37,6 +37,7 @@ const isStrongPassword = (value: string) =>
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+const GOOGLE_SIGNIN_CONTAINER_ID = 'google-signin-container';
 
 type GoogleProfile = {
   name?: string;
@@ -403,20 +404,40 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
     }
 
     try {
-      // Si ya estaba inicializado, eliminar el widget de Google si existe
-      const googleButton = document.getElementById('g_id_onload');
-      if (googleButton) {
-        googleButton.remove();
+      const container = document.getElementById(GOOGLE_SIGNIN_CONTAINER_ID);
+      if (!container) {
+        setGoogleError('No se pudo mostrar el boton de Google.');
+        setGoogleLoading(false);
+        return;
       }
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCallback,
-        auto_select: false,
+
+      if (!googleInitializedRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCallback,
+          auto_select: false,
+        });
+        googleInitializedRef.current = true;
+      }
+
+      container.innerHTML = '';
+      (window.google.accounts.id as any).renderButton(container, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'pill',
+        logo_alignment: 'left',
+        width: 320,
       });
-      googleInitializedRef.current = true;
+
+      setGoogleError(null);
       console.log(' Google Sign-In inicializado');
     } catch (error) {
       console.error('Error inicializando Google Sign-In:', error);
+      setGoogleError('Error al cargar Google Sign-In.');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -493,33 +514,69 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
       setGoogleError('Falta configurar el Client ID de Google.');
       return;
     }
-
     setGoogleError(null);
     setGoogleLoading(true);
-
     try {
-      // Inicializar si no est谩 inicializado
-      if (!googleInitializedRef.current) {
-        initializeGoogleSignIn();
+      if (typeof window === 'undefined' || !window.google?.accounts?.id) {
+        setGoogleError('Google Identity Services no esta disponible en este navegador.');
+        setGoogleLoading(false);
+        return;
       }
 
-      // Mostrar el prompt de Google
-      if (window.google?.accounts?.id) {
-        window.google.accounts.id.prompt((notification) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            setGoogleError('No se pudo mostrar el login de Google.');
-            setGoogleLoading(false);
+      initializeGoogleSignIn();
+
+      const triggerGoogleButton = () => {
+        const container = document.getElementById(GOOGLE_SIGNIN_CONTAINER_ID);
+        const trigger =
+          (container?.querySelector('div[role="button"]') as HTMLElement | null) ??
+          (container?.querySelector('iframe') as HTMLElement | null);
+
+        if (!trigger) {
+          return false;
+        }
+
+        trigger.click();
+        return true;
+      };
+
+      if (!triggerGoogleButton()) {
+        window.setTimeout(() => {
+          if (!triggerGoogleButton()) {
+            setGoogleError('No se pudo abrir Google. Intenta nuevamente.');
           }
-        });
-      } else {
-        throw new Error('Google Identity Services no está disponible');
+        }, 120);
       }
     } catch (error) {
       console.error('Error al iniciar Google auth:', error);
-      setGoogleError('Error al iniciar autenticación con Google.');
+      setGoogleError('Error al iniciar autenticacion con Google.');
       setGoogleLoading(false);
     }
   };
+  useEffect(() => {
+    if (!open || !GOOGLE_CLIENT_ID) {
+      return;
+    }
+    let attempts = 0;
+    const maxAttempts = 20;
+    const intervalId = window.setInterval(() => {
+      attempts += 1;
+      if (window.google?.accounts?.id) {
+        setGoogleError(null);
+        setGoogleLoading(true);
+        initializeGoogleSignIn();
+        window.clearInterval(intervalId);
+        return;
+      }
+      if (attempts >= maxAttempts) {
+        setGoogleError('No se pudo cargar Google Sign-In. Revisa bloqueadores o cookies de terceros.');
+        setGoogleLoading(false);
+        window.clearInterval(intervalId);
+      }
+    }, 250);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [open]);
 
   const textFieldSx = {
     '& .MuiInputBase-root': {
@@ -676,6 +733,19 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
           </Tabs>
 
           <Box sx={{ display: 'grid', gap: 2, mb: 3 }}>
+            <Box
+              id={GOOGLE_SIGNIN_CONTAINER_ID}
+              sx={{
+                position: 'fixed',
+                left: '-10000px',
+                top: '-10000px',
+                width: 320,
+                height: 44,
+                overflow: 'hidden',
+                opacity: 0,
+                pointerEvents: 'none',
+              }}
+            />
             <Button
               fullWidth
               onClick={handleGoogleAuth}
