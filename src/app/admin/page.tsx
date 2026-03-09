@@ -1,12 +1,13 @@
 ﻿'use client';
 
-import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Card, CardContent, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Skeleton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Card, CardContent, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Skeleton, Stack, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { fetchReviews, approveReview, ReviewRecord } from '@/services/reviews';
 
 type AdminStatus = 'Pendiente' | 'Confirmado' | 'Reprogramado' | 'Cancelado' | 'Completado' | 'No asistio';
 
@@ -58,6 +59,8 @@ type AdminGiftCard = {
 
 type ApiGiftCard = Record<string, unknown>;
 
+type AdminTestimonial = ReviewRecord;
+
 const initialAdminAppointments: AdminAppointment[] = [];
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
@@ -73,22 +76,22 @@ const BLOCKED_SLOT_TYPES: { value: BlockedSlotType; label: string }[] = [
   { value: 'other', label: 'Otro' },
 ];
 
-const statusColor = (status: AdminStatus) => {
+const statusChipSx = (status: AdminStatus) => {
   switch (status) {
-    case 'Confirmado':
-      return 'success';
     case 'Pendiente':
-      return 'warning';
+      return { backgroundColor: '#E7E3E3', color: '#5A5454', fontWeight: 600 };
+    case 'Confirmado':
+      return { backgroundColor: '#6FB98F', color: '#FFFFFF', fontWeight: 600 };
     case 'Reprogramado':
-      return 'info';
+      return { backgroundColor: '#84C9A2', color: '#FFFFFF', fontWeight: 600 };
     case 'Cancelado':
-      return 'default';
+      return { backgroundColor: '#E07A7A', color: '#FFFFFF', fontWeight: 600 };
     case 'Completado':
-      return 'success';
+      return { backgroundColor: '#6FA6D9', color: '#FFFFFF', fontWeight: 600 };
     case 'No asistio':
-      return 'default';
+      return { backgroundColor: '#B58AD8', color: '#FFFFFF', fontWeight: 600 };
     default:
-      return 'default';
+      return { backgroundColor: '#E7E3E3', color: '#5A5454', fontWeight: 600 };
   }
 };
 
@@ -264,6 +267,19 @@ const formatGiftCardDate = (value?: string) => {
   return parsed.toLocaleDateString('es-AR');
 };
 
+const formatTestimonialDate = (value?: string | null) => {
+  if (!value) return '—';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  return parsed.toLocaleDateString('es-AR');
+};
+
+const truncateText = (value: string, maxLength: number) => {
+  if (!value) return '';
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, Math.max(0, maxLength - 3))}...`;
+};
+
 const giftCardStatusMeta: Record<
   GiftCardStatus,
   { label: string; color: 'default' | 'success' | 'warning' | 'info' | 'error' }
@@ -345,8 +361,13 @@ function AdminDashboardContent() {
   const [redeemValues, setRedeemValues] = useState({ amount: '', notes: '' });
   const [redeemSubmitting, setRedeemSubmitting] = useState(false);
   const [redeemError, setRedeemError] = useState<string | null>(null);
-  const [appointmentsExpanded, setAppointmentsExpanded] = useState(true);
-  const [giftCardsExpanded, setGiftCardsExpanded] = useState(true);
+  const [appointmentsExpanded, setAppointmentsExpanded] = useState(false);
+  const [giftCardsExpanded, setGiftCardsExpanded] = useState(false);
+  const [testimonials, setTestimonials] = useState<AdminTestimonial[]>([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(false);
+  const [testimonialsError, setTestimonialsError] = useState<string | null>(null);
+  const [testimonialUpdatingId, setTestimonialUpdatingId] = useState<string | null>(null);
+  const [testimonialsExpanded, setTestimonialsExpanded] = useState(false);
 
   const stats = useMemo(() => {
     return {
@@ -819,6 +840,46 @@ function AdminDashboardContent() {
     };
   }, [giftCardsUrl, router]);
 
+  useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+    const loadTestimonials = async () => {
+      setTestimonialsLoading(true);
+      setTestimonialsError(null);
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
+        if (!token) {
+          if (mounted) {
+            setTestimonialsError('Necesitas iniciar sesion como admin para ver las reseñas.');
+            setTestimonials([]);
+          }
+          return;
+        }
+        const data = await fetchReviews({ token, signal: controller.signal });
+        if (mounted) {
+          setTestimonials(data);
+          if (data.length === 0) {
+            setTestimonialsError('No se encontraron reseñas en el servidor.');
+          }
+        }
+      } catch (err) {
+        if (mounted) {
+          setTestimonialsError(err instanceof Error ? err.message : 'No se pudieron cargar las reseñas.');
+          setTestimonials([]);
+        }
+      } finally {
+        if (mounted) setTestimonialsLoading(false);
+      }
+    };
+
+    loadTestimonials();
+
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, [router]);
+
   const handleOpenEdit = (appointment: AdminAppointment) => {
     setEditing(appointment);
     setEditValues({
@@ -978,6 +1039,25 @@ function AdminDashboardContent() {
       setRedeemError('No se pudo canjear la gift card. Intenta nuevamente.');
     } finally {
       setRedeemSubmitting(false);
+    }
+  };
+
+  const handleToggleReviewApproval = async (testimonial: AdminTestimonial, nextApproved: boolean) => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
+      if (!token) {
+        setTestimonialsError('Necesitas iniciar sesion como admin para actualizar reseñas.');
+        return;
+      }
+      setTestimonialUpdatingId(testimonial.id);
+      await approveReview({ id: testimonial.id, isApproved: nextApproved, token });
+      setTestimonials((prev) =>
+        prev.map((item) => (item.id === testimonial.id ? { ...item, isApproved: nextApproved } : item))
+      );
+    } catch (err) {
+      setTestimonialsError(err instanceof Error ? err.message : 'No se pudo actualizar la reseña.');
+    } finally {
+      setTestimonialUpdatingId(null);
     }
   };
 
@@ -1728,7 +1808,7 @@ function AdminDashboardContent() {
                                   {appt.time}
                                 </Typography>
                             </Box>
-                            <Chip label={appt.status} size="small" color={statusColor(appt.status)} />
+                            <Chip label={appt.status} size="small" sx={statusChipSx(appt.status)} />
                           </Box>
                         ))}
                       </Stack>
@@ -1980,6 +2060,154 @@ function AdminDashboardContent() {
               <Accordion
                 disableGutters
                 elevation={0}
+                expanded={testimonialsExpanded}
+                onChange={(_, expanded) => setTestimonialsExpanded(expanded)}
+                sx={{
+                  borderRadius: '20px',
+                  backgroundColor: 'transparent',
+                  '&:before': { display: 'none' },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon sx={{ color: '#8B6B6B' }} />}
+                  sx={{
+                    px: { xs: 2.5, md: 3 },
+                    py: 1.5,
+                    '& .MuiAccordionSummary-content': {
+                      alignItems: 'center',
+                      gap: 1.5,
+                      flexWrap: 'wrap',
+                    },
+                  }}
+                >
+                  <Box>
+                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>Reseñas</Typography>
+                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>
+                      Decide cuáles comentarios se muestran en el sitio.
+                    </Typography>
+                  </Box>
+                  <Chip
+                    size="small"
+                    label={`${testimonials.length}`}
+                    sx={{ backgroundColor: '#F5E6E8', color: '#6B6B6B' }}
+                  />
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: { xs: 2.5, md: 3 }, pb: 3, pt: 0 }}>
+                  <Stack spacing={2.5}>
+                    {testimonialsError && (
+                      <Typography sx={{ color: '#B00020', fontSize: '0.9rem' }}>{testimonialsError}</Typography>
+                    )}
+
+                    {testimonialsLoading ? (
+                      <Box sx={{ display: 'grid', gap: 1.5 }}>
+                        {Array.from({ length: 4 }).map((_, index) => (
+                          <Skeleton key={`testimonial-skeleton-${index}`} height={42} />
+                        ))}
+                      </Box>
+                    ) : testimonials.length === 0 ? (
+                      <Box
+                        sx={{
+                          borderRadius: '16px',
+                          border: '1px dashed #E6E0DD',
+                          p: { xs: 2, md: 3 },
+                          textAlign: 'center',
+                        }}
+                      >
+                        <Typography sx={{ color: '#6B6B6B' }}>
+                          No hay reseñas para mostrar.
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <TableContainer
+                        sx={{
+                          borderRadius: '16px',
+                          border: '1px solid #F0DEDE',
+                          overflowX: 'auto',
+                          overflowY: 'hidden',
+                        }}
+                      >
+                        <Table size="small" sx={{ minWidth: 900 }}>
+                          <TableHead>
+                            <TableRow sx={{ backgroundColor: '#FFF7F7' }}>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }}>Cliente</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }}>Comentario</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }} align="center">
+                                Rating
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }}>Fecha</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#6B6B6B' }} align="right">
+                                Aprobada
+                              </TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {testimonials.map((testimonial) => (
+                              <TableRow key={testimonial.id} hover>
+                                <TableCell>
+                                  <Typography sx={{ fontWeight: 600, color: '#2C2C2C' }}>
+                                    {testimonial.reviewerName}
+                                  </Typography>
+                                  <Typography sx={{ fontSize: '0.78rem', color: '#8B6B6B' }}>
+                                    {testimonial.appointmentId
+                                      ? `Turno ${testimonial.appointmentId.slice(0, 8)}`
+                                      : 'Turno'}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell>
+                                  <Typography sx={{ fontSize: '0.85rem', color: '#6B6B6B' }}>
+                                    {testimonial.comment
+                                      ? truncateText(testimonial.comment, 160)
+                                      : 'Sin comentario'}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell align="center">
+                                  <Chip
+                                    label={`${testimonial.rating}/5`}
+                                    size="small"
+                                    sx={{ backgroundColor: '#F5E6E8', color: '#6B6B6B' }}
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Typography sx={{ fontSize: '0.85rem', color: '#6B6B6B' }}>
+                                    {formatTestimonialDate(testimonial.createdAt)}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell align="right">
+                                  <Switch
+                                    checked={testimonial.isApproved}
+                                    onChange={(_, checked) => handleToggleReviewApproval(testimonial, checked)}
+                                    disabled={testimonialUpdatingId === testimonial.id}
+                                    sx={{
+                                      '& .MuiSwitch-switchBase.Mui-checked': { color: '#C47A85' },
+                                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                        backgroundColor: '#C47A85',
+                                      },
+                                    }}
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
+                  </Stack>
+                </AccordionDetails>
+              </Accordion>
+            </CardContent>
+          </Card>
+
+          <Card
+            sx={{
+              borderRadius: '20px',
+              border: '1px solid #F0DEDE',
+              backgroundColor: '#FFFFFF',
+            }}
+          >
+            <CardContent sx={{ p: 0 }}>
+              <Accordion
+                disableGutters
+                elevation={0}
                 expanded={appointmentsExpanded}
                 onChange={(_, expanded) => setAppointmentsExpanded(expanded)}
                 sx={{
@@ -2114,7 +2342,7 @@ function AdminDashboardContent() {
                                   <TableCell sx={{ color: '#6B6B6B' }}>{appt.time}</TableCell>
                                   <TableCell sx={{ color: '#6B6B6B' }}>{appt.location}</TableCell>
                                   <TableCell>
-                                    <Chip label={appt.status} size="small" color={statusColor(appt.status)} />
+                                    <Chip label={appt.status} size="small" sx={statusChipSx(appt.status)} />
                                   </TableCell>
                                   <TableCell>
                                     <Stack direction="row" spacing={1}>
@@ -2361,7 +2589,11 @@ function AdminDashboardContent() {
                                     <Typography sx={{ fontSize: '0.85rem', color: '#6B6B6B' }}>
                                       {appointment.location}
                                     </Typography>
-                                  <Chip label={appointment.status} size="small" color={statusColor(appointment.status)} sx={{ alignSelf: 'flex-start' }} />
+                                  <Chip
+                                    label={appointment.status}
+                                    size="small"
+                                    sx={{ ...statusChipSx(appointment.status), alignSelf: 'flex-start' }}
+                                  />
                                 </Stack>
                               ) : (
                                 <Typography sx={{ fontSize: '0.82rem', color: '#B8A4A4' }}>

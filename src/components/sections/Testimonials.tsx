@@ -1,10 +1,87 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import { Box, Container, Card, CardContent, Typography, Rating, Avatar } from '@mui/material';
 import { SectionTitle } from '../ui/SectionTitle';
-import { testimonials } from '@/lib/data';
+import { testimonials, Testimonial } from '@/lib/data';
+import { fetchReviews } from '@/services/reviews';
+
+const MOCK_STORAGE_KEY = 'turnera_mock_reviews';
+
+const loadMockReviews = (): Testimonial[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(MOCK_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((item, index) => ({
+        id: Number(item?.id) || 1000 + index,
+        name: String(item?.name ?? '').trim(),
+        role: String(item?.role ?? 'Cliente reciente').trim(),
+        comment: String(item?.comment ?? '').trim(),
+        rating: Number(item?.rating) || 5,
+      }))
+      .filter((item) => item.name && item.comment);
+  } catch {
+    return [];
+  }
+};
 
 export function TestimonialsSection() {
+  const [mockReviews, setMockReviews] = useState<Testimonial[]>([]);
+  const [remoteTestimonials, setRemoteTestimonials] = useState<Testimonial[]>([]);
+  const [remoteError, setRemoteError] = useState<string | null>(null);
+  const [remoteLoaded, setRemoteLoaded] = useState(false);
+
+  useEffect(() => {
+    const refresh = () => setMockReviews(loadMockReviews());
+    refresh();
+    window.addEventListener('mock-reviews-updated', refresh);
+    return () => {
+      window.removeEventListener('mock-reviews-updated', refresh);
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+    const loadRemote = async () => {
+      try {
+        const data = await fetchReviews({ signal: controller.signal });
+        if (!mounted) return;
+        const normalized = data
+          .filter((item) => item.isApproved && item.comment)
+          .map((item, index) => ({
+            id: Number(item.id) || 10000 + index,
+            name: item.reviewerName,
+            role: 'Cliente reciente',
+            comment: item.comment,
+            rating: item.rating,
+          }));
+        setRemoteTestimonials(normalized);
+        setRemoteError(null);
+      } catch (err) {
+        if (!mounted) return;
+        setRemoteError(err instanceof Error ? err.message : 'No pudimos cargar las reseñas.');
+        setRemoteTestimonials([]);
+      } finally {
+        if (mounted) setRemoteLoaded(true);
+      }
+    };
+    loadRemote();
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  const allTestimonials = useMemo(() => {
+    if (remoteLoaded && !remoteError) return remoteTestimonials;
+    return [...mockReviews, ...testimonials];
+  }, [mockReviews, remoteError, remoteLoaded, remoteTestimonials]);
+
   return (
     <Box
       id="testimonios"
@@ -17,7 +94,7 @@ export function TestimonialsSection() {
       <Container maxWidth="lg">
         <SectionTitle
           title="Lo Que Dicen Nuestros Clientes"
-          subtitle="Testimonios de personas que han transformado su belleza con MOK"
+          subtitle="Testimonios de personas que han transformado su belleza con JG"
         />
 
         <Box
@@ -28,7 +105,7 @@ export function TestimonialsSection() {
             mt: 2,
           }}
         >
-          {testimonials.map((testimonial) => (
+          {allTestimonials.map((testimonial) => (
             <Box key={testimonial.id}>
               <Card
                 sx={{

@@ -218,7 +218,7 @@ export function Navbar() {
 
   const navItemStyle = {
     color: '#2C2C2C',
-    fontSize: '0.95rem',
+    fontSize: '1.02rem',
     fontWeight: 500,
     fontFamily: 'Poppins, sans-serif',
     textTransform: 'none',

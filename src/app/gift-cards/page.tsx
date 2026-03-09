@@ -6,10 +6,8 @@ interface GiftCardForm {
   amount: string;
   buyerName: string;
   buyerEmail: string;
-  buyerPhone: string;
   recipientName: string;
   recipientEmail: string;
-  recipientPhone: string;
   message: string;
 }
 
@@ -17,10 +15,8 @@ const INITIAL: GiftCardForm = {
   amount: '',
   buyerName: '',
   buyerEmail: '',
-  buyerPhone: '',
   recipientName: '',
   recipientEmail: '',
-  recipientPhone: '',
   message: '',
 };
 
@@ -105,10 +101,8 @@ export default function GiftCardsPage() {
           amount: amountValue,
           purchaserName: form.buyerName.trim(),
           purchaserEmail: form.buyerEmail.trim(),
-          purchaserPhone: form.buyerPhone.trim() || undefined,
           recipientName: form.recipientName.trim(),
           recipientEmail: form.recipientEmail.trim(),
-          recipientPhone: form.recipientPhone.trim() || undefined,
           personalMessage: form.message.trim() || undefined,
         }),
       });
@@ -202,7 +196,7 @@ export default function GiftCardsPage() {
     borderRadius: '10px',
     padding: '12px 15px',
     fontFamily: "'Poppins', sans-serif",
-    fontSize: '12px',
+    fontSize: '13px',
     fontWeight: 300,
     color: '#2b1f20',
     background: 'rgba(255,255,255,0.75)',
@@ -283,8 +277,13 @@ export default function GiftCardsPage() {
               {/* â”€â”€ COLUMNA IZQUIERDA â€” texto â”€â”€ */}
               <div className="flex flex-col justify-center pr-6 md:pr-12 lg:pr-16">
                 <p
-                  className="fade-up flex items-center gap-3 mb-6 text-[#c47a85]"
-                  style={{ fontSize: '10px', letterSpacing: '4px', textTransform: 'uppercase' }}
+                  className="fade-up flex items-center gap-3 mb-14 text-[#c47a85]"
+                  style={{
+                    fontSize: '10px',
+                    letterSpacing: '4px',
+                    textTransform: 'uppercase',
+                    fontWeight: 600,
+                  }}
                 >
                   <span className="block w-8 h-px bg-[#c47a85]" />
                   Regala bienestar
@@ -292,7 +291,7 @@ export default function GiftCardsPage() {
 
                 <h1
                   className="fade-up delay-1 font-bacalisties text-[#2b1f20] leading-[1.1] mb-6"
-                  style={{ fontSize: 'clamp(50px, 6vw, 82px)' }}
+                  style={{ fontSize: 'clamp(50px, 6vw, 82px)', paddingTop: '6px' }}
                 >
                   El regalo
                   <br />
@@ -315,7 +314,10 @@ export default function GiftCardsPage() {
                     'Válida para cualquier tratamiento',
                   ].map((item) => (
                     <div key={item} className="flex items-center gap-3">
-                      <span className="text-[#c47a85]" style={{ fontSize: '10px' }}>
+                      <span
+                        className="text-[#c47a85]"
+                        style={{ fontSize: '10px', fontWeight: 600 }}
+                      >
                         -
                       </span>
                       <span
@@ -337,7 +339,7 @@ export default function GiftCardsPage() {
                       fontSize: '18px',
                       letterSpacing: '6px',
                       textTransform: 'uppercase',
-                      fontWeight: 300,
+                      fontWeight: 600,
                     }}
                   >
                     JG
@@ -434,8 +436,8 @@ export default function GiftCardsPage() {
                         Personalizá tu regalo
                       </h2>
                       <p
-                        className="text-[#6b4f50]/60 mt-1"
-                        style={{ fontSize: '11px', fontWeight: 300 }}
+                        className="text-[#6b4f50]/75 mt-1"
+                        style={{ fontSize: '12px', fontWeight: 400 }}
                       >
                         Completá los datos a continuación
                       </p>
@@ -484,18 +486,6 @@ export default function GiftCardsPage() {
                             style={inputStyle}
                           />
                         </div>
-                        <div className="sm:col-span-2">
-                          <GCLabel>Teléfono</GCLabel>
-                          <input
-                            type="tel"
-                            name="buyerPhone"
-                            placeholder="+54 9 341 1234567"
-                            value={form.buyerPhone}
-                            onChange={handleChange}
-                            className="gc-input"
-                            style={inputStyle}
-                          />
-                        </div>
                       </div>
 
                       {/* beneficiario */}
@@ -520,18 +510,6 @@ export default function GiftCardsPage() {
                             name="recipientEmail"
                             placeholder="email@beneficiario.com"
                             value={form.recipientEmail}
-                            onChange={handleChange}
-                            className="gc-input"
-                            style={inputStyle}
-                          />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <GCLabel>Teléfono</GCLabel>
-                          <input
-                            type="tel"
-                            name="recipientPhone"
-                            placeholder="+54 9 341 7654321"
-                            value={form.recipientPhone}
                             onChange={handleChange}
                             className="gc-input"
                             style={inputStyle}
@@ -583,7 +561,7 @@ export default function GiftCardsPage() {
                         </button>
                         <p
                           className="text-[#6b4f50]/45 mt-3"
-                          style={{ fontSize: '10px', fontWeight: 300 }}
+                          style={{ fontSize: '11px', fontWeight: 300 }}
                         >
                           Te contactamos en menos de 24 hs para coordinar el pago
                         </p>
@@ -609,7 +587,12 @@ export default function GiftCardsPage() {
           <div className="text-center mb-14">
             <p
               className="flex items-center justify-center gap-4 text-[#c47a85] mb-4"
-              style={{ fontSize: '10px', letterSpacing: '4px', textTransform: 'uppercase' }}
+              style={{
+                fontSize: '10px',
+                letterSpacing: '4px',
+                textTransform: 'uppercase',
+                fontWeight: 600,
+              }}
             >
               <span className="block w-12 h-px bg-[#c47a85]" />
               Simple y rápido
@@ -640,7 +623,7 @@ export default function GiftCardsPage() {
                   >
                     <span
                       className="font-cormorant text-[#c47a85]"
-                      style={{ fontSize: '20px', fontWeight: 300 }}
+                      style={{ fontSize: '20px', fontWeight: 600 }}
                     >
                       {step.num}
                     </span>
@@ -671,11 +654,12 @@ export default function GiftCardsPage() {
 function GCLabel({ children }: { children: React.ReactNode }) {
   return (
     <label
-      className="block text-[#6b4f50]/60 mb-[6px]"
+      className="block text-[#6b4f50]/75 mb-[6px]"
       style={{
         fontSize: '9px',
         letterSpacing: '2px',
         textTransform: 'uppercase',
+        fontWeight: 500,
         fontFamily: "'Poppins', sans-serif",
       }}
     >
@@ -689,10 +673,10 @@ function GCDivider({ label }: { label: string }) {
     <div className="flex items-center gap-3">
       <div className="flex-1 h-px bg-[#c47a85]/12" />
       <p
-        className="text-[#c47a85]/70 whitespace-nowrap"
+        className="text-[#6b4f50] whitespace-nowrap"
         style={{
-          fontSize: '9px',
-          letterSpacing: '3px',
+          fontSize: '11px',
+          letterSpacing: '3.5px',
           textTransform: 'uppercase',
           fontFamily: "'Poppins', sans-serif",
         }}
