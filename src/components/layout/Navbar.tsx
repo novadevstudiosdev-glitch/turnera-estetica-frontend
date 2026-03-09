@@ -61,7 +61,6 @@ export function Navbar() {
   const theme = useTheme();
   const [isMounted, setIsMounted] = useState(false);
   const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true });
-  const isMobileView = isMounted ? isMobile : false;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
@@ -84,6 +83,12 @@ export function Navbar() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!isMobile && mobileMenuOpen) {
+      setMobileMenuOpen(false);
+    }
+  }, [isMobile, mobileMenuOpen]);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 8);
@@ -270,7 +275,7 @@ export function Navbar() {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            minHeight: { xs: 68, md: 80 },
+            minHeight: { xs: 64, md: 80 },
             padding: 0,
             // position: relative es clave para que la nav absoluta se posicione dentro del Toolbar
             position: 'relative',
@@ -284,9 +289,9 @@ export function Navbar() {
                   display: 'flex',
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: 1,
+                  gap: { xs: 0.6, sm: 1 },
                   cursor: 'pointer',
-                  height: 80,
+                  height: { xs: 56, md: 80 },
                   transition: 'transform 0.3s ease',
                   '&:hover': { transform: 'scale(1.02)' },
                 }}
@@ -296,7 +301,7 @@ export function Navbar() {
                     fontFamily: '"Cormorant Garamond", serif',
                     fontWeight: 600,
                     letterSpacing: '3px',
-                    fontSize: { xs: '1.5rem', md: '1.75rem' },
+                    fontSize: { xs: '1.35rem', md: '1.75rem' },
                     color: '#D4A5A5',
                   }}
                 >
@@ -304,7 +309,12 @@ export function Navbar() {
                 </Typography>
                 <Box
                   aria-hidden="true"
-                  sx={{ width: '1px', height: 30, backgroundColor: '#E0E0E0' }}
+                  sx={{
+                    width: '1px',
+                    height: 30,
+                    backgroundColor: '#E0E0E0',
+                    display: { xs: 'none', sm: 'block' },
+                  }}
                 />
                 <Typography
                   sx={{
@@ -328,14 +338,13 @@ export function Navbar() {
                position:absolute + left:50% + translateX(-50%) la centra perfectamente
                dentro del Toolbar sin participar en el flujo flex, así nunca
                comprime al logo ni a los botones de la derecha.             ── */}
-          {!isMobileView && (
-            <Box
+          <Box
               sx={{
                 position: 'absolute',
                 left: '50%',
                 top: '50%',
                 transform: 'translate(-50%, -50%)',
-                display: 'flex',
+                display: { xs: 'none', md: 'flex' },
                 alignItems: 'center',
                 // pointerEvents en el contenedor: none para que no bloquee clicks en zonas vacías
                 pointerEvents: 'none',
@@ -353,8 +362,7 @@ export function Navbar() {
                   {item.label}
                 </Button>
               ))}
-            </Box>
-          )}
+          </Box>
 
           {/* ── BOTONES DERECHA ──
                marginLeft:auto los empuja siempre al extremo derecho.
@@ -368,38 +376,37 @@ export function Navbar() {
               flexShrink: 0,
             }}
           >
-            {!isMobileView && (
-              <Button
-                variant="contained"
-                onClick={handleOpenReserva}
-                sx={{
-                  borderRadius: '25px',
-                  px: { xs: 2.6, md: 3.5 },
-                  py: { xs: 0.9, md: 1.1 },
-                  fontSize: { xs: '0.85rem', md: '0.95rem' },
-                  backgroundColor: '#EEBBC3',
-                  color: '#2C2C2C',
-                  border: '1px solid #D4A5A5',
-                  boxShadow: '0 6px 18px rgba(238, 187, 195, 0.25)',
-                  textTransform: 'none',
-                  fontWeight: 500,
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap',
-                  ml: { md: 2 },
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    backgroundColor: '#FFB8C6',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 14px 26px rgba(238, 187, 195, 0.35)',
-                  },
-                }}
-              >
-                Reservar
-              </Button>
-            )}
+            <Button
+              variant="contained"
+              onClick={handleOpenReserva}
+              sx={{
+                display: { xs: 'none', md: 'inline-flex' },
+                borderRadius: '25px',
+                px: { xs: 2.6, md: 3.5 },
+                py: { xs: 0.9, md: 1.1 },
+                fontSize: { xs: '0.85rem', md: '0.95rem' },
+                backgroundColor: '#EEBBC3',
+                color: '#2C2C2C',
+                border: '1px solid #D4A5A5',
+                boxShadow: '0 6px 18px rgba(238, 187, 195, 0.25)',
+                textTransform: 'none',
+                fontWeight: 500,
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+                ml: { md: 2 },
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  backgroundColor: '#FFB8C6',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 14px 26px rgba(238, 187, 195, 0.35)',
+                },
+              }}
+            >
+              Reservar
+            </Button>
 
-            {!isMobileView &&
-              (displayName ? (
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
+              {displayName ? (
                 <>
                 <Tooltip title={displayName} placement="bottom" arrow>
                   <Button
@@ -560,25 +567,30 @@ export function Navbar() {
                     </Box>
                   </IconButton>
                 </Tooltip>
-              ))}
+              )}
+            </Box>
 
             {/* Mobile Menu Button */}
-            {isMobileView && (
-              <Button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                sx={{ color: '#2C2C2C', minWidth: 'auto', p: 1, flexShrink: 0 }}
-              >
-                {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
-              </Button>
-            )}
+            <Button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              sx={{
+                color: '#2C2C2C',
+                minWidth: 'auto',
+                p: 1,
+                flexShrink: 0,
+                display: { xs: 'inline-flex', md: 'none' },
+              }}
+            >
+              {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+            </Button>
           </Box>
         </Toolbar>
 
         {/* Mobile Navigation */}
-        {isMobileView && mobileMenuOpen && (
+        {mobileMenuOpen && (
           <Box
             sx={{
-              display: 'flex',
+              display: { xs: 'flex', md: 'none' },
               flexDirection: 'column',
               gap: 1,
               pb: 2,

@@ -310,7 +310,7 @@ export default function GiftCardsPage() {
                 <div className="fade-up delay-3 space-y-3 mb-10">
                   {[
                     'Monto libre a tu elección',
-                    'Entrega digital o en caja premium',
+                    'Entrega digital',
                     'Válida para cualquier tratamiento',
                   ].map((item) => (
                     <div key={item} className="flex items-center gap-3">
@@ -562,9 +562,7 @@ export default function GiftCardsPage() {
                         <p
                           className="text-[#6b4f50]/45 mt-3"
                           style={{ fontSize: '11px', fontWeight: 300 }}
-                        >
-                          Te contactamos en menos de 24 hs para coordinar el pago
-                        </p>
+                        ></p>
                       </div>
                     </form>
                   </div>
