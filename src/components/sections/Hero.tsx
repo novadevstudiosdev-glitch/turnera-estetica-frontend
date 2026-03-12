@@ -132,6 +132,9 @@ const styles = {
     textTransform: 'uppercase',
     lineHeight: 1.3,
     display: 'block',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   } as React.CSSProperties,
   doctorSpecialty: {
     fontFamily: "'Bacalisties', cursive",
