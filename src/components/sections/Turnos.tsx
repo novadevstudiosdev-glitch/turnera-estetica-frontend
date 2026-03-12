@@ -212,7 +212,7 @@ export function TurnosSection() {
             </Box>
             <Box>
               <Typography sx={{ fontSize: '0.9rem', color: '#3D3D3D', mb: 1 }}>
-                Seleccione lugar de atenciÃ³n
+                Seleccione lugar de atención
               </Typography>
               <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
                 {LOCATIONS.map((location) => {
@@ -245,7 +245,7 @@ export function TurnosSection() {
               </Box>
               {selectedLocation && (
                 <Typography sx={{ mt: 1.2, fontSize: '0.82rem', color: '#666666' }}>
-                  EstÃ¡s reservando en:{' '}
+                  Estás reservando en:{' '}
                   <strong>
                     {LOCATIONS.find((item) => item.id === selectedLocation)?.label}
                   </strong>
@@ -268,8 +268,8 @@ export function TurnosSection() {
               />
               <Typography sx={{ mt: 1, fontSize: '0.82rem', color: '#666666' }}>
                 {selectedLocation
-                  ? `DÃ­as disponibles: ${availableDaysLabel}`
-                  : 'SeleccionÃ¡ una sede para ver los dÃ­as disponibles.'}
+                  ? `Días disponibles: ${availableDaysLabel}`
+                  : 'Seleccioná una sede para ver los días disponibles.'}
               </Typography>
             </Box>
           </Box>
@@ -316,7 +316,7 @@ export function TurnosSection() {
           </Box>
           {shouldShowNoSlotsMessage && (
             <Typography sx={{ color: '#9C6B6B', fontSize: '0.9rem', mb: 4 }}>
-              No hay turnos disponibles este dÃ­a
+              No hay turnos disponibles este día
             </Typography>
           )}
 

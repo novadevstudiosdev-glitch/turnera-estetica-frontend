@@ -32,7 +32,7 @@ const NAV_ITEMS = [
   { key: 'inicio', label: 'Inicio', href: '#hero' },
   { key: 'servicios', label: 'Tratamientos', href: '#servicios' },
   { key: 'testimonios', label: 'Testimonios', href: '#testimonios' },
-  { key: 'ubicación', label: 'Ubicación', href: '#ubicacion' },
+  { key: 'ubicacion', label: 'Ubicación', href: '#ubicacion' },
   { key: 'gift-card', label: 'Gift Card', href: '/gift-cards' },
 ];
 
@@ -281,7 +281,7 @@ export function Navbar() {
             position: 'relative',
           }}
         >
-          {/* ── LOGO (izquierda, nunca se encoge) ── */}
+          {/* LOGO (izquierda, nunca se encoge) */}
           <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <Link href="/">
               <Box
@@ -296,17 +296,18 @@ export function Navbar() {
                   '&:hover': { transform: 'scale(1.02)' },
                 }}
               >
-                <Typography
+                <Box
+                  component="img"
+                  src="/LG.png"
+                  alt="Logo JG"
                   sx={{
-                    fontFamily: '"Cormorant Garamond", serif',
-                    fontWeight: 600,
-                    letterSpacing: '3px',
-                    fontSize: { xs: '1.35rem', md: '1.75rem' },
-                    color: '#D4A5A5',
+                    width: { xs: 30, md: 38 },
+                    height: { xs: 30, md: 38 },
+                    objectFit: 'contain',
+                    display: 'block',
+                    flexShrink: 0,
                   }}
-                >
-                  JG
-                </Typography>
+                />
                 <Box
                   aria-hidden="true"
                   sx={{
@@ -334,10 +335,8 @@ export function Navbar() {
             </Link>
           </Box>
 
-          {/* ── NAV CENTRAL ──
-               position:absolute + left:50% + translateX(-50%) la centra perfectamente
-               dentro del Toolbar sin participar en el flujo flex, así nunca
-               comprime al logo ni a los botones de la derecha.             ── */}
+          {/* NAV CENTRAL: centrado absoluto, no comprime logo ni botones */}
+
           <Box
               sx={{
                 position: 'absolute',
@@ -346,7 +345,7 @@ export function Navbar() {
                 transform: 'translate(-50%, -50%)',
                 display: { xs: 'none', md: 'flex' },
                 alignItems: 'center',
-                // pointerEvents en el contenedor: none para que no bloquee clicks en zonas vacías
+                // pointerEvents en el contenedor: none para que no bloquee clicks en zonas vacias
                 pointerEvents: 'none',
                 '& > *': { pointerEvents: 'auto' },
               }}
@@ -364,9 +363,8 @@ export function Navbar() {
               ))}
           </Box>
 
-          {/* ── BOTONES DERECHA ──
-               marginLeft:auto los empuja siempre al extremo derecho.
-               flexShrink:0 garantiza que nunca se compriman.               ── */}
+          {/* BOTONES DERECHA: marginLeft auto y flexShrink 0 */}
+
           <Box
             sx={{
               display: 'flex',

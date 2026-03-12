@@ -9,7 +9,7 @@ const quickLinks = [
   { label: 'Tratamiento', href: '#servicios' },
   // { label: 'Tienda Online', href: '#catalogo' },
   { label: 'Testimonios', href: '#testimonios' },
-  { label: 'Ubicacion', href: '#ubicacion' },
+  { label: 'Ubicación', href: '#ubicacion' },
   { label: 'Gift Card', href: '/gift-cards' },
 ];
 

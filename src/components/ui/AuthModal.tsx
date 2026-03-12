@@ -33,7 +33,7 @@ const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 const isStrongPassword = (value: string) =>
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).*$/.test(value);
 
-// 馃敟 IMPORTANTE: Cambiar estas URLs seg煤n tu configuraci贸n
+// IMPORTANTE: Cambiar estas URLs según tu configuración
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -117,7 +117,7 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
   // Limpia el estado de Google Sign-In cada vez que se abre el modal
   useEffect(() => {
     if (open) {
-      // Forzar reinicializaci贸n de Google Sign-In
+      // Forzar reinicialización de Google Sign-In
       googleInitializedRef.current = false;
     }
   }, [open]);
@@ -498,7 +498,7 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
     setGoogleLoading(true);
 
     try {
-      // Inicializar si no est谩 inicializado
+      // Inicializar si no está inicializado
       if (!googleInitializedRef.current) {
         initializeGoogleSignIn();
       }
@@ -618,7 +618,7 @@ export function AuthModal({ open, onClose, tab, onTabChange }: AuthModalProps) {
             >
               Mi cuenta
             </Typography>
-            <Typography sx={{ color: '#6B6B6B' }}>Acceda para reservar mas rápido</Typography>
+            <Typography sx={{ color: '#6B6B6B' }}>Accedé para reservar más rápido</Typography>
           </Box>
 
           <Tabs

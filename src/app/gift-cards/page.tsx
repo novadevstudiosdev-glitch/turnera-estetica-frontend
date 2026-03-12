@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 
@@ -254,7 +254,7 @@ export default function GiftCardsPage() {
                 'radial-gradient(ellipse 55% 70% at 80% 50%, rgba(217,149,158,0.16) 0%, rgba(240,218,218,0.10) 40%, transparent 70%)',
             }}
           />
-          {/* lÃ­nea diagonal decorativa */}
+          {/* línea diagonal decorativa */}
           <div
             className="absolute top-0 bottom-0 pointer-events-none hidden md:block"
             style={{
@@ -351,7 +351,7 @@ export default function GiftCardsPage() {
               {/* â”€â”€ COLUMNA DERECHA â€” formulario â”€â”€ */}
               <div className="flex flex-col justify-center mt-12 md:mt-0 pl-2 md:pl-12 lg:pl-16">
                 {submitted ? (
-                  /* Ã‰xito */
+                  /* Éxito */
                   <div
                     className="text-center"
                     style={{
@@ -376,7 +376,7 @@ export default function GiftCardsPage() {
                       className="font-bacalisties text-[#2b1f20] mb-3"
                       style={{ fontSize: '42px' }}
                     >
-                      Â¡Gift Card creada!
+                      ¡Gift Card creada!
                     </h3>
                     <p
                       className="text-[#6b4f50] mb-8"
@@ -427,7 +427,7 @@ export default function GiftCardsPage() {
                       }}
                     />
 
-                    {/* tÃ­tulo del form */}
+                    {/* título del form */}
                     <div className="mb-6 text-center">
                       <h2
                         className="font-bacalisties text-[#2b1f20]"

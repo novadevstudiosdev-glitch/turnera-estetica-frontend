@@ -24,8 +24,8 @@ export function HeroSection() {
             cuidado profesional
           </h1>
           <p style={styles.p}>
-            Tratamientos de medicina estetica diseñados para realzar tu belleza de forma sutil,
-            segura y armonica.
+            Tratamientos de medicina estética diseñados para realzar tu belleza de forma sutil,
+            segura y armónica.
           </p>
 
           <button type="button" onClick={handleOpenReserva} style={styles.btnReservar}>
@@ -66,7 +66,7 @@ export function HeroSection() {
         {/* CONTENEDOR DERECHO */}
         <div style={styles.heroRight}>
           <span style={styles.doctorTitle}>Dra. Jaquelina Grassetti</span>
-          <span style={styles.doctorSpecialty}>medicina estetica</span>
+          <span style={styles.doctorSpecialty}>medicina estética</span>
         </div>
       </div>
     </section>

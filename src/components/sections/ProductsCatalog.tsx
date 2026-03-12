@@ -73,8 +73,8 @@ export function ProductsCatalogSection() {
     >
       <Container maxWidth="lg">
         <SectionTitle
-          title="Catalogo de Productos"
-          subtitle="Dermocosmetica profesional para potenciar y mantener tus resultados en casa"
+          title="Catálogo de Productos"
+          subtitle="Dermocosmética profesional para potenciar y mantener tus resultados en casa"
         />
 
         <Box

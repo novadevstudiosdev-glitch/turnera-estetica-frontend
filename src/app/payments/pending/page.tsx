@@ -58,8 +58,8 @@ export default async function PaymentPendingPage({
           Pago pendiente
         </h1>
         <p style={{ color: '#6B6B6B', lineHeight: 1.7, marginTop: 12 }}>
-          Tu pago esta en proceso. Si no se acredita dentro de {pendingTtlMinutes} minutos, la
-          reserva se cancela automaticamente.
+          Tu pago está en proceso. Si no se acredita dentro de {pendingTtlMinutes} minutos, la
+          reserva se cancela automáticamente.
         </p>
 
         {details.length > 0 ? (
