@@ -99,6 +99,15 @@ export function ReservaModal() {
   const paymentsUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/payments/create-preference`;
   const servicesUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/services`;
   const availableSlotsUrl = `${appointmentsUrl}/available-slots`;
+  const selectedService = services.find((service) => service.id === selectedServiceId);
+  const selectedDepositAmount =
+    selectedService && Number.isFinite(selectedService.depositAmount)
+      ? selectedService.depositAmount
+      : 0;
+  const formattedDepositAmount =
+    selectedDepositAmount > 0
+      ? new Intl.NumberFormat('es-AR').format(selectedDepositAmount)
+      : '0';
 
   useEffect(() => {
     const syncStoredUser = () => {
@@ -811,15 +820,12 @@ export function ReservaModal() {
         return null;
       }
 
-      const selectedService = services.find((service) => service.id === selectedServiceId);
       if (!selectedService) {
         showAlert('No se pudo identificar el tratamiento seleccionado.');
         return null;
       }
 
-      const amount = Number.isFinite(selectedService.depositAmount)
-        ? selectedService.depositAmount
-        : 0;
+      const amount = selectedDepositAmount;
 
       if (amount <= 0) {
         return null;
@@ -1240,7 +1246,7 @@ export function ReservaModal() {
         <DialogTitle sx={{ fontWeight: 700 }}>Confirmar pago</DialogTitle>
         <DialogContent>
           <Typography sx={{ color: '#6B6B6B', lineHeight: 1.7 }}>
-            La consulta sale <strong>$20.000</strong>. ¿Querés continuar con el pago?
+            La seña sale <strong>{`$${formattedDepositAmount}`}</strong>. ¿Querés continuar con el pago?
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
