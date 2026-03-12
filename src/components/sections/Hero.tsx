@@ -7,10 +7,9 @@ const heroBg = '/hero.png';
 export function HeroSection() {
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detectar si estamos en mobile
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 900);
-    handleResize(); // inicial
+    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -34,16 +33,20 @@ export function HeroSection() {
             maxWidth: isMobile ? '100%' : 480,
           }}
         >
-          <img
-            src="/imagenes/doctora.jpeg"
-            alt="Dra. Jaquelina Grassetti"
-            style={{
-              ...styles.doctorImg,
-              width: isMobile ? 140 : 280,
-              height: isMobile ? 140 : 280,
-              objectPosition: isMobile ? 'center top 55%' : 'center 20%',
-            }}
-          />
+          {/* Imagen solo mobile */}
+          {isMobile && (
+            <img
+              src="/imagenes/doctora.jpeg"
+              alt="Dra. Jaquelina Grassetti"
+              style={{
+                ...styles.doctorImg,
+                width: 140,
+                height: 140,
+                objectPosition: 'center 16%',
+              }}
+            />
+          )}
+
           <span style={styles.doctorTitle}>Dra. Jaquelina Grassetti</span>
           <span style={styles.doctorSpecialty}>medicina estetica</span>
         </div>
@@ -52,7 +55,7 @@ export function HeroSection() {
         <div
           style={{
             ...styles.heroLeft,
-            order: isMobile ? 1 : 1,
+            order: 1,
             maxWidth: isMobile ? '100%' : 520,
           }}
         >
