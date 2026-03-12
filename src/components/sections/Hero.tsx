@@ -34,18 +34,17 @@ export function HeroSection() {
           }}
         >
           {/* Imagen solo mobile */}
-          {isMobile && (
-            <img
-              src="/imagenes/doctora.jpeg"
-              alt="Dra. Jaquelina Grassetti"
-              style={{
-                ...styles.doctorImg,
-                width: 140,
-                height: 140,
-                objectPosition: 'center 16%',
-              }}
-            />
-          )}
+
+          <img
+            src="/imagenes/doctora.jpeg"
+            alt="Dra. Jaquelina Grassetti"
+            style={{
+              ...styles.doctorImg,
+              width: isMobile ? 140 : 220,
+              height: isMobile ? 140 : 220,
+              objectPosition: 'center 16%',
+            }}
+          />
 
           <span style={styles.doctorTitle}>Dra. Jaquelina Grassetti</span>
           <span style={styles.doctorSpecialty}>medicina estetica</span>
