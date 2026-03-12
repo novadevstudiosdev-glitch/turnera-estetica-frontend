@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Card, CardContent, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Pagination, Skeleton, Stack, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -766,7 +766,7 @@ function AdminDashboardContent() {
         if (!token) {
           if (!signal?.aborted) {
             setAppointments([]);
-            setError('Necesitas iniciar sesion como admin para ver los turnos.');
+            setError('Necesitas iniciar sesión como admin para ver los turnos.');
           }
           return;
         }
@@ -834,7 +834,7 @@ function AdminDashboardContent() {
         if (!token) {
           if (!signal?.aborted) {
             setGiftCards([]);
-            setGiftCardsError('Necesitas iniciar sesion como admin para ver las gift cards.');
+            setGiftCardsError('Necesitas iniciar sesión como admin para ver las gift cards.');
           }
           return;
         }
@@ -896,7 +896,7 @@ function AdminDashboardContent() {
         const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
         if (!token) {
           if (!signal?.aborted) {
-            setTestimonialsError('Necesitas iniciar sesion como admin para ver las reseñas.');
+            setTestimonialsError('Necesitas iniciar sesión como admin para ver las reseñas.');
             setTestimonials([]);
           }
           return;
@@ -963,7 +963,7 @@ function AdminDashboardContent() {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
       if (!token) {
-        setError('Necesitas iniciar sesion como admin para actualizar un turno.');
+        setError('Necesitas iniciar sesión como admin para actualizar un turno.');
         return;
       }
       const response = await fetch(`${appointmentsUrl}/${editing.id}`, {
@@ -994,7 +994,7 @@ function AdminDashboardContent() {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
       if (!token) {
-        setError('Necesitas iniciar sesion como admin para cancelar un turno.');
+        setError('Necesitas iniciar sesión como admin para cancelar un turno.');
         return;
       }
       const payload = reason?.trim()
@@ -1067,7 +1067,7 @@ function AdminDashboardContent() {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
       if (!token) {
-        setRedeemError('Necesitas iniciar sesion como admin para canjear una gift card.');
+        setRedeemError('Necesitas iniciar sesión como admin para canjear una gift card.');
         return;
       }
       setRedeemSubmitting(true);
@@ -1114,7 +1114,7 @@ function AdminDashboardContent() {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
       if (!token) {
-        setTestimonialsError('Necesitas iniciar sesion como admin para actualizar reseñas.');
+        setTestimonialsError('Necesitas iniciar sesión como admin para actualizar reseñas.');
         return;
       }
       setTestimonialUpdatingId(testimonial.id);
@@ -1274,7 +1274,7 @@ function AdminDashboardContent() {
     const endIso = toIsoDate(normalizedEnd);
     const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
     if (!token) {
-      setRangeNotice('Necesitas iniciar sesion como admin para bloquear fechas.');
+      setRangeNotice('Necesitas iniciar sesión como admin para bloquear fechas.');
       return;
     }
     try {
@@ -1335,7 +1335,7 @@ function AdminDashboardContent() {
     }
     const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
     if (!token) {
-      setRangeNotice('Necesitas iniciar sesion como admin para bloquear horarios.');
+      setRangeNotice('Necesitas iniciar sesión como admin para bloquear horarios.');
       return;
     }
     try {
@@ -1373,7 +1373,7 @@ function AdminDashboardContent() {
     }
     const token = typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
     if (!token) {
-      setRangeNotice('Necesitas iniciar sesion como admin para reactivar horarios.');
+      setRangeNotice('Necesitas iniciar sesión como admin para reactivar horarios.');
       return;
     }
     try {
@@ -1607,7 +1607,7 @@ function AdminDashboardContent() {
                       Bloqueo de disponibilidad
                     </Typography>
                     <Typography sx={{ color: '#6B6B6B', fontSize: '0.88rem', mb: 1.5 }}>
-                      Bloquea dias completos o franjas horarias para evitar nuevas reservas.
+                      Bloquea días completos o franjas horarias para evitar nuevas reservas.
                     </Typography>
                     <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                       <Button
@@ -1702,7 +1702,7 @@ function AdminDashboardContent() {
                               const timeLabel =
                                 slot.startTime && slot.endTime
                                   ? `${slot.startTime} - ${slot.endTime}`
-                                  : 'Todo el dia';
+                                  : 'Todo el día';
                               return (
                                 <Box
                                   key={slot.id}
@@ -1767,8 +1767,8 @@ function AdminDashboardContent() {
               <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
                 <Stack spacing={2.5}>
                   <Box>
-                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>Resumen del dia</Typography>
-                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>Vista rapida de actividad y proximos turnos.</Typography>
+                    <Typography sx={{ fontWeight: 700, color: '#2C2C2C', mb: 0.5 }}>Resumen del día</Typography>
+                    <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>Vista rápida de actividad y próximos turnos.</Typography>
                   </Box>
                   <Box
                     sx={{
@@ -1801,7 +1801,7 @@ function AdminDashboardContent() {
                     </Box>
                   </Box>
                   <Box>
-                    <Typography sx={{ fontWeight: 600, color: '#2C2C2C', mb: 1 }}>Proximos turnos</Typography>
+                    <Typography sx={{ fontWeight: 600, color: '#2C2C2C', mb: 1 }}>próximos turnos</Typography>
                     {loading ? (
                       <Stack spacing={1}>
                         {Array.from({ length: 3 }).map((_, index) => (
@@ -1842,7 +1842,7 @@ function AdminDashboardContent() {
                           textAlign: 'center',
                         }}
                       >
-                        <Typography sx={{ color: '#8B6B6B', fontSize: '0.9rem' }}>No hay turnos proximos cargados.</Typography>
+                        <Typography sx={{ color: '#8B6B6B', fontSize: '0.9rem' }}>No hay turnos próximos cargados.</Typography>
                       </Box>
                     )}
                   </Box>
@@ -2309,7 +2309,7 @@ function AdminDashboardContent() {
                         ))}
                       </TextField>
                       <TextField select label="Ordenar por" size="small" value={sortBy} onChange={(event) => setSortBy(event.target.value as 'date-asc' | 'date-desc' | 'name-asc')} sx={{ minWidth: 180, backgroundColor: '#FFFFFF' }}>
-                        <MenuItem value="date-asc">Fecha (proximos)</MenuItem>
+                        <MenuItem value="date-asc">Fecha (próximos)</MenuItem>
                         <MenuItem value="date-desc">Fecha (recientes)</MenuItem>
                         <MenuItem value="name-asc">Cliente (A-Z)</MenuItem>
                       </TextField>
@@ -2594,10 +2594,10 @@ function AdminDashboardContent() {
                           }}
                         >
                           <Typography sx={{ fontWeight: 600, color: '#8B6B6B' }}>
-                            Dia bloqueado
+                            día bloqueado
                           </Typography>
                           <Typography sx={{ color: '#6B6B6B', fontSize: '0.85rem' }}>
-                            No se permiten nuevos turnos en este dia.
+                            No se permiten nuevos turnos en este día.
                           </Typography>
                         </Box>
                       )}
@@ -2615,7 +2615,7 @@ function AdminDashboardContent() {
                             Bloqueos parciales
                           </Typography>
                           <Typography sx={{ color: '#6B6B6B', fontSize: '0.85rem' }}>
-                            Hay franjas horarias bloqueadas en este dia.
+                            Hay franjas horarias bloqueadas en este día.
                           </Typography>
                         </Box>
                       )}
@@ -2683,7 +2683,7 @@ function AdminDashboardContent() {
         <DialogTitle>Bloquear fechas</DialogTitle>
         <DialogContent sx={{ display: 'grid', gap: 2, mt: 1 }}>
           <Typography sx={{ color: '#6B6B6B', fontSize: '0.9rem' }}>
-            Selecciona un rango para cancelar turnos (una semana, un mes o dias sueltos).
+            Selecciona un rango para cancelar turnos (una semana, un mes o días sueltos).
           </Typography>
           <TextField
             label="Desde"

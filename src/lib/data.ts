@@ -36,26 +36,26 @@ export interface Product {
 export const services: Service[] = [
   {
     id: 1,
-    name: 'Toxina Botulinica',
+    name: 'Toxina Botulínica',
     description:
-      'Tratamiento inyectable que relaja de forma controlada los musculos responsables de las arrugas de expresion (frente, entrecejo, patas de gallo). Resultado: rostro mas descansado y juvenil, sin perder naturalidad.',
-    icon: 'ðŸ’‰',
+      'Tratamiento inyectable que relaja de forma controlada los músculos responsables de las arrugas de expresión (frente, entrecejo, patas de gallo). Resultado: rostro más descansado y juvenil, sin perder naturalidad.',
+    icon: '💉',
     image: '/toxina%20butolinica.jpeg',
   },
   {
     id: 2,
     name: 'Bioestimuladores',
     description:
-      'Sustancias que estimulan la produccion natural de colageno. Mejoran firmeza, elasticidad y calidad de piel de manera progresiva. Ideal para flacidez facial y corporal.',
-    icon: 'âœ¨',
+      'Sustancias que estimulan la producción natural de colágeno. Mejoran firmeza, elasticidad y calidad de piel de manera progresiva. Ideal para flacidez facial y corporal.',
+    icon: '✨',
     image: '/bioestimuladores.jpeg',
   },
   {
     id: 3,
-    name: 'Tratamientos faciales y corporales con Acido Hialuronico',
+    name: 'Tratamientos faciales y corporales con Ácido Hialurónico',
     description:
-      'Rellenos que aportan volumen, definicion e hidratacion profunda. Se utilizan para labios, pomulos, menton, ojeras y tambien para mejorar contorno corporal.',
-    icon: 'ðŸ’§',
+      'Rellenos que aportan volumen, definición e hidratación profunda. Se utilizan para labios, pómulos, mentón, ojeras y también para mejorar contorno corporal.',
+    icon: '💧',
     image: '/%C3%A1cido%20hialuronico.jpeg',
   },
   {
@@ -63,71 +63,71 @@ export const services: Service[] = [
     name: 'Plasma Rico en Plaquetas (Facial, Corporal y Capilar)',
     description:
       'Procedimiento regenerativo que utiliza factores de crecimiento obtenidos de la propia sangre del paciente. Mejora textura, luminosidad, cicatrices y estimula el crecimiento capilar.',
-    icon: 'ðŸ©¸',
+    icon: '🩸',
     image: '/Plasma%20rico%20en%20plaquetas.jpeg',
   },
   {
     id: 5,
     name: 'Mesoterapia Facial, Corporal y Capilar',
     description:
-      'Microinyecciones con vitaminas, minerales y activos especificos segun el objetivo: rejuvenecimiento facial, reduccion de grasa localizada o fortalecimiento capilar.',
-    icon: 'ðŸ’‰',
+      'Microinyecciones con vitaminas, minerales y activos específicos según el objetivo: rejuvenecimiento facial, reducción de grasa localizada o fortalecimiento capilar.',
+    icon: '💉',
     image: '/mesoterapia.jpeg',
   },
   {
     id: 6,
     name: 'Skinbooster',
     description:
-      'Microinyecciones de acido hialuronico de baja densidad para hidratar profundamente la piel desde adentro. Mejora brillo, suavidad y elasticidad sin aportar volumen.',
-    icon: 'ðŸ’¦',
+      'Microinyecciones de ácido hialurónico de baja densidad para hidratar profundamente la piel desde adentro. Mejora brillo, suavidad y elasticidad sin aportar volumen.',
+    icon: '💦',
     image: '/skinbooster.jpeg',
   },
   {
     id: 7,
-    name: 'Peelings Quimicos',
+    name: 'Peelings Químicos',
     description:
-      'Aplicacion de sustancias quimicas que exfolian capas superficiales de la piel. Reduce manchas, acne, poros dilatados y lineas finas. Renueva la piel y mejora su textura.',
-    icon: 'ðŸ§ª',
+      'Aplicación de sustancias químicas que exfolian capas superficiales de la piel. Reduce manchas, acné, poros dilatados y líneas finas. Renueva la piel y mejora su textura.',
+    icon: '🧪',
     image: '/peeling%20quimico.jpeg',
   },
   {
     id: 8,
     name: 'Dermaplaning',
     description:
-      'Exfoliacion mecanica que elimina celulas muertas y vello fino del rostro. Deja la piel mas lisa, luminosa y mejora la penetracion de activos.',
-    icon: 'âœ¨',
+      'Exfoliación mecánica que elimina células muertas y vello fino del rostro. Deja la piel más lisa, luminosa y mejora la penetración de activos.',
+    icon: '✨',
     image: '/dermaplaning.jpeg',
   },
   {
     id: 9,
     name: 'Mesoterapia Suiza',
     description:
-      'Version premium de mesoterapia con principios activos de alta calidad y protocolos europeos. Enfoque en revitalizacion intensiva y resultados visibles en menor tiempo.',
-    icon: 'ðŸ‡¨ðŸ‡­',
+      'Versión premium de mesoterapia con principios activos de alta calidad y protocolos europeos. Enfoque en revitalización intensiva y resultados visibles en menor tiempo.',
+    icon: '🇨🇭',
     image: '/mesoterapia.jpeg',
   },
   {
     id: 10,
     name: 'Microneedling',
     description:
-      'Tratamiento con microagujas que estimula la produccion de colageno y elastina. Mejora cicatrices, manchas, arrugas y textura general de la piel.',
-    icon: 'ðŸŽ¯',
+      'Tratamiento con microagujas que estimula la producción de colágeno y elastina. Mejora cicatrices, manchas, arrugas y textura general de la piel.',
+    icon: '🎯',
     image: '/microneedling.jpeg',
   },
   {
     id: 11,
     name: 'Exosomas',
     description:
-      'Terapia avanzada de regeneracion celular. Potencia la reparacion de tejidos, mejora firmeza, calidad de piel y acelera recuperacion post procedimientos.',
-    icon: 'ðŸ§¬',
+      'Terapia avanzada de regeneración celular. Potencia la reparación de tejidos, mejora firmeza, calidad de piel y acelera recuperación post procedimientos.',
+    icon: '🧬',
     image: '/exomas.jpeg',
   },
   {
     id: 12,
     name: 'Enzimas',
     description:
-      'Aplicacion de enzimas especificas para disolver grasa localizada o mejorar fibrosis. Se usa en rostro y cuerpo para redefinir contornos sin cirugia.',
-    icon: 'ðŸ’Š',
+      'Aplicación de enzimas específicas para disolver grasa localizada o mejorar fibrosis. Se usa en rostro y cuerpo para redefinir contornos sin cirugía.',
+    icon: '💊',
     image: '/enzimas.jpeg',
   },
 ];
@@ -135,15 +135,15 @@ export const services: Service[] = [
 export const testimonials: Testimonial[] = [
   {
     id: 1,
-    name: 'Marí­a Garcí­a',
+    name: 'María García',
     role: 'Cliente desde 2023',
     comment:
-      'Excelente atención y resultados increí­bles. El equipo de JG es muy profesional y dedicado. ¡Recomiendo ampliamente!',
+      'Excelente atención y resultados increíbles. El equipo de JG es muy profesional y dedicado. ¡Recomiendo ampliamente!',
     rating: 5,
   },
   {
     id: 2,
-    name: 'Carlos Rodrí­guez',
+    name: 'Carlos Rodríguez',
     role: 'Cliente desde 2024',
     comment:
       'Cambió mi vida. Los tratamientos son de primera calidad y los resultados superaron mis expectativas. ¡Muy satisfecho!',
@@ -233,42 +233,42 @@ export const products: Product[] = [
       'Apoya el drenaje',
       '1 sobre diario',
     ],
-    icon: 'ðŸ§´',
+    icon: '🧴',
     image: '/Fine-Smooth.jpg.jpeg',
   },
   {
     id: 2,
-    name: 'Colageno Fine ',
-    category: 'Colagenos',
+    name: 'Colágeno Fine ',
+    category: 'Colágenos',
     description:
-      'Antioxidante con 5 frutas, colageno y resveratrol. Apoya articulaciones y energia.',
+      'Antioxidante con 5 frutas, colágeno y resveratrol. Apoya articulaciones y energía.',
     presentation: 'Sobres',
     price: '$29.900',
     benefits: [
       'Antioxidante potente',
       'Salud articular',
-      'Recuperacion post ejercicio',
+      'Recuperación post ejercicio',
       '1 sobre diario',
     ],
-    icon: 'âœ¨',
+    icon: '✨',
     image: '/finepower.jpg.jpeg',
   },
   {
     id: 3,
     name: 'Protector Solar',
-    category: 'Fotoproteccion',
+    category: 'Fotoprotección',
     description:
-      'Alta proteccion facial SPF 50+ UVA/UVB. Formula ligera, textura fluida y uso diario.',
+      'Alta protección facial SPF 50+ UVA/UVB. Fórmula ligera, textura fluida y uso diario.',
     presentation: '50 ml',
     price: '$24.900',
     benefits: [
       'Textura fluida y liviana',
-      'Hidratacion y accion antioxidante',
+      'Hidratación y acción antioxidante',
       'Aplicar 30 min antes del sol',
       'Reaplicar cada 2 horas o tras nadar/sudar',
       'Usar cantidad suficiente en rostro y cuello',
     ],
-    icon: 'â˜€ï¸',
+    icon: '☀️',
     image: '/lg.jpg.jpeg',
   },
 ];

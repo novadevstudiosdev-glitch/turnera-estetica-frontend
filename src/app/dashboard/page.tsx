@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {
   Box,
@@ -230,7 +230,7 @@ function DashboardContent() {
         if (!token) {
           if (mounted) {
             setAppointments([]);
-            setError('Necesitas iniciar sesion para ver tus turnos.');
+            setError('Necesitas iniciar sesión para ver tus turnos.');
           }
           return;
         }
@@ -308,7 +308,7 @@ function DashboardContent() {
       const token =
         typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
       if (!token) {
-        setError('Necesitas iniciar sesion para cancelar un turno.');
+        setError('Necesitas iniciar sesión para cancelar un turno.');
         return;
       }
       const payload = reason?.trim() ? { cancellationReason: reason.trim() } : {};
@@ -363,7 +363,7 @@ function DashboardContent() {
       const token =
         typeof window !== 'undefined' ? localStorage.getItem('turnera_access_token') : null;
       if (!token) {
-        setError('Necesitas iniciar sesion para reprogramar un turno.');
+        setError('Necesitas iniciar sesión para reprogramar un turno.');
         return;
       }
       if (!rescheduleTarget.serviceId) {

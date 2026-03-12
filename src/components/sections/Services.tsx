@@ -35,14 +35,14 @@ type ModalService = {
 const modalServices: ModalService[] = [
   {
     id: 1,
-    name: 'Toxina Botulinica',
+    name: 'Toxina Botulínica',
     shortDescription:
-      'Tratamiento inyectable que relaja de forma controlada los musculos responsables de las arrugas de expresion.',
+      'Tratamiento inyectable que relaja de forma controlada los músculos responsables de las arrugas de expresión.',
     details:
-      'Tratamiento inyectable que relaja de forma controlada los musculos responsables de las arrugas de expresion (frente, entrecejo, patas de gallo). Resultado: rostro mas descansado y juvenil, sin perder naturalidad.',
+      'Tratamiento inyectable que relaja de forma controlada los músculos responsables de las arrugas de expresión (frente, entrecejo, patas de gallo). Resultado: rostro más descansado y juvenil, sin perder naturalidad.',
     image: '/toxina%20butolinica.jpeg',
     category: 'Inyectables',
-    benefits: ['Suaviza lineas de expresion', 'Resultado natural y controlado', 'Recuperacion rapida'],
+    benefits: ['Suaviza líneas de expresión', 'Resultado natural y controlado', 'Recuperación rápida'],
     duration: '20-30 min',
     frequency: 'cada 4-6 meses',
   },
@@ -50,9 +50,9 @@ const modalServices: ModalService[] = [
     id: 2,
     name: 'Bioestimuladores',
     shortDescription:
-      'Sustancias que estimulan la produccion natural de colageno para mejorar firmeza y elasticidad.',
+      'Sustancias que estimulan la producción natural de colágeno para mejorar firmeza y elasticidad.',
     details:
-      'Sustancias que estimulan la produccion natural de colageno. Mejoran firmeza, elasticidad y calidad de piel de manera progresiva. Ideal para flacidez facial y corporal.',
+      'Sustancias que estimulan la producción natural de colágeno. Mejoran firmeza, elasticidad y calidad de piel de manera progresiva. Ideal para flacidez facial y corporal.',
     image: '/bioestimuladores.jpeg',
     category: 'Regenerativos',
     benefits: ['Mejora firmeza y elasticidad', 'Efecto progresivo y natural', 'Ideal para flacidez'],
@@ -61,14 +61,14 @@ const modalServices: ModalService[] = [
   },
   {
     id: 3,
-    name: 'Tratamientos faciales y corporales con Acido Hialuronico',
+    name: 'Tratamientos faciales y corporales con Ácido Hialurónico',
     shortDescription:
-      'Rellenos que aportan volumen, definicion e hidratacion profunda en rostro y cuerpo.',
+      'Rellenos que aportan volumen, definición e hidratación profunda en rostro y cuerpo.',
     details:
-      'Rellenos que aportan volumen, definicion e hidratacion profunda. Se utilizan para labios, pomulos, menton, ojeras y tambien para mejorar contorno corporal.',
+      'Rellenos que aportan volumen, definición e hidratación profunda. Se utilizan para labios, pómulos, mentón, ojeras y también para mejorar contorno corporal.',
     image: '/%C3%A1cido%20hialuronico.jpeg',
     category: 'Rellenos',
-    benefits: ['Aporta volumen y definicion', 'Hidratacion profunda', 'Resultados inmediatos'],
+    benefits: ['Aporta volumen y definición', 'hidratación profunda', 'Resultados inmediatos'],
     duration: '30-40 min',
     frequency: 'cada 9-12 meses',
   },
@@ -81,7 +81,7 @@ const modalServices: ModalService[] = [
       'Procedimiento regenerativo que utiliza factores de crecimiento obtenidos de la propia sangre del paciente. Mejora textura, luminosidad, cicatrices y estimula el crecimiento capilar.',
     image: '/Plasma%20rico%20en%20plaquetas.jpeg',
     category: 'Regenerativos',
-    benefits: ['Mejora luminosidad y textura', 'Favorece la reparacion', 'Estimula crecimiento capilar'],
+    benefits: ['Mejora luminosidad y textura', 'Favorece la Reparación', 'Estimula crecimiento capilar'],
     duration: '45-60 min',
     frequency: 'cada 4-6 semanas',
   },
@@ -89,9 +89,9 @@ const modalServices: ModalService[] = [
     id: 5,
     name: 'Mesoterapia Facial, Corporal y Capilar',
     shortDescription:
-      'Microinyecciones con activos especificos para rejuvenecimiento, reduccion localizada o fortalecimiento capilar.',
+      'Microinyecciones con activos específicos para rejuvenecimiento, reducción localizada o fortalecimiento capilar.',
     details:
-      'Microinyecciones con vitaminas, minerales y activos especificos segun el objetivo: rejuvenecimiento facial, reduccion de grasa localizada o fortalecimiento capilar.',
+      'Microinyecciones con vitaminas, minerales y activos específicos según el objetivo: rejuvenecimiento facial, reducción de grasa localizada o fortalecimiento capilar.',
     image: '/mesoterapia.jpeg',
     category: 'Mesoterapia',
     benefits: ['Aporta activos personalizados', 'Mejora firmeza y brillo', 'Tratamiento progresivo'],
@@ -102,12 +102,12 @@ const modalServices: ModalService[] = [
     id: 6,
     name: 'Skinbooster',
     shortDescription:
-      'Microinyecciones de acido hialuronico de baja densidad para hidratacion profunda sin volumen.',
+      'Microinyecciones de ácido hialurónico de baja densidad para hidratación profunda sin volumen.',
     details:
-      'Microinyecciones de acido hialuronico de baja densidad para hidratar profundamente la piel desde adentro. Mejora brillo, suavidad y elasticidad sin aportar volumen.',
+      'Microinyecciones de ácido hialurónico de baja densidad para hidratar profundamente la piel desde adentro. Mejora brillo, suavidad y elasticidad sin aportar volumen.',
     image: '/skinbooster.jpeg',
-    category: 'Hidratacion',
-    benefits: ['Hidratacion profunda', 'Mejora elasticidad', 'Efecto glow inmediato'],
+    category: 'Hidratación',
+    benefits: ['hidratación profunda', 'Mejora elasticidad', 'Efecto glow inmediato'],
     duration: '30 min',
     frequency: 'cada 3-6 meses',
   },
@@ -115,11 +115,11 @@ const modalServices: ModalService[] = [
     id: 7,
     name: 'Peelings Quimicos',
     shortDescription:
-      'Exfoliacion quimica para reducir manchas, acne, poros dilatados y lineas finas.',
+      'Exfoliación quimica para reducir manchas, acne, poros dilatados y líneas finas.',
     details:
-      'Aplicacion de sustancias quimicas que exfolian capas superficiales de la piel. Reduce manchas, acne, poros dilatados y lineas finas. Renueva la piel y mejora su textura.',
+      'Aplicación de sustancias quimicas que exfolian capas superficiales de la piel. Reduce manchas, acne, poros dilatados y líneas finas. Renueva la piel y mejora su textura.',
     image: '/peeling%20quimico.jpeg',
-    category: 'Exfoliacion',
+    category: 'Exfoliación',
     benefits: ['Reduce manchas y poros', 'Renueva la piel', 'Mejora textura'],
     duration: '20-30 min',
     frequency: 'cada 3-4 semanas',
@@ -128,12 +128,12 @@ const modalServices: ModalService[] = [
     id: 8,
     name: 'Dermaplaning',
     shortDescription:
-      'Exfoliacion mecanica que elimina celulas muertas y vello fino del rostro.',
+      'Exfoliación mecánica que elimina células muertas y vello fino del rostro.',
     details:
-      'Exfoliacion mecanica que elimina celulas muertas y vello fino del rostro. Deja la piel mas lisa, luminosa y mejora la penetracion de activos.',
+      'Exfoliación mecánica que elimina células muertas y vello fino del rostro. Deja la piel más lisa, luminosa y mejora la penetración de activos.',
     image: '/dermaplaning.jpeg',
-    category: 'Exfoliacion',
-    benefits: ['Piel mas lisa y luminosa', 'Mejor absorcion de activos', 'Resultados inmediatos'],
+    category: 'Exfoliación',
+    benefits: ['Piel más lisa y luminosa', 'Mejor absorción de activos', 'Resultados inmediatos'],
     duration: '30 min',
     frequency: 'cada 3-4 semanas',
   },
@@ -141,12 +141,12 @@ const modalServices: ModalService[] = [
     id: 9,
     name: 'Mesoterapia Suiza',
     shortDescription:
-      'Version premium con activos de alta calidad y protocolos europeos.',
+      'Versión premium con activos de alta calidad y protocolos europeos.',
     details:
-      'Version premium de mesoterapia con principios activos de alta calidad y protocolos europeos. Enfoque en revitalizacion intensiva y resultados visibles en menor tiempo.',
+      'Versión premium de mesoterapia con principios activos de alta calidad y protocolos europeos. Enfoque en revitalización intensiva y resultados visibles en menor tiempo.',
     image: '/mesoterapia.jpeg',
     category: 'Mesoterapia',
-    benefits: ['Activos premium', 'Revitalizacion intensiva', 'Resultados visibles rapidos'],
+    benefits: ['Activos premium', 'revitalización intensiva', 'Resultados visibles rápidos'],
     duration: '30-45 min',
     frequency: 'cada 2-4 semanas',
   },
@@ -154,37 +154,37 @@ const modalServices: ModalService[] = [
     id: 10,
     name: 'Microneedling',
     shortDescription:
-      'Tratamiento con microagujas que estimula colageno y elastina.',
+      'Tratamiento con microagujas que estimula colágeno y elastina.',
     details:
-      'Tratamiento con microagujas que estimula la produccion de colageno y elastina. Mejora cicatrices, manchas, arrugas y textura general de la piel.',
+      'Tratamiento con microagujas que estimula la producción de colágeno y elastina. Mejora cicatrices, manchas, arrugas y textura general de la piel.',
     image: '/microneedling.jpeg',
     category: 'Regenerativos',
-    benefits: ['Estimula colageno', 'Mejora cicatrices y manchas', 'Piel mas uniforme'],
+    benefits: ['Estimula colágeno', 'Mejora cicatrices y manchas', 'Piel más uniforme'],
     duration: '40-60 min',
     frequency: 'cada 4-6 semanas',
   },
   {
     id: 11,
-    name: 'Exosomas',
+    name: 'Exosomás',
     shortDescription:
-      'Terapia avanzada de regeneracion celular para mejorar calidad de piel y recuperacion.',
+      'Terapia avanzada de regeneracion celular para mejorar calidad de piel y Recuperación.',
     details:
-      'Terapia avanzada de regeneracion celular. Potencia la reparacion de tejidos, mejora firmeza, calidad de piel y acelera recuperacion post procedimientos.',
-    image: '/exomas.jpeg',
+      'Terapia avanzada de regeneracion celular. Potencia la Reparación de tejidos, mejora firmeza, calidad de piel y acelera Recuperación post procedimientos.',
+    image: '/exomás.jpeg',
     category: 'Regenerativos',
-    benefits: ['Reparacion celular avanzada', 'Mejora firmeza', 'Recuperacion mas rapida'],
+    benefits: ['Reparación celular avanzada', 'Mejora firmeza', 'Recuperación más rápida'],
     duration: '45-60 min',
     frequency: 'cada 6-8 semanas',
   },
   {
     id: 12,
-    name: 'Enzimas',
+    name: 'Enzimás',
     shortDescription:
-      'Aplicacion de enzimas para disolver grasa localizada o mejorar fibrosis.',
+      'Aplicación de enzimás para disolver grasa localizada o mejorar fibrosis.',
     details:
-      'Aplicacion de enzimas especificas para disolver grasa localizada o mejorar fibrosis. Se usa en rostro y cuerpo para redefinir contornos sin cirugia.',
-    image: '/enzimas.jpeg',
-    category: 'Enzimaticos',
+      'Aplicación de enzimás específicas para disolver grasa localizada o mejorar fibrosis. Se usa en rostro y cuerpo para redefinir contornos sin cirugía.',
+    image: '/enzimás.jpeg',
+    category: 'Enzimáticos',
     benefits: ['Ayuda a reducir grasa localizada', 'Mejora fibrosis', 'Define contornos'],
     duration: '30-45 min',
     frequency: 'cada 2-4 semanas',
@@ -289,7 +289,7 @@ export function ServicesSection() {
             },
           }}
         >
-          Ver mas
+          Ver más
         </Button>
       </CardContent>
     </Card>
@@ -341,7 +341,7 @@ export function ServicesSection() {
             },
           }}
         >
-          Ver mas detalles
+          Ver más detalles
         </Button>
       </CardContent>
     </Card>
@@ -360,7 +360,7 @@ export function ServicesSection() {
       <Container maxWidth="lg">
         <SectionTitle
           title="Tratamientos"
-          subtitle="Descubre nuestro amplio catalogo de tratamientos esteticos especializados"
+          subtitle="Descubre nuestro amplio catálogo de tratamientos estéticos especializados"
         />
 
         <Box
@@ -473,7 +473,7 @@ export function ServicesSection() {
                     </Stack>
                   ) : (
                     <Typography sx={{ color: '#9A8F8F', fontSize: '0.9rem' }}>
-                      Beneficios personalizados segun evaluacion profesional.
+                      Beneficios personalizados según evaluación profesional.
                     </Typography>
                   )}
                 </Box>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {
   Alert,
@@ -693,7 +693,7 @@ export function ReservaModal() {
     if (typeof window === 'undefined') return false;
     const token = localStorage.getItem('turnera_access_token');
     if (!token) {
-      showAlert('Para confirmar la reserva necesitas iniciar sesion.');
+      showAlert('Para confirmar la reserva necesitas iniciar sesión.');
       return false;
     }
     if (patientNameError) {
@@ -735,7 +735,7 @@ export function ReservaModal() {
       return false;
     }
     if (selectedTime && !availableTimeSlots.includes(selectedTime)) {
-      showAlert('El horario seleccionado ya no esta disponible.');
+      showAlert('El horario seleccionado ya no está disponible.');
       return false;
     }
     if (!apiBaseUrl) {
@@ -753,7 +753,7 @@ export function ReservaModal() {
     try {
       const token = localStorage.getItem('turnera_access_token');
       if (!token) {
-        showAlert('Para confirmar la reserva necesitas iniciar sesion.');
+        showAlert('Para confirmar la reserva necesitas iniciar sesión.');
         return null;
       }
       const notesParts: string[] = [];
@@ -816,7 +816,7 @@ export function ReservaModal() {
     try {
       const token = localStorage.getItem('turnera_access_token');
       if (!token) {
-        showAlert('Para confirmar la reserva necesitas iniciar sesion.');
+        showAlert('Para confirmar la reserva necesitas iniciar sesión.');
         return null;
       }
 
@@ -1089,7 +1089,7 @@ export function ReservaModal() {
               </LocalizationProvider>
               <Typography sx={{ mt: 1, fontSize: '0.82rem', color: '#666666' }}>
                 {selectedLocation
-                  ? `Dí­as disponibles: ${availableDaysLabel}`
+                  ? `Días disponibles: ${availableDaysLabel}`
                   : 'Selecciona una sede para ver los días disponibles.'}
               </Typography>
             </Box>
